@@ -5,7 +5,8 @@ import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
 import type { AreaIndexEntry } from "@/lib/data";
 import { boundsOf, type Shape } from "@/lib/fit/cells";
-import { AREA_FILL_LAYER, syncDataLayers } from "@/lib/map/layers";
+import type { DayHotspot } from "@/lib/hotspots/day";
+import { AREA_FILL_LAYER, HOTSPOT_LAYERS, syncDataLayers } from "@/lib/map/layers";
 import { getBasemapStyle, type Basemap } from "@/lib/map/style";
 import { COLOURS, type Theme } from "@/lib/tokens";
 
@@ -22,6 +23,7 @@ interface Props {
   drawMode: DrawMode;
   onDraft: (shape: Shape) => void; // while the shape is being drawn
   onDrawn: (shape: Shape) => void; // when it is finished
+  hotspots: DayHotspot[]; // the chosen day's hotspots
 }
 
 type Ring = number[][];
@@ -37,13 +39,13 @@ function toShape(ring: Ring, mode: DrawMode): Shape | null {
   return { type: "Polygon", coordinates: [ring] };
 }
 
-export default function MapView({ theme, basemap, date, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn }: Props) {
+export default function MapView({ theme, basemap, date, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn, hotspots }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [ready, setReady] = useState(false);
   const markers = useRef<Marker[]>([]);
-  const latest = useRef({ theme, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn });
-  latest.current = { theme, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn };
+  const latest = useRef({ theme, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn, hotspots });
+  latest.current = { theme, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn, hotspots };
   const styleKey = `${theme}|${basemap}|${basemap === "satellite" ? date : ""}`;
   const appliedStyle = useRef(styleKey);
   const shapeKey = shape ? JSON.stringify(shape) : "";
@@ -69,8 +71,29 @@ export default function MapView({ theme, basemap, date, areas, selected, onSelec
       // Data layers go back on after every style load, whatever the basemap is.
       map.on("style.load", () => {
         const now = latest.current;
-        syncDataLayers(map!, now.theme, now.areas, now.selected, now.shape);
+        syncDataLayers(map!, now.theme, now.areas, now.selected, now.shape, now.hotspots);
       });
+      // A hotspot says in words what it is: sensor, satellite, time, strength.
+      for (const layer of HOTSPOT_LAYERS) {
+        map.on("click", layer, (event) => {
+          const p = event.features?.[0]?.properties;
+          if (!p || latest.current.drawMode) return;
+          const box = document.createElement("div");
+          box.className = "hotspot-popup";
+          const line = (text: string, strong = false) => {
+            const el = document.createElement(strong ? "strong" : "span");
+            el.textContent = text;
+            box.appendChild(el);
+          };
+          line(`${p.sensor}, ${p.satellite}`, true);
+          line(`${p.time} UTC, ${p.daynight === "D" ? "day" : "night"}`);
+          line(`Fire radiative power ${p.frp} MW`);
+          line(`Confidence ${p.confidence}${p.sensor === "MODIS" ? "%" : ""}`);
+          new maplibre.Popup({ closeButton: true, maxWidth: "260px" }).setLngLat(event.lngLat).setDOMContent(box).addTo(map!);
+        });
+        map.on("mouseenter", layer, () => !latest.current.drawMode && (map!.getCanvas().style.cursor = "pointer"));
+        map.on("mouseleave", layer, () => !latest.current.drawMode && (map!.getCanvas().style.cursor = ""));
+      }
       map.once("load", () => !cancelled && setReady(true));
       map.on("click", AREA_FILL_LAYER, (event) => {
         if (latest.current.drawMode) return; // a click belongs to the drawing
@@ -105,7 +128,7 @@ export default function MapView({ theme, basemap, date, areas, selected, onSelec
     import("maplibre-gl").then((maplibre) => {
       const map = mapRef.current;
       if (cancelled || !map) return;
-      if (map.isStyleLoaded()) syncDataLayers(map, theme, areas, selected, shape);
+      if (map.isStyleLoaded()) syncDataLayers(map, theme, areas, selected, shape, latest.current.hotspots);
       markers.current.forEach((marker) => marker.remove());
       markers.current = areas.map((area) => {
         const element = document.createElement("button");
@@ -131,6 +154,13 @@ export default function MapView({ theme, basemap, date, areas, selected, onSelec
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, areas, selected, theme, shapeKey]);
+
+  // The chosen day's hotspots.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (ready && map && map.isStyleLoaded()) syncDataLayers(map, theme, areas, selected, shape, hotspots);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, hotspots]);
 
   // The draw tool (terra-draw). It lives only while a shape is being drawn: the finished
   // shape is drawn by our own data layer, so it survives a basemap swap.

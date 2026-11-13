@@ -186,3 +186,17 @@ ol.bars li { display: grid; grid-template-columns: 112px 1fr 72px; align-items: 
 
 .page td .swatches { min-width: 220px; margin: 0; }
 .page td .swatches span { height: 22px; }
+
+/* ---------------------------------------------------------------- day view */
+.day-wrap { padding-bottom: 0; }
+.day-wrap + .panel-body { padding-top: 4px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: center; color: var(--ink-muted); font-size: 16px; }
+.mark-viirs, .mark-modis { display: inline-block; vertical-align: middle; border-radius: 9999px; margin-right: 4px; }
+.mark-viirs { width: 10px; height: 10px; background: var(--rubric); }
+.mark-modis { width: 16px; height: 16px; border: 3px solid var(--lapis); }
+p.warning { margin-bottom: 10px; }
+.hotspot-popup { display: flex; flex-direction: column; font: 400 15px/21px var(--font-text); color: #1e1a15; }
+.maplibregl-popup-content { border-radius: 0; padding: 10px 26px 10px 12px; }
+
+table.wrap td, table.wrap th { white-space: normal; }
+table.wrap td:last-child { white-space: nowrap; }

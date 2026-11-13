@@ -11,6 +11,9 @@ export type DrawnResult =
   | { status: "ok"; area: Area; country: string; draft: boolean }
   | { status: "outside" | "two-countries" | "too-big"; countries: string[] };
 
+/** Timing of the last drawn-area fit, in milliseconds. */
+export let lastTiming: { country: string; cells: number; draft: boolean; fit_ms: number; document_ms: number } | null = null;
+
 /** The regions drawn areas can be in. */
 export const COVERED = "Egypt, mainland Portugal and Argentina";
 
@@ -56,7 +59,12 @@ export async function resolveDrawn(shape: Shape, draft = false): Promise<DrawnRe
   if (countries.length > 1) return { status: "two-countries", countries };
   const [country] = countries;
   const cells = await cellsOf(index, country);
+  const started = performance.now();
   const fitted = fitDrawnArea(cells, index, country, shape, draft ? { bands: false } : {});
+  const fitMs = performance.now() - started;
   const doc = areaDocument(fitted, index, { id: "drawn", name: nameOf(shape) });
+  // How long the fit and the document took, for anyone checking the main thread (see DECISIONS.md).
+  lastTiming = { country, cells: doc.n_cells, draft, fit_ms: Math.round(fitMs), document_ms: Math.round(performance.now() - started - fitMs) };
+  (globalThis as { __zijTiming?: typeof lastTiming }).__zijTiming = lastTiming;
   return { status: "ok", area: doc as unknown as Area, country, draft };
 }

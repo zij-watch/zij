@@ -420,8 +420,8 @@ export default function Panel({ area, theme, from, to, view, month, year, note, 
             </label>
             <TypicalYear area={area} theme={theme} year={chartYear} />
             <p className="note">
-              Dark line: the median week over {area.climatology.baseline_years[0]} to {area.climatology.baseline_years[1]}. Band: what 8 in 10 years reach.
-              Red line: {chartYear}{chartYear === lastYear ? " so far" : ""}; where it was converted from MODIS, the red band is its likely range. Shaded: the critical period, the {area.climatology.critical_weeks.length} weeks
+              Light line: the median week over {area.climatology.baseline_years[0]} to {area.climatology.baseline_years[1]}. Grey band: what 8 in 10 years reach.
+              Red line: {chartYear}{chartYear === lastYear ? " so far" : ""}; where it was converted from MODIS, the red band is its likely range. Brass shading: the critical period, the {area.climatology.critical_weeks.length} weeks
               that hold {Math.round(area.climatology.critical_share * 100)}% of a typical year&rsquo;s {area.unit_label}.
             </p>
           </section>

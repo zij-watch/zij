@@ -71,7 +71,7 @@ export default function TypicalYear({ area, theme, year }: { area: Area; theme: 
       yAxis: { type: "value", axisLabel: text, splitLine: { lineStyle: { color: c.rule, opacity: 0.4 } } },
       series: [
         { type: "line", data: p10, stack: "band", symbol: "none", lineStyle: { opacity: 0 }, silent: true },
-        { type: "line", data: spread, stack: "band", symbol: "none", lineStyle: { opacity: 0 }, areaStyle: { color: c.brass, opacity: 0.25 }, silent: true },
+        { type: "line", data: spread, stack: "band", symbol: "none", lineStyle: { opacity: 0 }, areaStyle: { color: c.ink, opacity: 0.16 }, silent: true },
         {
           type: "line",
           data: median,
@@ -79,7 +79,7 @@ export default function TypicalYear({ area, theme, year }: { area: Area; theme: 
           lineStyle: { color: c.ink, width: 2 },
           markArea: {
             silent: true,
-            itemStyle: { color: c.rubric, opacity: 0.16 },
+            itemStyle: { color: c.brass, opacity: 0.2 },
             data: runs(area.climatology.critical_weeks).map(([a, b]) => [{ xAxis: String(a) }, { xAxis: String(b) }]),
           },
         },

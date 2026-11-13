@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { loadArea, loadIndex, type Area, type Index } from "@/lib/data";
+import { hotspotsCsvFor } from "@/lib/dayData";
+import { COVERED, resolveDrawn } from "@/lib/drawnArea";
+import type { Shape } from "@/lib/fit/cells";
 import { monthSpan } from "@/lib/format";
 import type { Theme } from "@/lib/tokens";
 import { COLOURS } from "@/lib/tokens";
@@ -108,20 +111,64 @@ export default function Downloads() {
   useEffect(() => {
     loadIndex().then(setIndex).catch(() => setIndex(null));
   }, []);
-  const areaId = state.area ?? index?.areas[0]?.id ?? null;
+  const [problem, setProblem] = useState<string | null>(null);
+  const [hotspotNote, setHotspotNote] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  // A drawn area (box= or poly= in the URL) is fitted here, like on Explore; otherwise a preset.
+  const shapeKey = state.shape ? JSON.stringify(state.shape) : "";
+  const areaId = shapeKey ? null : state.area ?? index?.areas[0]?.id ?? null;
   useEffect(() => {
-    if (!areaId) return;
     let current = true;
-    loadArea(areaId).then((a) => current && setArea(a)).catch(() => undefined);
+    setProblem(null);
+    setHotspotNote(null);
+    if (shapeKey) {
+      setArea(null);
+      resolveDrawn(JSON.parse(shapeKey) as Shape)
+        .then((result) => {
+          if (!current) return;
+          if (result.status === "ok") setArea(result.area);
+          else setProblem(result.status === "two-countries"
+            ? `Your drawn area touches ${result.countries.join(" and ")}. Draw it inside one region.`
+            : `Your drawn area is outside the regions Zij has processed (${COVERED}).`);
+        })
+        .catch((e: Error) => current && setProblem(e.message));
+    } else if (areaId) {
+      loadArea(areaId).then((a) => current && setArea(a)).catch((e: Error) => current && setProblem(e.message));
+    }
     return () => {
       current = false;
     };
-  }, [areaId]);
+  }, [areaId, shapeKey]);
+  const noFit = area?.fit.mode === "none";
+
+  const saveHotspots = async () => {
+    if (!area) return;
+    setBusy(true);
+    setHotspotNote(null);
+    try {
+      const first = `${from}-01`;
+      const [y, m] = to.split("-").map(Number);
+      const lastOfMonth = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
+      const last = lastOfMonth > area.last_full_day ? area.last_full_day : lastOfMonth;
+      const result = await hotspotsCsvFor(area, first, last);
+      if (!result) {
+        setHotspotNote(`Single hotspots are not shipped for this part of ${area.country}: in Argentina they cover only the Chilecito and Parana Delta areas. The weekly and monthly files above are complete.`);
+      } else {
+        save(`${base}_hotspots.csv`, new Blob([result.csv], { type: "text/csv" }));
+        setHotspotNote(`${result.rows.toLocaleString("en-US")} hotspots, ${first} to ${last}.`);
+      }
+    } catch (e) {
+      setHotspotNote(`Could not build the file: ${(e as Error).message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const span = area ? monthSpan(area) : null;
   const from = span && state.from && state.from >= span[0] && state.from <= span[1] ? state.from : span?.[0] ?? "2000-11";
   const to = span && state.to && state.to <= span[1] && state.to >= from ? state.to : span?.[1] ?? "2026-11";
-  const base = area ? `zij_${area.id}_${from}_${to}` : "zij";
+  const slugOf = (a: Area) => (a.id === "drawn" ? `drawn_${a.box.map((v) => v.toFixed(2)).join("_")}` : a.id);
+  const base = area ? `zij_${slugOf(area)}_${from}_${to}` : "zij";
 
   return (
     <main className="page" data-theme="folio">
@@ -132,7 +179,8 @@ export default function Downloads() {
         <div className="actions">
           <label>
             Area{" "}
-            <select value={areaId ?? ""} onChange={(e) => update({ area: e.target.value, month: null })}>
+            <select value={shapeKey ? "drawn" : areaId ?? ""} onChange={(e) => e.target.value !== "drawn" && update({ area: e.target.value, shape: null, month: null })}>
+              {shapeKey && <option value="drawn">Your drawn area</option>}
               {index?.areas.map((a) => <option key={a.id} value={a.id}>{a.name}, {a.country}</option>)}
             </select>
           </label>
@@ -140,8 +188,28 @@ export default function Downloads() {
           <label>To <input type="month" value={to} min={from} max={span?.[1]} onChange={(e) => e.target.value && update({ to: e.target.value })} /></label>
         </div>
 
+        {problem && <p className="placeholder">{problem}</p>}
+        {!problem && !area && <p>Loading the area&hellip;</p>}
         {area && (
           <>
+            <p><strong>{area.name}</strong>, {area.country}.</p>
+            {noFit && (
+              <p className="placeholder">
+                This area has too few fires to convert MODIS (fewer than 30 MODIS fire weeks in 2012 to 2020). The files hold the raw counts of each
+                sensor; the harmonized value is empty before 2012.
+              </p>
+            )}
+            <h2>Hotspots (CSV)</h2>
+            <p>
+              One row per kept fire detection in the area and dates, from both sensors: position, date and time (UTC), satellite, sensor,
+              confidence, fire radiative power, day or night. Source: NASA FIRMS, credited in the file&rsquo;s header. A long range over a
+              large area is a big file.
+            </p>
+            <div className="actions">
+              <button type="button" disabled={busy} onClick={saveHotspots}>{busy ? "Building…" : "Hotspots CSV"}</button>
+            </div>
+            {hotspotNote && <p className="note">{hotspotNote}</p>}
+
             <h2>Harmonized series (CSV)</h2>
             <p>
               One row per week or per month: the harmonized value in {area.unit_label}, its band where it was converted from MODIS,

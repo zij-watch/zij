@@ -29,6 +29,25 @@ const REASON_WORDS: Record<string, string> = {
   volcano: "Volcano (type 1)",
 };
 
+const REQUIREMENTS: { ask: string; where: string; link: string; href: string }[] = [
+  { ask: "A web application with a burning activity calendar based on active fire hotspots", where: "Explore, Calendar tab: years as rows, months as columns", link: "Nile Delta calendar", href: "/?area=nile-delta" },
+  { ask: "Harmonize MODIS and VIIRS so the sensor of origin no longer matters", where: "One unit for both sensors; before 2012 MODIS is converted with the M4 fit. Method and validation on this page", link: "Models and validation", href: "#models" },
+  { ask: "A consistent time series from the early 2000s to the present", where: "November 2000 to yesterday, weekly, monthly and by season", link: "Seasons, 2001 to 2026", href: "/?area=nile-delta&view=series" },
+  { ask: "Select a region", where: "10 preset areas; draw a box or a polygon; or type latitude and longitude", link: "A drawn box", href: "/?box=30.5,30.6,31.5,31.4" },
+  { ask: "Select a specific date range", where: "From and To on Explore and on Downloads; a single day with the Day picker", link: "2010 to 2020", href: "/?area=nile-delta&from=2010-01&to=2020-12" },
+  { ask: "Which months and years had the highest fire activity", where: "Busiest tab: calendar months and whole years, ranked", link: "Busiest", href: "/?area=nile-delta&view=ranked" },
+  { ask: "Compare the current month against the historical median", where: "\u201cThis month against the median\u201d, on the same days of past years", link: "This month", href: "/?area=nile-delta&view=typical" },
+  { ask: "Anticipate critical periods", where: "Typical year tab: the fewest weeks holding 80% of a typical year, shaded", link: "Typical year", href: "/?area=nile-delta&view=typical" },
+  { ask: "Unusual conditions; anomalies against multi-year averages", where: "Anomalies tab in plain words; the strongest are boxed on the calendar", link: "Anomalies", href: "/?area=nile-delta&view=anomalies" },
+  { ask: "How a current fire compares with previous ones", where: "Day view: the day\u2019s hotspots on the map, and its week and month against the median", link: "Chilecito, 29 July 2026", href: "/?area=chilecito&day=2026-07-29" },
+  { ask: "Number of fires detected and reported", where: "Detections per sensor and per satellite: per day in the day view, per week in the month detail", link: "A month, week by week", href: "/?area=nile-delta&month=2018-10" },
+  { ask: "Download analytics and visualizations", where: "Weekly and monthly series as CSV; the calendar as PNG and SVG", link: "Downloads", href: "/downloads?area=nile-delta" },
+  { ask: "A downloadable CSV file of hot spots detected during a search", where: "Hotspots CSV for the chosen area and dates, both sensors", link: "Downloads", href: "/downloads?area=nile-delta&from=2018-08&to=2018-10" },
+  { ask: "Colour ramps for the number of hotspots across months; accessible colour ramps", where: "One 5-step heat ramp, checked for three kinds of colour blindness and in greyscale", link: "Colour check", href: "#colour" },
+  { ask: "An interactive map where users can draw the area of interest, or enter latitude and longitude", where: "Draw box, Draw polygon and Type coordinates on Explore", link: "Explore", href: "/" },
+  { ask: "Use NASA Earthdata FIRMS hotspots", where: "FIRMS MODIS Collection 6.1 and VIIRS 375 m, yearly archives and the FIRMS API for 2026", link: "Sources", href: "#sources" },
+];
+
 export default function Page() {
   const areas = method.areas as unknown as AreaRow[];
   const models = method.models.all_areas;
@@ -47,6 +66,19 @@ export default function Page() {
         <p className="placeholder">
           Placeholder page: the numbers are final for this build ({method.built_at_utc.slice(0, 10)}, data to {method.last_full_day}); the text is not written yet.
         </p>
+
+        <h2 id="requirements">What the challenge asks for, and where it is</h2>
+        <p>The challenge is NASA Space Apps 2026, &ldquo;Harmonization of MODIS and VIIRS Hot Spots&rdquo;. Each line is something its text asks for.</p>
+        <div className="table-scroll">
+          <table className="wrap">
+            <thead><tr><th>The challenge asks for</th><th>In Zij</th><th>Open it</th></tr></thead>
+            <tbody>
+              {REQUIREMENTS.map((r) => (
+                <tr key={r.ask}><td>{r.ask}</td><td>{r.where}</td><td><a href={r.href}>{r.link}</a></td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         <h2>1. The raw gap</h2>
         <p>
@@ -94,7 +126,7 @@ export default function Page() {
           </table>
         </div>
 
-        <h2>3. Models</h2>
+        <h2 id="models">3. Models</h2>
         <p>
           Weekly VIIRS is predicted from weekly MODIS, fitted on {method.models.train_years[0]} to {method.models.train_years[1]}, when both flew.
           Six ways were tested. Error is the season total, averaged over {method.models.research_areas} areas in Egypt and Portugal.
@@ -166,21 +198,22 @@ export default function Page() {
           <li>The fit is made on {method.models.train_years[0]} to {method.models.train_years[1]}. In Portugal it runs high afterwards (see the out-of-time column).</li>
           <li>2026 uses near-real-time data for the latest months, which NASA later replaces with standard processing.</li>
           <li>NOAA-21 joins the VIIRS average in 2026. Suomi NPP&rsquo;s data ends on 2 November 2026.</li>
+          <li>Single hotspots (the day view and the hotspots CSV) are shipped for Egypt and Portugal, and in Argentina only around Chilecito and the Parana Delta.</li>
           <li>Drawn areas work in Egypt, mainland Portugal and Argentina. An area with fewer than 100 MODIS fire weeks in 2012 to 2020 leans on its country&rsquo;s fit and gets a wide band; under 30 it gets raw counts only.</li>
         </ul>
 
-        <h2>7. Colour</h2>
+        <h2 id="colour">7. Colour</h2>
         <p>
           One heat ramp: zero, then five steps. Each row below shows it as it looks with a common kind of colour blindness
           (simulated after Machado, Oliveira and Fernandes, 2009, full severity) and in greyscale. The ramp passes when lightness
-          runs one way through all the steps and neighbouring steps stay clearly apart (a CIELAB difference of 10 or more).
+          runs one way through all the steps and neighbouring steps stay clearly apart: a colour difference of 10 or more, measured as CIE76 (the distance between two colours in CIELAB).
         </p>
         {(["night", "folio"] as const).map((theme) => {
-          const checks = checkRamp([COLOURS[theme]["ground-raised"], ...heatRamp(theme)]);
+          const checks = checkRamp([COLOURS[theme]["heat-0"], ...heatRamp(theme)]);
           return (
             <div key={theme} className="table-scroll">
               <table>
-                <thead><tr><th>{theme === "night" ? "Night theme" : "Folio theme"}</th><th>Ramp</th><th>Lightness L*</th><th>Smallest step</th><th>Result</th></tr></thead>
+                <thead><tr><th>{theme === "night" ? "Night theme" : "Folio theme"}</th><th>Ramp</th><th>Lightness L*</th><th>Smallest step (CIE76)</th><th>Result</th></tr></thead>
                 <tbody>
                   {checks.map((check) => (
                     <tr key={check.vision}>
@@ -198,7 +231,7 @@ export default function Page() {
         })}
         <p className="note">Anomalies and converted values are also marked with a shape (a box, a corner), never by colour alone.</p>
 
-        <h2>8. Sources</h2>
+        <h2 id="sources">8. Sources</h2>
         <ul>
           <li>NASA FIRMS active fire detections: MODIS Collection 6.1 (Terra, Aqua) and VIIRS 375 m (Suomi NPP, NOAA-20, NOAA-21).</li>
           <li>NASA GIBS true-colour imagery, for the satellite basemap.</li>

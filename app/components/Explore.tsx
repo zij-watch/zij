@@ -2,15 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import { loadArea, loadIndex, loadNotes, type Area, type Index } from "@/lib/data";
+import { loadDay, type DayResult } from "@/lib/dayData";
 import { COVERED, loadCellsIndex, resolveDrawn, type DrawnResult } from "@/lib/drawnArea";
 import type { Shape } from "@/lib/fit/cells";
 import { monthSpan } from "@/lib/format";
 import { BASEMAPS } from "@/lib/map/style";
 import { useAppState } from "@/lib/url";
+import DayPanel from "./DayPanel";
 import MapView, { type DrawMode } from "./MapView";
 import Panel from "./Panel";
 
 const THEME = "night" as const;
+const NO_HOTSPOTS: DayResult["view"]["hotspots"] = [];
 
 /** Last day of a YYYY-MM month, not after `cap`. */
 function lastDayOf(ym: string, cap: string): string {
@@ -80,6 +83,8 @@ export default function Explore() {
   const [draft, setDraft] = useState<DrawnResult | null>(null);
   const [working, setWorking] = useState(false);
   const draftTicket = useRef(0);
+  const [dayResult, setDayResult] = useState<DayResult | null>(null);
+  const [dayLoading, setDayLoading] = useState(false);
 
   useEffect(() => {
     loadIndex().then(setIndex).catch((e: Error) => setError(e.message));
@@ -143,7 +148,27 @@ export default function Explore() {
   const span = panelArea && panelArea.months.year.length ? monthSpan(panelArea) : null;
   const from = span ? (state.from && state.from >= span[0] && state.from <= span[1] ? state.from : span[0]) : state.from ?? "2000-11";
   const to = span ? (state.to && state.to <= span[1] && state.to >= from ? state.to : span[1]) : state.to ?? (index?.last_full_day.slice(0, 7) ?? "2026-11");
-  const mapDate = lastDayOf(to, index?.last_full_day ?? "2026-11-12");
+  // The day view. The satellite basemap follows the chosen day.
+  const lastDay = index?.last_full_day ?? "2026-11-12";
+  const day = state.day && state.day >= "2000-11-01" && state.day <= lastDay ? state.day : null;
+  const mapDate = day ?? lastDayOf(to, lastDay);
+  const dayArea = !isDraft ? panelArea : null;
+  useEffect(() => {
+    if (!day || !dayArea) {
+      setDayResult(null);
+      return;
+    }
+    let current = true;
+    setDayLoading(true);
+    loadDay(dayArea, day)
+      .then((result) => current && setDayResult(result))
+      .catch((e: Error) => current && setError(e.message))
+      .finally(() => current && setDayLoading(false));
+    return () => {
+      current = false;
+    };
+  }, [day, dayArea]);
+  const hotspots = day && dayResult && dayResult.view.date === day ? dayResult.view.hotspots : NO_HOTSPOTS;
 
   return (
     <div className={`explore${hasPanel ? " has-area" : ""}`}>
@@ -163,6 +188,10 @@ export default function Explore() {
         <label>
           <span>To</span>
           <input type="month" value={to} min={from} max={span?.[1]} onChange={(e) => e.target.value && update({ to: e.target.value })} />
+        </label>
+        <label>
+          <span>Day</span>
+          <input type="date" value={day ?? ""} min="2000-11-01" max={lastDay} onChange={(e) => update({ day: e.target.value || null })} />
         </label>
         <div className="switch" role="group" aria-label="Draw your own area">
           <button type="button" className={drawMode === "box" ? "is-active" : ""} aria-pressed={drawMode === "box"} onClick={() => setDrawMode(drawMode === "box" ? null : "box")}>Draw box</button>
@@ -190,7 +219,7 @@ export default function Explore() {
       <div className="stage">
         <MapView theme={THEME} basemap={state.basemap} date={mapDate} areas={index?.areas ?? []} selected={areaId}
           onSelect={(id) => update({ area: id, shape: null, month: null })}
-          shape={drawMode ? null : state.shape} drawMode={drawMode} onDraft={onDraft} onDrawn={onDrawn} />
+          shape={drawMode ? null : state.shape} drawMode={drawMode} onDraft={onDraft} onDrawn={onDrawn} hotspots={hotspots} />
         {state.basemap === "satellite" && <p className="map-note">NASA GIBS true colour, {mapDate}</p>}
         <aside className="panel" aria-live="polite">
           {error && <p className="panel-body">Could not load the data: {error}</p>}
@@ -215,6 +244,14 @@ export default function Explore() {
             <p className="panel-body">{working && shapeKey ? "Reading the cells of this region and fitting your area…" : "Loading…"}</p>
           )}
           {!error && shown && shown.status !== "ok" && <CoverageMessage result={shown} />}
+          {!error && day && !panelArea && !drawMode && (
+            <p className="panel-body">Choose an area to see {day}: its hotspots on the map and how the day compares.</p>
+          )}
+          {!error && day && dayArea && (
+            <div className="panel-body day-wrap">
+              <DayPanel area={dayArea} date={day} result={dayResult && dayResult.view.date === day ? dayResult : null} loading={dayLoading} onClose={() => update({ day: null })} />
+            </div>
+          )}
           {!error && panelArea && (
             <Panel area={panelArea} theme={THEME} from={from} to={to} view={state.view} month={state.month} year={state.year}
               note={notes[panelArea.id]} drawn={Boolean(shown)} draft={isDraft}

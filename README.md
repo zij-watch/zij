@@ -21,7 +21,7 @@ Status: the record runs from November 2000 to yesterday for 10 preset areas, and
 ## Before the event
 
 - **Research and method decisions were done before the event.** We studied the challenge and the two sensors, tested methods, and wrote a spec. That work is in private repositories (available to the organizers on request). During the event we read its spec, its notes and its reference numbers. No code, notebook or generated data from it is in this repository.
-- **The public FIRMS files were downloaded before the event.** They are public NASA data, not project work, and they are never committed here.
+- **The public FIRMS files were downloaded before the event.** They are public NASA data, not project work. The raw archive is not committed. What the app needs from it is: a filtered copy of the kept hotspots and the weekly counts per cell (see "What is shipped from FIRMS" below).
 - **All code in this repository was written during the event.**
 - **AI assistance: Claude and Claude Code (Anthropic).** They write code and documentation here under our direction. We decide the method, log every decision in `docs/event/DECISIONS.md`, and check the output against our own research numbers before building on it. No AI-generated images, video or audio are in this repository.
 
@@ -79,6 +79,18 @@ For the Nile Delta, M4 is off by 7.0% (10.3% for 2021 to 2025). The fits are pla
 `harmonize` builds, for each named area, one weekly record from November 2000 to the last full day, in VIIRS-equivalent fire days: VIIRS itself from 2012, and before that MODIS converted with M4, each converted value with a band. Before July 2002 MODIS is Terra alone, so those weeks are first put on the Terra + Aqua footing, by month and area. From the record it derives month and season totals, the typical year over 2001 to 2025, the critical period (the fewest weeks holding 80% of a typical year), anomalies (outside the 10th to 90th percentile), and the running month against the same days of past years.
 
 It writes one JSON file per area to `app/public/data/areas/`, with the raw counts per satellite alongside, and `app/public/data/index.json`. The format is in `docs/event/DATA_CONTRACT.md`. These files hold weekly totals, not FIRMS rows.
+
+## What is shipped from FIRMS
+
+The raw FIRMS archive (the yearly country files and the API pulls, about 1.2 GB) is not in this repository. The pipeline reads it from a folder outside the repository and writes its working files to `data/`, which git ignores.
+
+Three things made from it are committed in `app/public/data/`, because the deployed app reads them:
+
+- `areas/`: weekly, monthly and seasonal totals for the 10 preset areas.
+- `cells/`: weekly counts per 0.1 degree cell and satellite, for drawn areas (`docs/event/CELLS_FORMAT.md`).
+- `hotspots/`: a filtered copy of the kept FIRMS detections (position, time, satellite, confidence, fire radiative power), for the day view and the hotspots CSV: all of Egypt and Portugal, and in Argentina around Chilecito and the Parana Delta (`docs/event/HOTSPOTS_FORMAT.md`).
+
+FIRMS is NASA open data. It is credited here, in the app's footer and in the header of every downloaded CSV.
 
 ## Data sources
 

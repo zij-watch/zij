@@ -92,7 +92,7 @@ export default function Calendar({ area, from, to, theme, selected, onSelect, ti
                 return (
                   <g key={ym} onClick={onSelect ? () => onSelect(ym) : undefined} style={onSelect ? { cursor: "pointer" } : undefined}>
                     <title>{words}</title>
-                    <rect x={x} y={y} width={CELL_W} height={CELL_H} fill={k5 === 0 ? c["ground-raised"] : ramp[k5 - 1]}
+                    <rect x={x} y={y} width={CELL_W} height={CELL_H} fill={k5 === 0 ? c["heat-0"] : ramp[k5 - 1]}
                       opacity={m.complete[i] ? 1 : 0.55} />
                     {converted && <path d={`M${x} ${y}h9l-9 9z`} fill={c.lapis} />}
                     {flag && (
@@ -108,7 +108,7 @@ export default function Calendar({ area, from, to, theme, selected, onSelect, ti
         })}
       </g>
       <g transform={`translate(${LEFT} ${legendY})`}>
-        <rect x={0} y={0} width={26} height={14} fill={c["ground-raised"]} stroke={c.rule} strokeWidth={0.5} />
+        <rect x={0} y={0} width={26} height={14} fill={c["heat-0"]} stroke={c.rule} strokeWidth={0.5} />
         <text x={32} y={12} {...label}>0</text>
         {ramp.map((colour, k) => (
           <g key={colour} transform={`translate(${62 + k * 84} 0)`}>

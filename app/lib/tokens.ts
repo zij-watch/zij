@@ -15,6 +15,9 @@ export const COLOURS: Record<Theme, Record<string, string>> = {
     rubric: "#f0643c",
     "on-rubric": "#100c09",
     lapis: "#7ea2e6",
+    // Zero fires: halfway between ground and ground-raised, dark enough to stay 10 or more
+    // lightness steps below heat-1 in greyscale (see the colour table on How it works).
+    "heat-0": "#16100c",
     "heat-1": "#4a1810",
     "heat-2": "#9e2a16",
     "heat-3": "#e2582f",
@@ -32,6 +35,7 @@ export const COLOURS: Record<Theme, Record<string, string>> = {
     rubric: "#a92f18",
     "on-rubric": "#fbf4e4",
     lapis: "#22468f",
+    "heat-0": "#f6edd8",
     "heat-1": "#f2c978",
     "heat-2": "#e0873a",
     "heat-3": "#b8391c",

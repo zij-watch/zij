@@ -20,6 +20,7 @@ export interface AppState {
   basemap: Basemap;
   shape: Shape | null; // a drawn box (?box=w,s,e,n) or polygon (?poly=lon,lat;lon,lat;...)
   year: number | null; // the year drawn over the typical year
+  day: string | null; // YYYY-MM-DD, the day view
 }
 
 /** The drawn shape as URL parameters. */
@@ -43,6 +44,7 @@ function parseShape(params: URLSearchParams): Shape | null {
 }
 
 const YM = /^\d{4}-(0[1-9]|1[0-2])$/;
+const YMD = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 const ID = /^[a-z0-9-]{1,60}$/;
 
 export function parseState(params: URLSearchParams): AppState {
@@ -59,6 +61,7 @@ export function parseState(params: URLSearchParams): AppState {
     month: pick("month", YM),
     basemap: params.get("basemap") === "satellite" ? "satellite" : "zij",
     shape: parseShape(params),
+    day: pick("day", YMD),
     year: /^\d{4}$/.test(params.get("year") ?? "") ? Number(params.get("year")) : null,
   };
 }
