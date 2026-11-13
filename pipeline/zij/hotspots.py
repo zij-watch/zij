@@ -189,7 +189,7 @@ def write_fixtures(con: duckdb.DuckDBPyConnection) -> None:
             for _, sat, n, _ in rows:
                 by_satellite[c.SATELLITES[sat][1]] = by_satellite.get(c.SATELLITES[sat][1], 0) + n
             cases.append({"area": name, "id": slug(name), "country": country, "box": list(box), "from": first, "to": last,
-                          "hotspots": sum(r[2] for r in rows), "frp_sum": float(sum(r[3] for r in rows)),
+                          "hotspots": sum(r[2] for r in rows), "frp_sum": round(float(sum(r[3] for r in rows)), 2),
                           "by_satellite": by_satellite,
                           "days": [[d.isoformat(), c.SATELLITES[sat][1], n] for d, sat, n, _ in rows] if len(rows) <= 600 else None})
     FIXTURES.parent.mkdir(parents=True, exist_ok=True)
