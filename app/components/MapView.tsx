@@ -50,16 +50,27 @@ function toShape(ring: Ring, mode: DrawMode): Shape | null {
 
 export default function MapView({ basemap, date, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn, hotspots,
   labels = true, chrome = true, interactive = true, follow = true, view, onMap, tags = chrome, onCursor, fitPadding }: Props) {
-  const padKey = fitPadding ? `${fitPadding.top},${fitPadding.right},${fitPadding.bottom},${fitPadding.left}` : "";
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [ready, setReady] = useState(false);
   const markers = useRef<Marker[]>([]);
+  const declutter = useRef<() => void>(() => {});
   const latest = useRef({ basemap, date, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn, hotspots, onMap, onCursor, fitPadding });
   latest.current = { basemap, date, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn, hotspots, onMap, onCursor, fitPadding };
   const styleKey = `${basemap}|${basemap === "satellite" ? date : ""}|${labels}`;
   const appliedStyle = useRef(styleKey);
   const shapeKey = shape ? JSON.stringify(shape) : "";
+
+  // Layers can be added once the style is in, tiles or no tiles. Between a basemap swap and its
+  // style load this throws; the style-load handler then draws the same data.
+  const trySync = (map: MapLibreMap) => {
+    const now = latest.current;
+    try {
+      syncDataLayers(map, now.areas, now.selected, now.shape, now.hotspots);
+    } catch {
+      // the next style load syncs
+    }
+  };
 
   // Create the map once.
   useEffect(() => {
@@ -92,6 +103,9 @@ export default function MapView({ basemap, date, areas, selected, onSelect, shap
         if (!announced) {
           announced = true;
           now.onMap?.(map!);
+          // Ready as soon as the style is in: the area is shown and fitted without waiting for
+          // every tile, which on a slow line to the satellite imagery can take a long time.
+          if (!cancelled) setReady(true);
         }
       });
       // A hotspot says in words what it is: sensor, satellite, time, strength.
@@ -115,7 +129,7 @@ export default function MapView({ basemap, date, areas, selected, onSelect, shap
         map.on("mouseenter", layer, () => !latest.current.drawMode && (map!.getCanvas().style.cursor = "pointer"));
         map.on("mouseleave", layer, () => !latest.current.drawMode && (map!.getCanvas().style.cursor = ""));
       }
-      map.once("load", () => !cancelled && setReady(true));
+      map.on("move", () => declutter.current());
       map.on("mousemove", (event) => latest.current.onCursor?.({ lng: event.lngLat.lng, lat: event.lngLat.lat }));
       map.getCanvas().addEventListener("mouseleave", () => latest.current.onCursor?.(null));
       map.on("click", AREA_FILL_LAYER, (event) => {
@@ -152,7 +166,7 @@ export default function MapView({ basemap, date, areas, selected, onSelect, shap
     import("maplibre-gl").then((maplibre) => {
       const map = mapRef.current;
       if (cancelled || !map) return;
-      if (map.isStyleLoaded()) syncDataLayers(map, areas, selected, shape, latest.current.hotspots);
+      trySync(map);
       markers.current.forEach((marker) => marker.remove());
       markers.current = (tags ? areas : []).map((area) => {
         const element = document.createElement("button");
@@ -167,6 +181,20 @@ export default function MapView({ basemap, date, areas, selected, onSelect, shap
           .setLngLat([(area.box[0] + area.box[2]) / 2, area.box[3]])
           .addTo(map);
       });
+      // Name tags never overlap: the selected area's tag is placed first, then the rest in order;
+      // a tag that would touch one already placed is hidden until there is room.
+      declutter.current = () => {
+        const placed: DOMRect[] = [];
+        const order = [...markers.current].sort((a, b) => Number(b.getElement().classList.contains("is-selected")) - Number(a.getElement().classList.contains("is-selected")));
+        for (const marker of order) {
+          const element = marker.getElement();
+          const r = element.getBoundingClientRect();
+          const touches = placed.some((k) => !(r.right < k.left - 4 || r.left > k.right + 4 || r.bottom < k.top - 2 || r.top > k.bottom + 2));
+          element.style.visibility = touches ? "hidden" : "";
+          if (!touches) placed.push(r);
+        }
+      };
+      requestAnimationFrame(() => declutter.current());
       const area = areas.find((a) => a.id === selected);
       const box = shape ? boundsOf(shape) : area?.box;
       if (box && follow && !latest.current.drawMode) {
@@ -177,12 +205,12 @@ export default function MapView({ basemap, date, areas, selected, onSelect, shap
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, areas, selected, shapeKey, tags, padKey]);
+  }, [ready, areas, selected, shapeKey, tags]);
 
   // The chosen day's hotspots.
   useEffect(() => {
     const map = mapRef.current;
-    if (ready && map && map.isStyleLoaded()) syncDataLayers(map, areas, selected, shape, hotspots);
+    if (ready && map) trySync(map);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, hotspots]);
 

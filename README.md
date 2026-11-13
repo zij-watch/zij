@@ -22,7 +22,7 @@ Status: the record runs from November 2000 to yesterday for 10 preset areas, and
 
 - **Research and method decisions were done before the event.** We studied the challenge and the two sensors, tested methods, and wrote a spec. That work is in private repositories (available to the organizers on request). During the event we read its spec, its notes and its reference numbers. No code, notebook or generated data from it is in this repository.
 - **The public FIRMS files were downloaded before the event.** They are public NASA data, not project work. The raw archive is not committed. What the app needs from it is: a filtered copy of the kept hotspots and the weekly counts per cell (see "What is shipped from FIRMS" below).
-- **The design system was made before the event.** From it this repository takes the colour and font tokens, the Seal (the mark that reads Zij and زيج; `Seal` in `app/components/Shell.tsx`, and `app/app/icon.svg`), and the paper material: the grain file `app/public/paper-grain.svg` and the sheet's shading, shadow and scrollbar rules in `app/app/globals.css`. Nothing else of it is here.
+- **The design system was made before the event.** From it this repository takes the colour and font tokens, the Seal (the mark that reads Zij and زيج; `Seal` in `app/components/Shell.tsx`, and the favicon set drawn from it by `app/scripts/icons.mjs`), and the paper material: the grain file `app/public/paper-grain.svg` and the sheet's shading, shadow and scrollbar rules in `app/app/globals.css`. Nothing else of it is here.
 - **All other code in this repository was written during the event.**
 - **AI assistance: Claude and Claude Code (Anthropic).** They write code and documentation here under our direction. We decide the method, log every decision in `docs/event/DECISIONS.md`, and check the output against our own research numbers before building on it. No AI-generated images, video or audio are in this repository.
 
@@ -123,6 +123,8 @@ Exact versions are in `pipeline/pyproject.toml` and `pipeline/uv.lock`. The app 
 | [zij-map](https://github.com/zij-watch/zij-map), the Zij atlas, by our team | the look of the map: style, patterns, signs and drawings | by our team; its repository has no licence file yet |
 | [Apache ECharts](https://echarts.apache.org) | the charts | Apache-2.0 |
 | [Terra Draw](https://terradraw.io) and its MapLibre adapter | drawing a box or polygon on the map | MIT |
+| [Radix UI](https://www.radix-ui.com) primitives (Select, Popover, Tabs, Checkbox, Tooltip, Dialog) | the controls: keyboard, focus and screen-reader behaviour | MIT |
+| [React DayPicker](https://daypicker.dev) | the date pickers | MIT |
 | [Fontsource](https://fontsource.org) packages of Cormorant Garamond, Reem Kufi and Amiri | fonts, bundled | fonts: SIL Open Font License 1.1 |
 | [TypeScript](https://www.typescriptlang.org), [ESLint](https://eslint.org) | development | Apache-2.0, MIT |
 

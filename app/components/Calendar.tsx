@@ -17,6 +17,7 @@ const TOP = 30;
 const GAP = 2;
 
 export interface CalendarProps {
+  labelSize?: number; // the month and year labels; bigger in the narrow panel, where the drawing is scaled down
   area: Area;
   from: string; // YYYY-MM
   to: string;
@@ -26,7 +27,7 @@ export interface CalendarProps {
   id?: string;
 }
 
-export default function Calendar({ area, from, to, selected, onSelect, title, id }: CalendarProps) {
+export default function Calendar({ area, from, to, labelSize = 13, selected, onSelect, title, id }: CalendarProps) {
   const c = COLOURS;
   const ramp = heatRamp();
   const m = area.months;
@@ -44,7 +45,7 @@ export default function Calendar({ area, from, to, selected, onSelect, title, id
   const legendY = titleH + TOP + gridH + 18;
   const width = LEFT + 12 * (CELL_W + GAP) + 8;
   const height = legendY + 78;
-  const label = { fontFamily: FONT_TEXT, fontSize: 13, fill: c["ink-muted"] };
+  const label = { fontFamily: FONT_TEXT, fontSize: labelSize, fill: c["ink-muted"] };
 
   return (
     <svg id={id} xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${width} ${height}`} width="100%" role="img"

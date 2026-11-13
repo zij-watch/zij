@@ -1,5 +1,6 @@
 "use client";
 
+import { Select, Tabs } from "./ui";
 import type { Area } from "@/lib/data";
 import { COVERED } from "@/lib/drawnArea";
 import { rawByMonth, type RawMonth } from "@/lib/derive";
@@ -12,6 +13,7 @@ import TypicalYear from "./TypicalYear";
 const VIEW_LABELS: Record<View, string> = { calendar: "Calendar", typical: "Typical year", series: "Seasons", ranked: "Busiest", anomalies: "Anomalies" };
 
 interface Props {
+  named?: boolean; // the country and name at the top; off where the panel head already shows them
   area: Area;
   from: string;
   to: string;
@@ -341,7 +343,7 @@ function RawOnly({ area }: { area: Area }) {
 
 // ------------------------------------------------------------------ panel
 
-export default function Panel({ area, from, to, view, month, year, note, drawn, draft, onView, onMonth, onYear }: Props) {
+export default function Panel({ area, named = true, from, to, view, month, year, note, drawn, draft, onView, onMonth, onYear }: Props) {
   const weekBand = area.bands.week_mult;
   const seasonBand = area.bands.season_pct;
   const lastYear = Number(area.last_full_day.slice(0, 4));
@@ -349,8 +351,8 @@ export default function Panel({ area, from, to, view, month, year, note, drawn, 
   const chartYear = year && year >= firstYear && year <= lastYear ? year : lastYear;
   const head = (
     <header className="panel-head">
-      <p className="eyebrow">{drawn ? `Your area, ${area.country}` : area.country}</p>
-      <h2>{area.name}</h2>
+      {named && <p className="eyebrow">{drawn ? `Your area, ${area.country}` : area.country}</p>}
+      {named && <h2>{area.name}</h2>}
       {note && <p className="area-note">{note}</p>}
     </header>
   );
@@ -387,19 +389,17 @@ export default function Panel({ area, from, to, view, month, year, note, drawn, 
 
       <ThisMonth area={area} />
 
-      <nav className="tabs" aria-label="Views">
-        {VIEWS.map((v) => (
-          <button key={v} type="button" className={v === view ? "is-active" : ""} aria-pressed={v === view} onClick={() => onView(v)}>
-            {VIEW_LABELS[v]}
-          </button>
-        ))}
-      </nav>
+      <Tabs.Root value={view} onValueChange={(v) => onView(v as View)}>
+      <Tabs.List className="tabs" aria-label="Views">
+        {VIEWS.map((v) => <Tabs.Trigger key={v} value={v} className="tab">{VIEW_LABELS[v]}</Tabs.Trigger>)}
+      </Tabs.List>
+      <Tabs.Content value={view} className="tab-panel">
 
       {view === "calendar" && (
         <>
           <section className="block">
             <div className="calendar-scroll">
-              <Calendar area={area} from={from} to={to} selected={month} onSelect={(ym) => onMonth(ym === month ? null : ym)} />
+              <Calendar area={area} from={from} to={to} labelSize={17} selected={month} onSelect={(ym) => onMonth(ym === month ? null : ym)} />
             </div>
             <p className="note">Click a month for its weeks and the raw counts per satellite.</p>
           </section>
@@ -411,12 +411,11 @@ export default function Panel({ area, from, to, view, month, year, note, drawn, 
         <>
           <section className="block">
             <h3>Typical year</h3>
-            <label className="year-pick">
+            <div className="year-pick">
               Year on top
-              <select value={chartYear} onChange={(e) => onYear(Number(e.target.value) === lastYear ? null : Number(e.target.value))}>
-                {Array.from({ length: lastYear - firstYear + 1 }, (_, k) => lastYear - k).map((y) => <option key={y} value={y}>{y}</option>)}
-              </select>
-            </label>
+              <Select small label="Year on top" value={String(chartYear)} onChange={(v) => onYear(Number(v) === lastYear ? null : Number(v))}
+                options={Array.from({ length: lastYear - firstYear + 1 }, (_, k) => ({ value: String(lastYear - k), label: String(lastYear - k) }))} />
+            </div>
             <TypicalYear area={area} year={chartYear} />
             <p className="note">
               Light line: the median week over {area.climatology.baseline_years[0]} to {area.climatology.baseline_years[1]}. Grey band: what 8 in 10 years reach.
@@ -437,6 +436,9 @@ export default function Panel({ area, from, to, view, month, year, note, drawn, 
           {month && <WeekDetail area={area} ym={month} onClose={() => onMonth(null)} />}
         </>
       )}
+
+      </Tabs.Content>
+      </Tabs.Root>
 
       <footer className="panel-foot">
         <p className="note">

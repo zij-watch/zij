@@ -13,6 +13,10 @@ export const COLOURS: Record<string, string> = {
   "on-rubric": "#fbf4e4",
   lapis: "#22468f",
   shadow: "#3a2410",
+  // On frosted glass over satellite imagery the surface can sit over black sea, so the two
+  // lighter inks are deepened to keep 4.5:1 (checked in scripts/contrast.mjs).
+  "glass-ink-muted": "#453d32",
+  "glass-brass": "#58400f",
   "heat-0": "#f6edd8",
   "heat-1": "#f2c978",
   "heat-2": "#e0873a",

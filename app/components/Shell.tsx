@@ -22,11 +22,11 @@ export function AreaLinks({ areas, base = "/" }: { areas: AreaIndexEntry[]; base
   );
 }
 
-export function FactsBlock({ facts }: { facts: AreaFacts }) {
+export function FactsBlock({ facts, named = true }: { facts: AreaFacts; named?: boolean }) {
   return (
     <div className="panel-body shell-facts">
-      <p className="eyebrow">{facts.country}</p>
-      <h2>{facts.name}</h2>
+      {named && <p className="eyebrow">{facts.country}</p>}
+      {named && <h2>{facts.name}</h2>}
       <p className="note">Unit: {facts.unitLabel}. Data to {facts.lastFullDay}. The calendar and charts are loading.</p>
       <section className="block">
         <h3>Busiest months</h3>
@@ -85,7 +85,7 @@ export function ExploreShell({ areas, facts }: { areas: AreaIndexEntry[]; facts:
         <nav aria-label="Pages"><a href="/downloads">Downloads</a><a href="/how-it-works">How it works</a></nav>
       </header>
       <div className="mapwrap"><div className="map map-waiting" role="status">Loading the map…</div></div>
-      <aside className="sheet paper"><div className="sheet-body">{facts ? <FactsBlock facts={facts} /> : <IntroBlock areas={areas} />}</div></aside>
+      <aside className="sheet paper">{facts && <header className="sheet-head"><p><span>{facts.country}</span><strong>{facts.name}</strong></p></header>}<div className="sheet-body">{facts ? <FactsBlock facts={facts} named={false} /> : <IntroBlock areas={areas} />}</div></aside>
     </main>
   );
 }

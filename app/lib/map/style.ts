@@ -91,13 +91,13 @@ function satelliteStyle(date: string, options: BasemapOptions): StyleSpecificati
       filter: ["<=", ["-", ["get", "minzoom"], 1.4], ["zoom"]],
       layout: {
         "text-field": ["coalesce", ["get", "name"], ""],
-        "text-font": [FONT.textBold],
+        "text-font": [FONT.text], // regular weight: imagery is busy enough
         "text-size": ["interpolate", ["linear"], ["zoom"], 2, 11, 9, 16],
         "text-padding": 4,
         "symbol-sort-key": ["get", "rank"],
       },
       // Imagery is dark or bright by turns, so names are always light ink on a dark halo.
-      paint: { "text-color": COLOURS["ground-raised"], "text-halo-color": "rgba(16, 12, 9, 0.8)", "text-halo-width": 1.4 },
+      paint: { "text-color": COLOURS["ground-raised"], "text-halo-color": "rgba(16, 12, 9, 0.7)", "text-halo-width": 0.9 },
     });
     return tiered(style);
   }

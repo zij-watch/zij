@@ -1,0 +1,224 @@
+/* The control system. One radius scale, one spacing scale, one set of states, for every control.
+   Loaded after globals.css. Colours are tokens (lib/tokens.ts): never a hex value here.
+
+   Radius:  --r-1 2px (marks, checkboxes, tags)   --r-2 4px (controls)   --r-3 8px (floating surfaces)
+   Spacing: steps of 4px, --s-1 to --s-6
+   States:  hover, focus-visible (a brass ring), pressed, selected, disabled. Hit targets are 40px or more. */
+
+:root {
+  --r-1: 2px; --r-2: 4px; --r-3: 8px;
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px;
+  --hit: 40px;
+  --hover: color-mix(in srgb, var(--brass) 10%, var(--ground-raised));
+  --pressed: color-mix(in srgb, var(--brass) 20%, var(--ground-raised));
+  --fade: 180ms;
+}
+
+/* ---------------------------------------------------------------- every control */
+button, select, input, .ui-select, .ui-field {
+  border-radius: var(--r-2);
+  min-height: var(--hit);
+  border-color: var(--rule);
+  transition: background-color var(--fade), border-color var(--fade), color var(--fade), box-shadow var(--fade);
+}
+button:hover:not(:disabled), .ui-select:hover, .ui-field:hover { background-color: var(--hover); }
+button:active:not(:disabled), .ui-select:active, .ui-field:active { background-color: var(--pressed); }
+button:disabled, [data-disabled] { opacity: 0.5; cursor: not-allowed; }
+button.is-active, button.is-active:hover:not(:disabled), [data-state="active"].tab, [data-state="active"].tab:hover,
+.sheet button.is-active, .left-tools button.is-active, .chips button.is-active, .menu button.is-active {
+  background-color: var(--brass); border-color: var(--brass); color: var(--ground-raised);
+}
+button.is-active:active:not(:disabled) { background-color: color-mix(in srgb, var(--brass) 86%, var(--ink)); }
+:is(a, button, input, summary, [role="tab"], [role="checkbox"], [role="combobox"], [role="option"], [role="radio"], [tabindex]):focus-visible {
+  outline: 2px solid var(--brass); outline-offset: 2px;
+}
+.sheet summary:focus-visible, .dock :focus-visible { outline: 2px solid var(--brass); outline-offset: -3px; }
+button.link, button.link:hover:not(:disabled) { min-height: 0; background: none; border: 0; border-radius: var(--r-1); }
+.icon-button { width: var(--hit); min-height: var(--hit); border-color: transparent; background: none; border-radius: var(--r-2); }
+.icon-button:hover:not(:disabled) { border-color: transparent; }
+
+/* Surfaces and the small pieces share the scale too. */
+.paper { border-radius: var(--r-3); }
+.paper::before { border-radius: inherit; }
+.strip.paper, .map-credit { border-radius: 0; }
+.block, .warning, .preview, .facts > div, .maplibregl-popup-content { border-radius: var(--r-2); }
+.map-label, .gauge, .gauge-now, .gauge-range, .bars-track, .bars-fill { border-radius: var(--r-1); }
+.map-label { min-height: 0; }
+/* A name tag is 26px tall to keep the map clear; its target reaches 40px above and below it. */
+.map-label::after { content: ""; position: absolute; inset: -8px 0; }
+
+/* A group of buttons is one piece: the outer corners are the group's, the inner ones are square. */
+.switch > *, .tabs > *, .left-tools > *, .dock > * { border-radius: 0; }
+.switch > :first-child, .tabs > :first-child { border-radius: var(--r-2) 0 0 var(--r-2); }
+.switch > :last-child, .tabs > :last-child { border-radius: 0 var(--r-2) var(--r-2) 0; }
+.switch > :only-child { border-radius: var(--r-2); }
+.left-tools > :first-child { border-radius: var(--r-3) var(--r-3) 0 0; }
+.left-tools > :last-child { border-radius: 0 0 var(--r-3) var(--r-3); }
+.dock > :first-child { border-radius: var(--r-3) 0 0 var(--r-3); }
+.dock > :last-child { border-radius: 0 var(--r-3) var(--r-3) 0; }
+.switch { flex-wrap: nowrap; }
+.switch button { flex: 1 1 0; padding: 0 var(--s-2); }
+
+.chips button { min-height: var(--hit); padding: 0 var(--s-3); border-radius: var(--r-2); background: var(--ground-raised); }
+.field { display: flex; flex-direction: column; gap: var(--s-1); min-width: 0; }
+.fields .field { flex: 1 1 160px; }
+.field > span { font-size: 13px; line-height: 16px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+.actions .field { flex: 0 1 260px; }
+.year-pick { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-2); }
+
+/* ---------------------------------------------------------------- select */
+.ui-select, .ui-field {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); width: 100%;
+  padding: 0 var(--s-3); border: 1px solid var(--rule); background: var(--ground-raised); color: var(--ink);
+  font: inherit; text-align: left; cursor: pointer;
+}
+.ui-select > span:first-child, .ui-field > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui-select.is-small { width: auto; min-width: 88px; padding: 0 var(--s-2); }
+.ui-select[data-placeholder] { color: var(--ink-muted); }
+.ui-select-icon { display: flex; color: var(--brass); }
+.ui-field { justify-content: flex-start; }
+.ui-field svg { flex: none; color: var(--brass); }
+
+.ui-menu, .ui-pop, .ui-dialog {
+  z-index: 50; background: var(--ground-raised); color: var(--ink); border: 1px solid var(--rule); border-radius: var(--r-3);
+  box-shadow: 4px 8px 20px -4px color-mix(in srgb, var(--shadow) 55%, transparent);
+  font: 400 17px/24px var(--font-text);
+}
+.ui-menu { min-width: var(--radix-select-trigger-width); max-height: min(var(--radix-select-content-available-height), 420px); overflow: hidden; }
+.ui-menu-view { padding: var(--s-1); }
+.ui-option {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); min-height: var(--hit);
+  padding: 0 var(--s-2) 0 var(--s-3); border-radius: var(--r-2); cursor: pointer; user-select: none; outline: none;
+}
+.ui-option[data-highlighted] { background: var(--pressed); }
+.ui-option[data-state="checked"] { font-weight: 700; }
+.ui-option[data-disabled] { color: var(--ink-muted); }
+.ui-option-tick { display: flex; color: var(--brass); }
+
+/* ---------------------------------------------------------------- checkbox */
+.ui-check { display: flex; align-items: center; gap: var(--s-2); min-height: var(--hit); cursor: pointer; }
+.ui-check b { margin-left: auto; font-variant-numeric: tabular-nums; }
+.ui-checkbox {
+  flex: none; display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; min-height: 0; padding: 0;
+  border: 1px solid var(--brass); border-radius: var(--r-1); background: var(--ground-raised); color: var(--ground-raised);
+}
+/* The box is 20px; the row it sits in is the 40px target. */
+.ui-checkbox[data-state="checked"], .ui-checkbox[data-state="checked"]:hover:not(:disabled) { background: var(--brass); }
+
+/* ---------------------------------------------------------------- tooltip, popover, dialog */
+.ui-tip {
+  z-index: 60; padding: var(--s-1) var(--s-2); border-radius: var(--r-2); background: var(--ink); color: var(--ground-raised);
+  font: 400 14px/20px var(--font-text); pointer-events: none;
+}
+.ui-pop { padding: var(--s-3); max-width: calc(100vw - 16px); outline: none; }
+.ui-pop-foot { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-1); max-width: 280px; margin-top: var(--s-2); padding-top: var(--s-2); border-top: 1px solid var(--rule); font-size: 14px; line-height: 20px; color: var(--ink-muted); }
+.menu { display: flex; flex-direction: column; gap: var(--s-1); min-width: 220px; }
+.menu button { text-align: left; padding: 0 var(--s-3); }
+.ui-overlay { position: fixed; inset: 0; z-index: 49; background: color-mix(in srgb, var(--shadow) 35%, transparent); }
+.ui-dialog { position: fixed; left: 50%; top: 96px; transform: translateX(-50%); width: min(380px, calc(100vw - 24px)); padding: var(--s-4); outline: none; }
+.ui-dialog-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); margin: calc(var(--s-2) * -1) calc(var(--s-2) * -1) var(--s-2) 0; }
+.ui-dialog-title { margin: 0; font: 600 22px/28px var(--font-display); color: var(--brass); }
+.goto .note { margin: var(--s-3) 0 0; }
+
+/* ---------------------------------------------------------------- tabs */
+.tabs { display: flex; flex-wrap: nowrap; margin-bottom: var(--s-4); }
+.tab {
+  flex: 1 1 auto; min-height: var(--hit); padding: 0 var(--s-1); border: 1px solid var(--rule); background: var(--ground-raised); color: var(--ink);
+  font: inherit; font-size: 16px; cursor: pointer; white-space: nowrap;
+}
+.tab + .tab { border-left: 0; }
+.tab-panel { outline: none; }
+
+/* ---------------------------------------------------------------- the day picker (react-day-picker) */
+.rdp-root { font-size: 16px; line-height: 20px; }
+.rdp-months { position: relative; }
+.rdp-month_caption { display: flex; align-items: center; height: var(--hit); margin-bottom: var(--s-2); padding-right: 88px; }
+.rdp-dropdowns { display: flex; gap: var(--s-2); }
+.rdp-nav { position: absolute; right: 0; top: 0; display: flex; gap: var(--s-1); }
+.rdp-button_previous, .rdp-button_next { display: flex; align-items: center; justify-content: center; width: var(--hit); padding: 0; border-color: transparent; background: none; }
+.rdp-chevron { width: 18px; height: 18px; fill: var(--brass); }
+.rdp-month_grid { border-collapse: collapse; width: auto; font-size: 16px; }
+.rdp-weekday { width: var(--hit); padding: 0 0 var(--s-1); border: 0; text-align: center; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
+.rdp-day { width: var(--hit); height: var(--hit); padding: 0; border: 0; text-align: center; }
+.rdp-day_button { width: var(--hit); height: var(--hit); min-height: 0; padding: 0; border: 1px solid transparent; background: none; font-variant-numeric: tabular-nums; }
+.rdp-today .rdp-day_button { border-color: var(--brass); font-weight: 700; }
+.rdp-selected .rdp-day_button, .rdp-selected .rdp-day_button:hover:not(:disabled) { background: var(--brass); border-color: var(--brass); color: var(--ground-raised); }
+.rdp-range_middle { background: var(--pressed); }
+.rdp-range_middle .rdp-day_button, .rdp-range_middle .rdp-day_button:hover:not(:disabled) { background: none; border-color: transparent; color: var(--ink); }
+.rdp-range_start { background: linear-gradient(90deg, transparent 50%, var(--pressed) 50%); }
+.rdp-range_end { background: linear-gradient(90deg, var(--pressed) 50%, transparent 50%); }
+.rdp-range_start.rdp-range_end { background: none; }
+.rdp-outside .rdp-day_button { color: var(--ink-muted); }
+.rdp-disabled .rdp-day_button { opacity: 0.35; cursor: not-allowed; }
+.rdp-hidden { visibility: hidden; }
+
+/* ---------------------------------------------------------------- the panel head: the name, once */
+.sheet-head p { flex-direction: column; }
+.sheet-head span { font: 600 13px/16px var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass); }
+.sheet-head strong { font: 600 24px/28px var(--font-display); }
+.sheet summary { min-height: var(--hit); align-items: center; }
+.panel-head:empty { display: none; }
+
+/* The calendar always fits the panel: 12 months across, no sideways scroll. A wider panel makes bigger cells. */
+.calendar-scroll { overflow: visible; }
+.calendar-scroll svg { min-width: 0; width: 100%; height: auto; display: block; }
+.sheet .block { padding: var(--s-3); }
+
+/* ---------------------------------------------------------------- credits: a line of its own
+   The credit has its own strip of the screen. Nothing floats over it, and it is under nothing. */
+.explore { --credit: 24px; --top: var(--strip); }
+.map-credit {
+  position: absolute; z-index: 7; left: 0; right: 0; bottom: 0; top: auto; height: var(--credit); max-width: none; margin: 0; padding: 0 var(--s-3);
+  display: flex; align-items: center; font-size: 12px; line-height: 16px; color: var(--ink);
+  background: var(--ground-raised); border-top: 1px solid var(--rule);
+}
+.mapwrap { inset: var(--strip) 0 var(--credit) 0; }
+.sheet { bottom: calc(var(--edge) + var(--credit)); }
+.dock { bottom: calc(var(--edge) + var(--credit)); }
+.timeline { bottom: calc(var(--edge) + var(--credit) + var(--dock) + 12px); }
+.map-progress { bottom: calc(var(--edge) + var(--credit)); }
+.has-timeline .map-progress { bottom: calc(var(--edge) + var(--credit) + var(--dock) + 100px); }
+.has-timeline .map-credit { bottom: 0; }
+.dock button, .dock a { min-height: var(--dock); }
+
+/* ---------------------------------------------------------------- satellite = glass
+   Over NASA imagery the floating pieces turn from paper to frosted glass: a warm light tint at 80%,
+   the picture blurred behind it, a hairline light edge and a soft shadow. Text stays ink; the two
+   lighter inks are deepened so every text keeps 4.5:1 even over black sea (scripts/contrast.mjs). */
+.paper, .left-tools button { transition: background-color 240ms, border-color 240ms, box-shadow 240ms; }
+.paper::before { transition: opacity 240ms; }
+.is-satellite { --ink-muted: var(--glass-ink-muted); --brass: var(--glass-brass); }
+.is-satellite .paper, .is-satellite .left-tools button {
+  background-color: color-mix(in srgb, var(--ground-raised) 80%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  backdrop-filter: blur(14px) saturate(1.1);
+  border-color: color-mix(in srgb, var(--on-rubric) 70%, transparent);
+  box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--shadow) 60%, transparent);
+}
+.is-satellite .paper::before { opacity: 0; }
+.is-satellite .left-tools button.is-active, .is-satellite .dock .is-active { background-color: var(--brass); }
+.is-satellite .left-tools button:hover, .is-satellite .dock button:hover, .is-satellite .dock a:hover { background-color: color-mix(in srgb, var(--ground-raised) 94%, transparent); }
+.is-satellite .map-credit { background: var(--ground-raised); }
+
+/* ---------------------------------------------------------------- phone */
+@media (max-width: 760px) {
+  .explore { --credit: 36px; --top: calc(var(--strip) + var(--credit)); }
+  .map-credit, .has-timeline .map-credit {
+    display: flex; left: 0; right: 0; top: var(--strip); bottom: auto; height: var(--credit); padding: 0 var(--s-2);
+    font-size: 11px; line-height: 14px; border-top: 0; border-bottom: 1px solid var(--rule);
+  }
+  .mapwrap { inset: var(--top) 0 var(--dock) 0; }
+  .left-tools { top: calc(var(--top) + var(--edge)); }
+  .has-timeline .left-tools { top: calc(var(--top) + var(--edge) + 116px); }
+  .timeline { top: calc(var(--top) + var(--edge)); bottom: auto; }
+  .toast { top: calc(var(--top) + var(--edge)); }
+  .sheet { bottom: var(--dock); border-radius: var(--r-3) var(--r-3) 0 0; }
+  .sheet-tab { bottom: calc(var(--dock) + 8px); }
+  .dock { bottom: 0; border-radius: 0; }
+  .dock > :first-child, .dock > :last-child { border-radius: 0; }
+  .dock button, .dock a { flex: 1 0 56px; }
+  .map-progress, .has-timeline .map-progress { bottom: calc(var(--dock) + var(--sheet-h) + 8px); }
+  .ui-dialog { top: calc(44px + 36px + 8px); }
+  .tab { font-size: 14px; padding: 0 2px; }
+  .switch button { font-size: 15px; }
+}

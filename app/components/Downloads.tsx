@@ -1,5 +1,6 @@
 "use client";
 
+import { RangeField, Select } from "./ui";
 import { useEffect, useState } from "react";
 import { loadArea, loadIndex, type Area, type Index } from "@/lib/data";
 import { hotspotsCsvFor } from "@/lib/dayData";
@@ -199,15 +200,14 @@ export default function Downloads() {
         <h1>Take the numbers with you</h1>
         <p>The harmonized series as CSV, and the calendar as a picture. Files cover the area and dates chosen here.</p>
         <div className="actions">
-          <label>
-            Area{" "}
-            <select value={shapeKey ? "drawn" : areaId ?? ""} onChange={(e) => e.target.value !== "drawn" && update({ area: e.target.value, shape: null, month: null })}>
-              {shapeKey && <option value="drawn">Your drawn area</option>}
-              {index?.areas.map((a) => <option key={a.id} value={a.id}>{a.name}, {a.country}</option>)}
-            </select>
-          </label>
-          <label>From <input type="month" value={from} min={span?.[0]} max={to} onChange={(e) => e.target.value && update({ from: e.target.value })} /></label>
-          <label>To <input type="month" value={to} min={from} max={span?.[1]} onChange={(e) => e.target.value && update({ to: e.target.value })} /></label>
+          <div className="field"><span>Area</span>
+            <Select label="Area" placeholder="Choose an area" value={shapeKey ? "drawn" : areaId ?? null}
+              options={[...(shapeKey ? [{ value: "drawn", label: "Your drawn area" }] : []), ...(index?.areas ?? []).map((a) => ({ value: a.id, label: `${a.name}, ${a.country}` }))]}
+              onChange={(next) => next !== "drawn" && update({ area: next, shape: null, month: null })} />
+          </div>
+          <div className="field"><span>From and to</span>
+            <RangeField label="From and to" from={from} to={to} min={span ? `${span[0]}-01` : "2000-11-01"} max={index?.last_full_day ?? `${to}-28`} onChange={(a, b) => update({ from: a, to: b })} />
+          </div>
         </div>
 
         {problem && <p className="placeholder">{problem}</p>}
