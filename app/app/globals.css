@@ -208,3 +208,14 @@ table.wrap td:last-child { white-space: nowrap; }
 /* ---------------------------------------------------------------- first HTML, before scripts */
 .shell-title { font: 600 24px/30px var(--font-display); margin: 4px 0; }
 .noscript { margin: 0; padding: 8px 16px; background: var(--ground-raised); border-bottom: 1px solid var(--rule); }
+
+/* The studio map (/studio/map): the map alone, edge to edge, with no cursor. */
+.studio { position: fixed; inset: 0; background: var(--sky); overflow: hidden; }
+.studio, .studio * { cursor: none !important; }
+.studio .map { position: absolute; inset: 0; min-height: 0; height: auto; }
+.studio-caption {
+  position: absolute; left: 64px; bottom: 56px; margin: 0; padding: 6px 18px;
+  background: var(--ground); color: var(--ink); border: 1px solid var(--rule);
+  font-family: var(--font-display); font-size: 40px; font-weight: 600; letter-spacing: 0.02em;
+}
+.studio-note { position: absolute; left: 24px; top: 24px; margin: 0; color: var(--ink); }
