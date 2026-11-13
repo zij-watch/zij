@@ -2408,6 +2408,69 @@
     }
   }, { threshold: 0.2 });
   document.querySelectorAll('.desk > .record [data-ink]').forEach((s) => recordIO.observe(s));
+  (function abjadInk() {
+    if (still) return;
+    // each stroke: points across the letter's ink box (0,0 its top left, 1,1 its bottom right),
+    // the brush's width in ems, how long it takes, and its wet tip as a share of the stroke
+    const DUCTUS = {
+      'أ': [[[[0.5, 0.42], [0.5, 1.06]], 0.26, 0.55, 0.3], [[[0.9, 0], [0.3, 0.06], [0.62, 0.16], [0.2, 0.24]], 0.22, 0.4, 0.4]],
+      'ب': [[[[1.02, 0], [0.98, 0.45], [0.75, 0.62], [0.25, 0.62], [0, 0.5], [-0.02, 0.15]], 0.34, 0.75, 0.16], [[[0.5, 0.78], [0.5, 1]], 0.26, 0.18, 1]],
+      'ج': [[[[0.92, 0.04], [0.2, 0.1], [0.62, 0.34], [0.12, 0.58], [0.22, 0.92], [0.72, 1], [1, 0.84]], 0.3, 1, 0.12], [[[0.6, 0.56], [0.55, 0.68]], 0.22, 0.18, 1]],
+      'د': [[[[0.4, 0], [0.9, 0.58], [0.7, 0.95], [-0.02, 0.95]], 0.34, 0.6, 0.2]],
+    };
+    const ctx = document.createElement('canvas').getContext('2d');
+    function write(letterEl, k) {
+      const ch = letterEl.textContent.trim(), strokes = DUCTUS[ch];
+      if (!strokes) { letterEl.classList.remove('ab-wait'); return; }
+      const cs = getComputedStyle(letterEl), fs = parseFloat(cs.fontSize);
+      ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${fs}px ${cs.fontFamily}`;
+      const m = ctx.measureText(ch), range = document.createRange();
+      range.selectNodeContents(letterEl);
+      const rr = range.getBoundingClientRect(), er = letterEl.getBoundingClientRect();
+      const left = rr.left - er.left, base = rr.top - er.top + m.fontBoundingBoxAscent;
+      const x0 = left - m.actualBoundingBoxLeft, x1 = left + m.actualBoundingBoxRight;
+      const y0 = base - m.actualBoundingBoxAscent, y1 = base + m.actualBoundingBoxDescent;
+      const pad = 0.14 * fs, iw = x1 - x0, ih = y1 - y0, W = iw + 2 * pad, H = ih + 2 * pad;
+      const P = ([u, v]) => n1(pad + u * iw) + ' ' + n1(pad + v * ih);
+      let t = 0.15, ink = '', wet = '';
+      for (const [pts, w, dur, tip] of strokes) {
+        const d = `M${pts.map(P).join(' L')}`, timing = `--at:${n1(t)}s;--dur:${dur}s;--tip:${tip}`;
+        ink += `<path class="ab-stroke" pathLength="1" d="${d}" stroke-width="${n1(w * fs)}" style="${timing}"/>`;
+        wet += `<path class="ab-wet-stroke" pathLength="1" d="${d}" stroke-width="${n1(w * fs)}" style="${timing}"/>`;
+        t += dur + 0.12;
+      }
+      // the letter, drawn again exactly where it stands, in its own face, for the brush to uncover
+      const glyph = `x="${n1(left - x0 + pad)}" y="${n1(base - y0 + pad)}" style="font: ${cs.fontStyle} ${cs.fontWeight} ${fs}px ${cs.fontFamily.replace(/"/g, "'")}"`;
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'ab-ink'); svg.setAttribute('aria-hidden', 'true');
+      svg.setAttribute('width', n1(W)); svg.setAttribute('height', n1(H)); svg.setAttribute('viewBox', `0 0 ${n1(W)} ${n1(H)}`);
+      svg.style.left = n1(x0 - pad) + 'px'; svg.style.top = n1(y0 - pad) + 'px';
+      const box = `x="0" y="0" width="${n1(W)}" height="${n1(H)}"`;
+      const brush = `<filter id="ab-brush-${k}" filterUnits="userSpaceOnUse" ${box}><feTurbulence type="fractalNoise" baseFrequency="0.35" numOctaves="2" seed="${7 + k}"/><feDisplacementMap in="SourceGraphic" scale="${n1(fs * 0.045)}" xChannelSelector="R" yChannelSelector="G"/></filter>`;
+      svg.innerHTML = `<defs>${brush}` +
+        `<mask id="ab-ink-${k}" maskUnits="userSpaceOnUse" ${box}><g filter="url(#ab-brush-${k})">${ink}</g><rect class="ab-settle" width="100%" height="100%" style="--at:${n1(t)}s"/></mask>` +
+        `<mask id="ab-wet-${k}" maskUnits="userSpaceOnUse" ${box}><g filter="url(#ab-brush-${k})">${wet}</g></mask></defs>` +
+        `<text class="ab-glyph" ${glyph} mask="url(#ab-ink-${k})">${ch}</text><text class="ab-glyph is-wet" ${glyph} mask="url(#ab-wet-${k})">${ch}</text>`;
+      if (getComputedStyle(letterEl).position === 'static') letterEl.style.position = 'relative';
+      letterEl.appendChild(svg);
+      letterEl.classList.remove('ab-wait'); letterEl.classList.add('ab-writing');
+      // once written, the text takes its place again: nothing can be left hidden
+      setTimeout(() => { svg.remove(); letterEl.classList.remove('ab-writing'); }, (t + 0.35 + 0.5) * 1000);
+    }
+    const letters = [...document.querySelectorAll('.chapter-head .abjad')];
+    letters.forEach((l) => l.classList.add('ab-wait'));
+    letters.forEach((letterEl, k) => {
+      let seen = false, begun = false;
+      const sheet = letterEl.closest('[data-ink]');
+      const go = () => {
+        if (begun || !seen || (sheet && !sheet.classList.contains('is-dry'))) return;
+        begun = true;
+        (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => write(letterEl, k)).catch(() => letterEl.classList.remove('ab-wait', 'ab-writing'));
+      };
+      new IntersectionObserver((entries, io) => { if (entries.some((e) => e.isIntersecting)) { seen = true; io.disconnect(); go(); } }, { threshold: 0.6 }).observe(letterEl);
+      if (sheet) new MutationObserver(go).observe(sheet, { attributes: true, attributeFilter: ['class'] });
+    });
+  })();
 
   // paper is painted while the page is idle, one sheet at a time, long before it is needed; a sheet
   // that comes near first is painted then

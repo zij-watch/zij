@@ -127,20 +127,47 @@
   background: radial-gradient(closest-side, color-mix(in srgb, var(--flame) 14%, transparent), color-mix(in srgb, var(--brass) 5%, transparent) 58%, transparent);
   animation: seal-breathe 5s ease-in-out 4.2s infinite alternate both;
 }
-/* The seal is written in, stroke by stroke, as with an old reed brush (build-landing.mjs draws the
-   strokes); each stroke rests fully drawn, the animation only brings it from nothing. Then it glows. */
+/* The seal is written in, stroke by stroke and right to left, as زيج, with an old reed brush
+   (build-landing.mjs draws the strokes); each stroke rests fully drawn, the animation only brings
+   it from nothing. Then it glows. */
 .hero h1 .seal-written { display: block; height: var(--seal); width: auto; aspect-ratio: 287 / 246; overflow: visible; animation: seal-light 5s ease-in-out 4.4s infinite alternate; }
 .seal-written .seal-ink { fill: var(--ink); }
 .seal-written .seal-stroke { stroke-dasharray: 1; stroke-dashoffset: 0; animation: seal-write var(--dur, 0.4s) cubic-bezier(0.45, 0.05, 0.4, 1) var(--at, 0s) both; }
 @keyframes seal-write { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+/* the wet tip: a short stretch of each stroke in warm, still-wet ink, running with the stroke's head
+   (same timing, so they stay together), drying a moment after the stroke ends */
+.seal-written .seal-wet { fill: color-mix(in srgb, var(--flame) 62%, var(--ink)); }
+.seal-written .seal-wet-stroke {
+  stroke-dasharray: var(--tip, 0.1) 2; stroke-dashoffset: calc(var(--tip, 0.1) - 1); opacity: 0;
+  animation: seal-tip var(--dur, 0.4s) cubic-bezier(0.45, 0.05, 0.4, 1) var(--at, 0s) both, seal-dry calc(var(--dur, 0.4s) + 0.4s) linear var(--at, 0s) both;
+}
+@keyframes seal-tip { from { stroke-dashoffset: var(--tip, 0.1); } to { stroke-dashoffset: calc(var(--tip, 0.1) - 1); } }
+@keyframes seal-dry { 0% { opacity: 0; } 8% { opacity: 1; } 62% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes seal-light {
   from { filter: drop-shadow(0 0 1px color-mix(in srgb, var(--flame) 12%, transparent)); }
   to { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--flame) 28%, transparent)); }
 }
 @keyframes seal-breathe { from { opacity: 0.2; transform: scale(0.96); } to { opacity: 0.5; transform: scale(1.03); } }
-.still .hero h1 .seal-written, .still .seal-written .seal-stroke, .still .hero h1::before { animation: none; }
+.still .hero h1 .seal-written, .still .seal-written .seal-stroke, .still .seal-written .seal-wet-stroke, .still .hero h1::before { animation: none; }
 .still .hero h1::before { opacity: 0.35; }
-@media (prefers-reduced-motion: reduce) { .hero h1 .seal-written, .seal-written .seal-stroke, .hero h1::before { animation: none; } .hero h1::before { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .hero h1 .seal-written, .seal-written .seal-stroke, .seal-written .seal-wet-stroke, .hero h1::before { animation: none; } .hero h1::before { opacity: 0.35; } }
 
 /* The opening line's "1,000" in lining figures: the face's old-style 1 reads as a small capital I. */
 #hero .line { font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1, "onum" 0; }
+
+/* The chapters' letters, written in with a brush when they come into view (build-landing.mjs): hidden
+   until their turn; while written, the text gives way to a drawing of the letter that a mask of
+   brush strokes uncovers, a wet tip of warm ink at the head of each stroke; then the text is back. */
+.chapter-head .abjad.ab-wait { opacity: 0; }
+.chapter-head .abjad.ab-writing { color: transparent; }
+.chapter-head .abjad > .ab-ink { position: absolute; overflow: visible; pointer-events: none; }
+.ab-ink .ab-glyph { fill: var(--brass); }
+.ab-ink .ab-glyph.is-wet { fill: color-mix(in srgb, var(--flame) 70%, var(--brass)); }
+.ab-ink .ab-stroke { fill: none; stroke: white; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: seal-write var(--dur, 0.5s) cubic-bezier(0.45, 0.05, 0.4, 1) var(--at, 0s) forwards; }
+.ab-ink .ab-wet-stroke {
+  fill: none; stroke: white; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: var(--tip, 0.15) 2; stroke-dashoffset: calc(var(--tip, 0.15) - 1); opacity: 0;
+  animation: seal-tip var(--dur, 0.5s) cubic-bezier(0.45, 0.05, 0.4, 1) var(--at, 0s) both, seal-dry calc(var(--dur, 0.5s) + 0.4s) linear var(--at, 0s) both;
+}
+.ab-ink .ab-settle { fill: white; opacity: 0; animation: ab-settle 0.35s ease-out var(--at, 1s) forwards; }
+@keyframes ab-settle { to { opacity: 1; } }
