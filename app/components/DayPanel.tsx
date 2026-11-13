@@ -5,7 +5,7 @@
 
 import type { Area } from "@/lib/data";
 import type { DayResult } from "@/lib/dayData";
-import { MONTHS, againstNormal, num } from "@/lib/format";
+import { MONTHS, againstNormal, num, UNIT } from "@/lib/format";
 
 // Every satellite of a sensor is listed on every day: one that was not flying says so.
 const SATELLITES = { MODIS: ["Terra", "Aqua"], VIIRS: ["Suomi NPP", "NOAA-20", "NOAA-21"] } as const;
@@ -78,7 +78,7 @@ export default function DayPanel({ area, date, result, loading, loadingText, onC
       )}
       {week && runningWeek && week.value !== null && week.median !== null && (
         <p>
-          <strong>Its week</strong> (from {week.week_start}) is still running: {num((week.value * daysOfWeek) / 7, 1)} {area.unit_label} in
+          <strong>Its week</strong> (from {week.week_start}) is still running: {num((week.value * daysOfWeek) / 7, 1)} {UNIT} in
           its first {daysOfWeek} {daysOfWeek === 1 ? "day" : "days"}. The same days of this week in past years have a median of{" "}
           {num((week.median * daysOfWeek) / 7, 1)}: <strong>{againstNormal(week.value, week.median)}</strong>.
           {week.in_critical_period ? " This week is inside the critical period." : ""}
@@ -86,7 +86,7 @@ export default function DayPanel({ area, date, result, loading, loadingText, onC
       )}
       {week && !runningWeek && week.value !== null && week.median !== null && (
         <p>
-          <strong>Its week</strong> (from {week.week_start}): {num(week.value, 1)} {area.unit_label}
+          <strong>Its week</strong> (from {week.week_start}): {num(week.value, 1)} {UNIT}
           {week.source === "MODIS" && week.lo !== null ? `, converted from MODIS (likely ${num(week.lo, 1)} to ${num(week.hi, 1)})` : ""}.
           The median for this week of the year is {num(week.median, 1)}: <strong>{againstNormal(week.value, week.median)}</strong>
           {week.flag ? `, unusually ${week.flag}` : ""}.{week.is_partial ? " The week is not complete." : ""}
@@ -95,14 +95,14 @@ export default function DayPanel({ area, date, result, loading, loadingText, onC
       )}
       {month && toDate && toDate.value_to_date !== null && toDate.median_to_date !== undefined && toDate.median_to_date !== null && (
         <p>
-          <strong>Its month</strong>, {MONTHS[month.month - 1]} {month.year}, is still running: {num(toDate.value_to_date, 1)} {area.unit_label} in
+          <strong>Its month</strong>, {MONTHS[month.month - 1]} {month.year}, is still running: {num(toDate.value_to_date, 1)} {UNIT} in
           its first {toDate.days_so_far} days. The median for the same days of past years is {num(toDate.median_to_date, 1)}:{" "}
           <strong>{againstNormal(toDate.value_to_date, toDate.median_to_date)}</strong>.
         </p>
       )}
       {month && !toDate && month.value !== null && month.median !== null && (
         <p>
-          <strong>Its month</strong>, {MONTHS[month.month - 1]} {month.year}: {num(month.value)} {area.unit_label}
+          <strong>Its month</strong>, {MONTHS[month.month - 1]} {month.year}: {num(month.value)} {UNIT}
           {month.source !== "VIIRS" && month.lo !== null ? `, converted from MODIS (likely ${num(month.lo)} to ${num(month.hi)})` : ""}.
           The median {MONTHS[month.month - 1]} is {num(month.median)}: <strong>{againstNormal(month.value, month.median)}</strong>
           {month.flag ? `, unusually ${month.flag}` : ""}.{month.complete ? "" : ` Only ${month.days_with_data} days have data.`}

@@ -479,7 +479,7 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
         </div>
       )}
       {!error && panelArea && (
-        <Panel area={panelArea} named={false} from={from} to={to} view={state.view} month={state.month} year={state.year}
+        <Panel area={panelArea} simple={state.mode === "simple"} onExpert={() => update({ mode: "expert" })} named={false} from={from} to={to} view={state.view} month={state.month} year={state.year}
           note={notes[panelArea.id]} drawn={Boolean(shown)} draft={isDraft}
           onView={(view) => update({ view })} onMonth={(month) => update({ month })} onYear={(year) => update({ year })} />
       )}
@@ -531,6 +531,10 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
       <aside className={`sheet paper${wide ? " is-wide" : ""}`} hidden={closed} aria-label="Panel">
         <header className="sheet-head">
           <p>{(panelArea?.country ?? areaEntry?.country) && <span>{shown ? "Your area, " : ""}{panelArea?.country ?? areaEntry?.country}</span>}<strong>{areaName}</strong></p>
+          <div className="switch mode-switch" role="radiogroup" aria-label="How much to show">
+            <button type="button" role="radio" aria-checked={state.mode === "simple"} className={state.mode === "simple" ? "is-active" : ""} onClick={() => update({ mode: "simple" })}>Simple</button>
+            <button type="button" role="radio" aria-checked={state.mode === "expert"} className={state.mode === "expert" ? "is-active" : ""} onClick={() => update({ mode: "expert" })}>Expert</button>
+          </div>
           <Tip label={wide ? "Narrow the panel" : "Widen to half the screen"} side="bottom">
             <button type="button" className="icon-button" onClick={() => update({ panel: wide ? "open" : "wide" })} aria-label={wide ? "Narrow the panel" : "Widen the panel to half the screen"}>
               <Icon name={wide ? "shrink" : "expand"} />
@@ -612,7 +616,7 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
           </details>
 
           <details open={open.results} onToggle={toggle("results")} className="results" aria-live="polite">
-            <summary><span>Results</span><em>{!hasPanel ? "Choose an area" : day ? shortDate(day) : VIEW_WORDS[state.view]}</em></summary>
+            <summary><span>Results</span><em>{!hasPanel ? "Choose an area" : day ? shortDate(day) : state.mode === "simple" ? "The short answer" : VIEW_WORDS[state.view]}</em></summary>
             {results}
           </details>
         </div>

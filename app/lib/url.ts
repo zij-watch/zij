@@ -25,6 +25,7 @@ export interface AppState {
   hide: string[]; // layers switched off: "viirs", "modis", "outlines"
   panel: "open" | "wide" | "closed"; // the floating panel
   timeline: boolean; // the day scrubber along the bottom
+  mode: "simple" | "expert"; // how much the panel shows; simple unless the link says expert
 }
 
 export const LAYERS = ["viirs", "modis", "outlines"] as const;
@@ -72,6 +73,9 @@ export function parseState(params: URLSearchParams): AppState {
     hide: (params.get("hide") ?? "").split(",").filter((v) => (LAYERS as readonly string[]).includes(v)),
     panel: params.get("panel") === "wide" ? "wide" : params.get("panel") === "closed" ? "closed" : "open",
     timeline: params.get("timeline") === "1",
+    // Simple unless the link says otherwise. A link that asks for a view, a month's weeks or a year
+    // on the typical year is asking for something only Expert shows, so it opens in Expert.
+    mode: params.get("mode") === "expert" || (!params.get("mode") && (VIEWS.includes(view) && view !== "calendar" || params.has("month") || params.has("year"))) ? "expert" : "simple",
     year: /^\d{4}$/.test(params.get("year") ?? "") ? Number(params.get("year")) : null,
   };
 }
