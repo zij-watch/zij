@@ -59,7 +59,7 @@ export default function Page() {
   const gap2018 = method.raw_gap.rows.find((r) => r.year === 2018);
 
   return (
-    <main className="page" data-theme="folio">
+    <main className="page">
       <div className="page-inner">
         <p className="eyebrow">How it works</p>
         <h1>Two sensors, one scale</h1>
@@ -208,12 +208,12 @@ export default function Page() {
           (simulated after Machado, Oliveira and Fernandes, 2009, full severity) and in greyscale. The ramp passes when lightness
           runs one way through all the steps and neighbouring steps stay clearly apart: a colour difference of 10 or more, measured as CIE76 (the distance between two colours in CIELAB).
         </p>
-        {(["night", "folio"] as const).map((theme) => {
-          const checks = checkRamp([COLOURS[theme]["heat-0"], ...heatRamp(theme)]);
+        {(["folio"] as const).map((theme) => {
+          const checks = checkRamp([COLOURS["heat-0"], ...heatRamp()]);
           return (
             <div key={theme} className="table-scroll">
               <table>
-                <thead><tr><th>{theme === "night" ? "Night theme" : "Folio theme"}</th><th>Ramp</th><th>Lightness L*</th><th>Smallest step (CIE76)</th><th>Result</th></tr></thead>
+                <thead><tr><th>Vision</th><th>Ramp</th><th>Lightness L*</th><th>Smallest step (CIE76)</th><th>Result</th></tr></thead>
                 <tbody>
                   {checks.map((check) => (
                     <tr key={check.vision}>

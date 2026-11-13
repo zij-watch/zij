@@ -8,7 +8,7 @@ import type { Area } from "@/lib/data";
 import { MONTHS, MONTHS_SHORT, num } from "@/lib/format";
 import { rawByMonth, strongAnomalies } from "@/lib/derive";
 import { heatBreaks, heatClass } from "@/lib/heat";
-import { COLOURS, FONT_DISPLAY, FONT_TEXT, heatRamp, type Theme } from "@/lib/tokens";
+import { COLOURS, FONT_DISPLAY, FONT_TEXT, heatRamp} from "@/lib/tokens";
 
 const CELL_W = 40;
 const CELL_H = 22;
@@ -20,16 +20,15 @@ export interface CalendarProps {
   area: Area;
   from: string; // YYYY-MM
   to: string;
-  theme: Theme;
   selected?: string | null;
   onSelect?: (ym: string) => void;
   title?: boolean;
   id?: string;
 }
 
-export default function Calendar({ area, from, to, theme, selected, onSelect, title, id }: CalendarProps) {
-  const c = COLOURS[theme];
-  const ramp = heatRamp(theme);
+export default function Calendar({ area, from, to, selected, onSelect, title, id }: CalendarProps) {
+  const c = COLOURS;
+  const ramp = heatRamp();
   const m = area.months;
   const breaks = heatBreaks(m.value);
   const firstYear = Number(from.slice(0, 4));

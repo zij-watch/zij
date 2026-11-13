@@ -8,12 +8,11 @@ import { boundsOf, type Shape } from "@/lib/fit/cells";
 import type { DayHotspot } from "@/lib/hotspots/day";
 import { AREA_FILL_LAYER, HOTSPOT_LAYERS, syncDataLayers } from "@/lib/map/layers";
 import { getBasemapStyle, MAX_ZOOM, prepareBasemap, type Basemap } from "@/lib/map/style";
-import { COLOURS, type Theme } from "@/lib/tokens";
+import { COLOURS } from "@/lib/tokens";
 
 export type DrawMode = "box" | "polygon" | null;
 
 interface Props {
-  theme: Theme;
   basemap: Basemap;
   date: string; // YYYY-MM-DD, for the satellite basemap
   areas: AreaIndexEntry[];
@@ -31,6 +30,9 @@ interface Props {
   follow?: boolean; // move to the chosen area or shape when it changes; on by default
   view?: { center: [number, number]; zoom: number; bearing?: number; pitch?: number }; // where the map opens
   onMap?: (map: MapLibreMap) => void; // called once, when the map can be moved
+  fitPadding?: { top: number; right: number; bottom: number; left: number }; // room to keep free when moving to an area
+  tags?: boolean; // the area name tags; follows `chrome` unless set
+  onCursor?: (at: { lng: number; lat: number } | null) => void; // where the pointer is, for a readout
 }
 
 type Ring = number[][];
@@ -46,15 +48,16 @@ function toShape(ring: Ring, mode: DrawMode): Shape | null {
   return { type: "Polygon", coordinates: [ring] };
 }
 
-export default function MapView({ theme, basemap, date, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn, hotspots,
-  labels = true, chrome = true, interactive = true, follow = true, view, onMap }: Props) {
+export default function MapView({ basemap, date, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn, hotspots,
+  labels = true, chrome = true, interactive = true, follow = true, view, onMap, tags = chrome, onCursor, fitPadding }: Props) {
+  const padKey = fitPadding ? `${fitPadding.top},${fitPadding.right},${fitPadding.bottom},${fitPadding.left}` : "";
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [ready, setReady] = useState(false);
   const markers = useRef<Marker[]>([]);
-  const latest = useRef({ theme, basemap, date, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn, hotspots, onMap });
-  latest.current = { theme, basemap, date, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn, hotspots, onMap };
-  const styleKey = `${theme}|${basemap}|${basemap === "satellite" ? date : ""}|${labels}`;
+  const latest = useRef({ basemap, date, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn, hotspots, onMap, onCursor, fitPadding });
+  latest.current = { basemap, date, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn, hotspots, onMap, onCursor, fitPadding };
+  const styleKey = `${basemap}|${basemap === "satellite" ? date : ""}|${labels}`;
   const appliedStyle = useRef(styleKey);
   const shapeKey = shape ? JSON.stringify(shape) : "";
 
@@ -69,7 +72,7 @@ export default function MapView({ theme, basemap, date, areas, selected, onSelec
       maplibre.setWorkerUrl(`${window.location.origin}/vendor/maplibre/maplibre-gl-worker.mjs`);
       map = new maplibre.Map({
         container: container.current,
-        style: getBasemapStyle(theme, basemap, date, { labels }),
+        style: getBasemapStyle(basemap, date, { labels }),
         center: view?.center ?? [10, 15],
         zoom: view?.zoom ?? 1.6,
         bearing: view?.bearing ?? 0,
@@ -83,8 +86,8 @@ export default function MapView({ theme, basemap, date, areas, selected, onSelec
       // Data layers go back on after every style load, whatever the basemap is.
       map.on("style.load", () => {
         const now = latest.current;
-        syncDataLayers(map!, now.theme, now.areas, now.selected, now.shape, now.hotspots);
-        void prepareBasemap(map!, now.theme, now.basemap, now.date);
+        syncDataLayers(map!, now.areas, now.selected, now.shape, now.hotspots);
+        void prepareBasemap(map!, now.basemap, now.date);
         // Hand the map over as soon as it can be moved; it need not wait for every tile.
         if (!announced) {
           announced = true;
@@ -113,6 +116,8 @@ export default function MapView({ theme, basemap, date, areas, selected, onSelec
         map.on("mouseleave", layer, () => !latest.current.drawMode && (map!.getCanvas().style.cursor = ""));
       }
       map.once("load", () => !cancelled && setReady(true));
+      map.on("mousemove", (event) => latest.current.onCursor?.({ lng: event.lngLat.lng, lat: event.lngLat.lat }));
+      map.getCanvas().addEventListener("mouseleave", () => latest.current.onCursor?.(null));
       map.on("click", AREA_FILL_LAYER, (event) => {
         if (latest.current.drawMode) return; // a click belongs to the drawing
         const id = event.features?.[0]?.properties?.id;
@@ -136,9 +141,9 @@ export default function MapView({ theme, basemap, date, areas, selected, onSelec
     const map = mapRef.current;
     if (!map || appliedStyle.current === styleKey) return;
     appliedStyle.current = styleKey;
-    map.setStyle(getBasemapStyle(theme, basemap, date, { labels }));
-    void prepareBasemap(map, theme, basemap, date);
-  }, [styleKey, theme, basemap, date, labels]);
+    map.setStyle(getBasemapStyle(basemap, date, { labels }));
+    void prepareBasemap(map, basemap, date);
+  }, [styleKey, basemap, date, labels]);
 
   // Area boxes, their name labels, the drawn shape, and the view.
   useEffect(() => {
@@ -147,9 +152,9 @@ export default function MapView({ theme, basemap, date, areas, selected, onSelec
     import("maplibre-gl").then((maplibre) => {
       const map = mapRef.current;
       if (cancelled || !map) return;
-      if (map.isStyleLoaded()) syncDataLayers(map, theme, areas, selected, shape, latest.current.hotspots);
+      if (map.isStyleLoaded()) syncDataLayers(map, areas, selected, shape, latest.current.hotspots);
       markers.current.forEach((marker) => marker.remove());
-      markers.current = (chrome ? areas : []).map((area) => {
+      markers.current = (tags ? areas : []).map((area) => {
         const element = document.createElement("button");
         element.type = "button";
         element.className = `map-label${area.id === selected ? " is-selected" : ""}`;
@@ -165,19 +170,19 @@ export default function MapView({ theme, basemap, date, areas, selected, onSelec
       const area = areas.find((a) => a.id === selected);
       const box = shape ? boundsOf(shape) : area?.box;
       if (box && follow && !latest.current.drawMode) {
-        map.fitBounds([[box[0], box[1]], [box[2], box[3]]], { padding: 90, maxZoom: 8, duration: 1200 });
+        map.fitBounds([[box[0], box[1]], [box[2], box[3]]], { padding: latest.current.fitPadding ?? 90, maxZoom: 8, duration: 1200 });
       }
     });
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, areas, selected, theme, shapeKey]);
+  }, [ready, areas, selected, shapeKey, tags, padKey]);
 
   // The chosen day's hotspots.
   useEffect(() => {
     const map = mapRef.current;
-    if (ready && map && map.isStyleLoaded()) syncDataLayers(map, theme, areas, selected, shape, hotspots);
+    if (ready && map && map.isStyleLoaded()) syncDataLayers(map, areas, selected, shape, hotspots);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, hotspots]);
 
@@ -191,7 +196,7 @@ export default function MapView({ theme, basemap, date, areas, selected, onSelec
     let timer: ReturnType<typeof setTimeout> | null = null;
     Promise.all([import("terra-draw"), import("terra-draw-maplibre-gl-adapter")]).then(([terra, adapter]) => {
       if (stopped) return;
-      const c = COLOURS[theme];
+      const c = COLOURS;
       const styles = {
         fillColor: c.brass as `#${string}`,
         fillOpacity: 0.2,
@@ -238,7 +243,7 @@ export default function MapView({ theme, basemap, date, areas, selected, onSelec
       if (timer) clearTimeout(timer);
       stop();
     };
-  }, [ready, drawMode, theme]);
+  }, [ready, drawMode]);
 
   return <div ref={container} className="map" aria-label="Map of the preset areas" />;
 }

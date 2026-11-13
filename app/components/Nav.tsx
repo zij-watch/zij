@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { Seal } from "./Shell";
 
 const PAGES = [
   { href: "/", label: "Explore" },
@@ -9,13 +10,17 @@ const PAGES = [
   { href: "/how-it-works", label: "How it works" },
 ];
 
-/** The top bar. Links carry the query string, so the chosen area and dates follow you between pages. */
+/**
+ * The top strip of the reading pages. Links carry the query string, so the chosen area and dates
+ * follow you between pages. Explore has its own strip, with the live readout (components/Explore.tsx).
+ */
 export default function Nav() {
   const pathname = usePathname();
   const query = useSearchParams().toString();
+  if (pathname === "/") return null;
   return (
-    <header className="nav">
-      <Link href={query ? `/?${query}` : "/"} className="wordmark">Zij</Link>
+    <header className="strip paper">
+      <Link href={query ? `/?${query}` : "/"} className="brand" aria-label="Zij, Explore"><Seal /></Link>
       <nav aria-label="Pages">
         {PAGES.map((page) => (
           <Link key={page.href} href={query ? `${page.href}?${query}` : page.href} aria-current={pathname === page.href ? "page" : undefined}>

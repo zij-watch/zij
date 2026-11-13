@@ -62,17 +62,30 @@ export function IntroBlock({ areas, base = "/" }: { areas: AreaIndexEntry[]; bas
   );
 }
 
+/**
+ * The Seal: one word that reads Zij from the left and زيج from the right. The small drawing, for
+ * running heads, from the Zij design system (docs/design/logo in the team's design repository).
+ * One colour, ink.
+ */
+export function Seal() {
+  return (
+    <svg className="seal" viewBox="44 135 306 255" height="26" role="img" aria-label="Zij · زيج" fill="currentColor">
+      <path d="M44,200L196,200L196,225L81.47,365L196,365L196,390L44,390L44,365L158.53,225L44,225Z" /><path d="M173.18,275L218,275L218,300L152.73,300Z" /><path d="M232,200L264,200L264,300L232,300Z" /><path d="M314,200L346,200L346,349.68L313.02,390L270,390L270,365L296,365L314,343Z" /><path d="M227,156a21,21 0 1,0 42,0a21,21 0 1,0 -42,0ZM235.5,156a12.5,12.5 0 1,1 25,0a12.5,12.5 0 1,1 -25,0Z" /><path d="M330,136L350,156L330,176L310,156Z" /><path d="M140,316L156.5,332.5L140,349L123.5,332.5Z" /><path d="M227,314L243.5,330.5L227,347L210.5,330.5ZM269,314L285.5,330.5L269,347L252.5,330.5Z" />
+    </svg>
+  );
+}
+
 /** The whole Explore page as the server sends it, before scripts: used as the Suspense fallback. */
 export function ExploreShell({ areas, facts }: { areas: AreaIndexEntry[]; facts: AreaFacts | null }) {
   return (
-    <main className={`explore${facts ? " has-area" : ""}`}>
-      <div className="toolbar">
-        <h1 className="shell-title">Zij: fire on one scale</h1>
-      </div>
-      <div className="stage">
-        <div className="map map-waiting" role="status">Loading the map…</div>
-        <aside className="panel">{facts ? <FactsBlock facts={facts} /> : <IntroBlock areas={areas} />}</aside>
-      </div>
+    <main className="explore panel-open">
+      <header className="strip paper">
+        <a className="brand" href="/"><Seal /><h1 className="sr-only">Zij: fire on one scale</h1></a>
+        <p className="readout"><span className="readout-area">Fire on one scale</span></p>
+        <nav aria-label="Pages"><a href="/downloads">Downloads</a><a href="/how-it-works">How it works</a></nav>
+      </header>
+      <div className="mapwrap"><div className="map map-waiting" role="status">Loading the map…</div></div>
+      <aside className="sheet paper"><div className="sheet-body">{facts ? <FactsBlock facts={facts} /> : <IntroBlock areas={areas} />}</div></aside>
     </main>
   );
 }

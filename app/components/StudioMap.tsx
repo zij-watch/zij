@@ -12,7 +12,6 @@ import { loadHotspotDays } from "@/lib/dayData";
 import { boundsOf, type Shape } from "@/lib/fit/cells";
 import type { DayHotspot } from "@/lib/hotspots/day";
 import { easeLamp, fitBox } from "@/lib/map/atlas/camera";
-import type { Theme } from "@/lib/tokens";
 import { parseState } from "@/lib/url";
 
 const MapView = dynamic(() => import("./MapView"), { ssr: false });
@@ -45,7 +44,6 @@ export default function StudioMap() {
   const params = useMemo(() => new URLSearchParams(search.toString()), [search]);
   const state = useMemo(() => parseState(params), [params]);
 
-  const theme: Theme = params.get("theme") === "folio" ? "folio" : "night";
   const off = (key: string) => ["0", "off", "false", "no"].includes(params.get(key) ?? "");
   const showHotspots = !off("hotspots");
   const labels = !off("labels");
@@ -153,7 +151,7 @@ export default function StudioMap() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, days]);
 
-  if (failed) return <main className="studio" data-theme={theme}><p className="studio-note">{failed}</p></main>;
+  if (failed) return <main className="studio"><p className="studio-note">{failed}</p></main>;
   const hotspots = (showHotspots && date && days?.get(date)) || NONE;
   // Where the map opens: the centre and zoom if given, else fitted to the area or box, else the world.
   // With `fly` and no area of its own, it opens on the world and flies in.
@@ -167,10 +165,9 @@ export default function StudioMap() {
   };
 
   return (
-    <main className="studio" data-theme={theme}>
+    <main className="studio">
       {index && (
         <MapView
-          theme={theme}
           basemap={state.basemap}
           date={date ?? index.last_full_day}
           areas={outline && area ? [area] : []}

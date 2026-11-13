@@ -9,7 +9,7 @@ export const metadata = { title: "Zij: downloads" };
 async function DownloadsShell() {
   const index = await readIndex();
   return (
-    <main className="page" data-theme="folio">
+    <main className="page">
       <div className="page-inner">
         <p className="eyebrow">Downloads</p>
         <h1>Take the numbers with you</h1>

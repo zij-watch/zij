@@ -7,7 +7,7 @@ import { CanvasRenderer } from "echarts/renderers";
 import { useEffect, useRef } from "react";
 import type { Area } from "@/lib/data";
 import { MONTHS_SHORT, num } from "@/lib/format";
-import { COLOURS, FONT_TEXT, type Theme } from "@/lib/tokens";
+import { COLOURS, FONT_TEXT} from "@/lib/tokens";
 
 echarts.use([LineChart, GridComponent, TooltipComponent, MarkAreaComponent, CanvasRenderer]);
 
@@ -25,12 +25,12 @@ function runs(weeks: number[]): [number, number][] {
   return out;
 }
 
-export default function TypicalYear({ area, theme, year }: { area: Area; theme: Theme; year: number }) {
+export default function TypicalYear({ area, year }: { area: Area; year: number }) {
   const element = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!element.current) return;
-    const c = COLOURS[theme];
+    const c = COLOURS;
     const chart = echarts.init(element.current);
     const w = area.climatology.weeks;
     const index = w.iso_week.map((k, i) => (k <= 52 ? i : -1)).filter((i) => i >= 0);
@@ -98,7 +98,7 @@ export default function TypicalYear({ area, theme, year }: { area: Area; theme: 
       window.removeEventListener("resize", resize);
       chart.dispose();
     };
-  }, [area, theme, year]);
+  }, [area, year]);
 
   return <div ref={element} className="chart" role="img" aria-label={`Typical year for ${area.name}: weekly median with the critical period shaded`} />;
 }

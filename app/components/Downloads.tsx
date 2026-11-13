@@ -7,7 +7,6 @@ import { loadingWords, useLoading } from "@/lib/download";
 import { COVERED, resolveDrawn } from "@/lib/drawnArea";
 import type { Shape } from "@/lib/fit/cells";
 import { monthSpan } from "@/lib/format";
-import type { Theme } from "@/lib/tokens";
 import { COLOURS } from "@/lib/tokens";
 import { useAppState } from "@/lib/url";
 import Calendar from "./Calendar";
@@ -129,7 +128,6 @@ export default function Downloads() {
   const [state, update] = useAppState();
   const [index, setIndex] = useState<Index | null>(null);
   const [area, setArea] = useState<Area | null>(null);
-  const [theme, setTheme] = useState<Theme>("folio");
 
   useEffect(() => {
     loadIndex().then(setIndex).catch(() => setIndex(null));
@@ -195,7 +193,7 @@ export default function Downloads() {
   const base = area ? `zij_${slugOf(area)}_${from}_${to}` : "zij";
 
   return (
-    <main className="page" data-theme="folio">
+    <main className="page">
       <div className="page-inner">
         <p className="eyebrow">Downloads</p>
         <h1>Take the numbers with you</h1>
@@ -247,13 +245,11 @@ export default function Downloads() {
 
             <h2>Calendar (PNG and SVG)</h2>
             <div className="actions">
-              <button type="button" className={theme === "folio" ? "is-active" : ""} aria-pressed={theme === "folio"} onClick={() => setTheme("folio")}>Light, for print</button>
-              <button type="button" className={theme === "night" ? "is-active" : ""} aria-pressed={theme === "night"} onClick={() => setTheme("night")}>Dark, for screens</button>
-              <button type="button" onClick={() => savePng(`${base}_calendar.png`, COLOURS[theme].ground)}>Calendar PNG</button>
+              <button type="button" onClick={() => savePng(`${base}_calendar.png`, COLOURS.ground)}>Calendar PNG</button>
               <button type="button" onClick={() => { const text = svgText(); if (text) save(`${base}_calendar.svg`, new Blob([text], { type: "image/svg+xml" })); }}>Calendar SVG</button>
             </div>
             <div className="preview">
-              <Calendar id={SVG_ID} area={area} from={from} to={to} theme={theme} title />
+              <Calendar id={SVG_ID} area={area} from={from} to={to} title />
             </div>
           </>
         )}

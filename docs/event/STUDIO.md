@@ -14,7 +14,6 @@ Credits are not on the picture. Put them in the video: fire data NASA FIRMS, ima
 | `box` | `west,south,east,north` | none | The same for any box. `poly=lon,lat;lon,lat;...` works too. |
 | `day` | `YYYY-MM-DD` | none | The day whose hotspots are shown. Also the day of the satellite picture. |
 | `basemap` | `zij`, `satellite` | `zij` | The Zij atlas, or NASA GIBS true colour for the day. |
-| `theme` | `night`, `folio` | `night` | Dark chart or paper sheet. |
 | `centre` | `longitude,latitude` | fitted to the area | Where the map opens. `center` is accepted too. |
 | `zoom` | 0 to 9 | fitted to the area | Zoom the map opens at. |
 | `bearing` | -180 to 180 | 0 | Degrees the map is turned. |
@@ -43,13 +42,13 @@ The `<html>` element says where the shot is, in `data-studio`: `loading`, `ready
 
 ## Marks
 
-VIIRS is a small filled red dot, MODIS a larger open blue ring, the same as on Explore. Hotspots exist for Egypt, Portugal, and the two Argentine areas with half a degree around them. Outside those, the map shows no marks.
+The map has one look, the paper sheet. VIIRS is a small filled red dot, MODIS a larger open blue ring, each with a thin light halo, the same as on Explore. Hotspots exist for Egypt, Portugal, and the two Argentine areas with half a degree around them. Outside those, the map shows no marks.
 
 ## Examples
 
-Nile Delta, one day in the October rice-straw season, on the paper sheet:
+Nile Delta, one day in the October rice-straw season:
 
-    /studio/map?area=nile-delta&day=2018-10-20&theme=folio
+    /studio/map?area=nile-delta&day=2018-10-20
 
 Nile Delta, all of October 2018, half a second a day, with the date:
 

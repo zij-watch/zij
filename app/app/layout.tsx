@@ -19,7 +19,7 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 // The bare frame: fonts, tokens and the theme. The top bar and credits are in app/(site)/layout.tsx.
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" data-theme="night">
+    <html lang="en">
       <head>
         <style dangerouslySetInnerHTML={{ __html: tokensCss() }} />
       </head>

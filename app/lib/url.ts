@@ -21,7 +21,13 @@ export interface AppState {
   shape: Shape | null; // a drawn box (?box=w,s,e,n) or polygon (?poly=lon,lat;lon,lat;...)
   year: number | null; // the year drawn over the typical year
   day: string | null; // YYYY-MM-DD, the day view
+  days: number | null; // 7: the hotspots of the last 7 days on the map
+  hide: string[]; // layers switched off: "viirs", "modis", "outlines"
+  panel: "open" | "wide" | "closed"; // the floating panel
+  timeline: boolean; // the day scrubber along the bottom
 }
+
+export const LAYERS = ["viirs", "modis", "outlines"] as const;
 
 /** The drawn shape as URL parameters. */
 export function shapeParams(shape: Shape | null): { box: string | null; poly: string | null } {
@@ -62,19 +68,25 @@ export function parseState(params: URLSearchParams): AppState {
     basemap: params.get("basemap") === "satellite" ? "satellite" : "zij",
     shape: parseShape(params),
     day: pick("day", YMD),
+    days: params.get("days") === "7" ? 7 : null,
+    hide: (params.get("hide") ?? "").split(",").filter((v) => (LAYERS as readonly string[]).includes(v)),
+    panel: params.get("panel") === "wide" ? "wide" : params.get("panel") === "closed" ? "closed" : "open",
+    timeline: params.get("timeline") === "1",
     year: /^\d{4}$/.test(params.get("year") ?? "") ? Number(params.get("year")) : null,
   };
 }
 
-export function useAppState(): [AppState, (patch: Partial<AppState>) => void, string] {
+export function useAppState(): [AppState, (patch: Partial<AppState>, quiet?: boolean) => void, string] {
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const state = useMemo(() => parseState(new URLSearchParams(params.toString())), [params]);
   const query = params.toString();
   const update = useCallback(
-    (patch: Partial<AppState>) => {
-      const next = new URLSearchParams(params.toString());
+    // `quiet` rewrites the address without asking the server for the page again: for the timeline,
+    // which changes the day many times a minute.
+    (patch: Partial<AppState>, quiet = false) => {
+      const next = new URLSearchParams(quiet ? window.location.search : params.toString());
       const { shape, ...rest } = patch;
       if (shape !== undefined) {
         for (const [key, value] of Object.entries(shapeParams(shape))) {
@@ -83,12 +95,15 @@ export function useAppState(): [AppState, (patch: Partial<AppState>) => void, st
         }
       }
       for (const [key, value] of Object.entries(rest)) {
-        const isDefault = value === null || (key === "view" && value === "calendar") || (key === "basemap" && value === "zij");
+        const isDefault = value === null || value === false || (key === "view" && value === "calendar") || (key === "basemap" && value === "zij")
+          || (key === "panel" && value === "open") || (Array.isArray(value) && value.length === 0);
         if (isDefault) next.delete(key);
-        else next.set(key, String(value));
+        else next.set(key, value === true ? "1" : Array.isArray(value) ? value.join(",") : String(value));
       }
       const text = next.toString();
-      router.replace(text ? `${pathname}?${text}` : pathname, { scroll: false });
+      const url = text ? `${pathname}?${text}` : pathname;
+      if (quiet) window.history.replaceState(null, "", url);
+      else router.replace(url, { scroll: false });
     },
     [params, router, pathname],
   );

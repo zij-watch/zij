@@ -1,11 +1,13 @@
 import { Suspense, type ReactNode } from "react";
 import Nav from "@/components/Nav";
+import { Seal } from "@/components/Shell";
 
-// The pages people read: the top bar, the no-script line and the credits. /studio has none of these.
+// The pages people read: the top strip, the no-script line and the credits. /studio has none of these.
+// Explore draws its own strip (with the live readout) and hides the credits line: its credit is on the map.
 export default function SiteLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      <Suspense fallback={<header className="nav"><a href="/" className="wordmark">Zij</a><nav aria-label="Pages"><a href="/">Explore</a><a href="/downloads">Downloads</a><a href="/how-it-works">How it works</a></nav></header>}>
+      <Suspense fallback={<header className="strip paper"><a href="/" className="brand"><Seal /></a><nav aria-label="Pages"><a href="/">Explore</a><a href="/downloads">Downloads</a><a href="/how-it-works">How it works</a></nav></header>}>
         <Nav />
       </Suspense>
       <noscript>
