@@ -250,3 +250,49 @@ button.link, button.link:hover:not(:disabled) { min-height: 0; background: none;
 .evidence { margin: var(--s-2) 0 0; }
 .evidence .link { font: 600 20px/28px var(--font-display); color: var(--brass); text-decoration: underline; }
 @media (max-width: 760px) { .mode-switch button { padding: 0 6px; font-size: 14px; } }
+
+/* ---------------------------------------------------------------- first use: three large choices */
+.first-use h2 { margin-bottom: var(--s-2); }
+.choices { display: flex; flex-direction: column; gap: var(--s-3); margin-top: var(--s-4); }
+.choice, .sheet .choice {
+  display: block; width: 100%; padding: var(--s-4); border: 1px solid var(--brass); border-radius: var(--r-3); background: var(--ground-raised);
+  color: var(--ink); font: inherit; text-align: left; cursor: pointer; transition: background-color var(--fade), box-shadow var(--fade);
+}
+button.choice:hover:not(:disabled), details.choice:hover { background: var(--hover); box-shadow: 2px 4px 10px -4px color-mix(in srgb, var(--shadow) 50%, transparent); }
+.choice strong { display: block; font: 600 24px/28px var(--font-display); color: var(--brass); }
+.choice span { display: block; margin-top: var(--s-1); font-size: 16px; line-height: 24px; color: var(--ink-muted); }
+.sheet details.choice { border-bottom: 1px solid var(--brass); }
+.sheet details.choice > summary { display: block; padding: 0; min-height: 0; }
+.sheet details.choice > summary::before { content: none; }
+.sheet details.choice > summary strong, .sheet details.choice > summary span { text-align: left; }
+.sheet details.choice > summary span { font: inherit; font-size: 16px; line-height: 24px; color: var(--ink-muted); letter-spacing: 0; }
+.sheet details.choice > summary strong { font: 600 24px/28px var(--font-display); color: var(--brass); }
+details.choice[open] > summary { margin-bottom: var(--s-3); }
+details.choice ul.plain li { min-height: var(--hit); display: flex; align-items: center; gap: var(--s-1); flex-wrap: wrap; }
+
+/* ---------------------------------------------------------------- the basemap tile, bottom left
+   A thumbnail of the other basemap: one press switches. The same switch stays in Layers. */
+.basemap-tile {
+  position: absolute; z-index: 4; left: var(--edge); bottom: calc(var(--edge) + var(--credit)); width: 72px; height: 72px; min-height: 0; padding: 0;
+  display: flex; align-items: flex-end; justify-content: stretch; overflow: hidden;
+  border: 2px solid var(--ground-raised); border-radius: var(--r-3); background-size: cover; background-position: center;
+  box-shadow: 2px 4px 12px -2px color-mix(in srgb, var(--shadow) 60%, transparent);
+}
+.basemap-tile span { width: 100%; padding: 2px 0; font-size: 13px; line-height: 18px; text-align: center; color: var(--ground-raised); background: color-mix(in srgb, var(--ink) 72%, transparent); }
+/* The satellite tile shows a NASA GIBS picture; under it, a dark sea in case the picture is slow. */
+.basemap-tile.is-satellite, .basemap-tile.is-satellite:hover:not(:disabled) { background-color: var(--ink); }
+/* The atlas tile is drawn: sea lines over sky, a slope of land. */
+.basemap-tile.is-atlas, .basemap-tile.is-atlas:hover:not(:disabled) {
+  background-color: var(--sky);
+  background-image: linear-gradient(155deg, transparent 46%, var(--ground) 46.5%), repeating-linear-gradient(0deg, transparent 0 5px, color-mix(in srgb, var(--lapis) 35%, transparent) 5px 6px);
+}
+.basemap-tile:hover:not(:disabled) { border-color: var(--brass); }
+.map-progress { bottom: calc(var(--edge) + var(--credit) + 84px); }
+.has-timeline .basemap-tile { bottom: calc(var(--edge) + var(--credit) + var(--dock) + 100px); }
+.has-timeline .map-progress { bottom: calc(var(--edge) + var(--credit) + var(--dock) + 184px); }
+@media (max-width: 760px) {
+  .basemap-tile, .has-timeline .basemap-tile { left: var(--edge); bottom: calc(var(--dock) + var(--sheet-h) + 8px); width: 56px; height: 56px; }
+  .basemap-tile span { font-size: 11px; line-height: 15px; }
+  .map-progress, .has-timeline .map-progress { bottom: calc(var(--dock) + var(--sheet-h) + 72px); }
+  .sheet-tab { bottom: calc(var(--dock) + 8px); }
+}

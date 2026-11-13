@@ -43,6 +43,11 @@ function gibsLayer(date: string): string {
 const hasText = (layer: StyleSpecification["layers"][number]) =>
   layer.type === "symbol" && layer.layout !== undefined && "text-field" in layer.layout;
 
+/** One small satellite picture of the Nile Delta for a day, for the basemap tile in the corner of the map. */
+export function satelliteThumb(date: string): string {
+  return `${GIBS}/${gibsLayer(date)}/default/${date}/GoogleMapsCompatible_Level9/6/26/37.jpg`;
+}
+
 /** The "Zij" basemap: the atlas sheet. Everything it reads is served by this site. */
 function zijStyle(options: BasemapOptions): StyleSpecification {
   const style = buildStyle({

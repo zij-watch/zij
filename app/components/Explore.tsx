@@ -20,7 +20,7 @@ import type { AreaFacts } from "@/lib/facts";
 import type { Shape } from "@/lib/fit/cells";
 import { monthSpan } from "@/lib/format";
 import type { DayHotspot } from "@/lib/hotspots/day";
-import { BASEMAPS } from "@/lib/map/style";
+import { BASEMAPS, satelliteThumb } from "@/lib/map/style";
 import { useAppState } from "@/lib/url";
 import DayPanel from "./DayPanel";
 import type { DrawMode } from "./MapView";
@@ -179,6 +179,7 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
   const [drawMenu, setDrawMenu] = useState(false);
   const [goTo, setGoTo] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [pickOpen, setPickOpen] = useState(false);
   const cursorEl = useRef<HTMLSpanElement>(null);
   const layersEl = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
@@ -204,8 +205,8 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
   const shapeKey = state.shape ? JSON.stringify(state.shape) : "";
   const areaEntry = !shapeKey && state.area ? index?.areas.find((a) => a.id === state.area) ?? null : null;
   const areaId = areaEntry?.id ?? null;
-  // Results are the point once an area is chosen; before that, the list of areas is.
-  const [open, setOpen] = useState<Sections>({ time: false, area: !state.area && !shapeKey, layers: false, results: true });
+  // Results is the one section open at first: the answer once an area is chosen, the three choices before.
+  const [open, setOpen] = useState<Sections>({ time: false, area: false, layers: false, results: true });
   const toggle = (key: keyof Sections) => (event: React.SyntheticEvent<HTMLDetailsElement>) => {
     const isOpen = event.currentTarget.open;
     setOpen((now) => (now[key] === isOpen ? now : { ...now, [key]: isOpen }));
@@ -432,21 +433,33 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
     <>
       {error && <p className="panel-body">Could not load the data: {error}</p>}
       {!error && !hasPanel && (
-        <div className="panel-body">
-          <p className="eyebrow">Zij</p>
-          <h2>26 years of fire, on one scale</h2>
-          {INTRO.map((text) => <p key={text}>{text}</p>)}
-          <p>Choose an area on the map or below, or draw your own in {COVERED}.</p>
-          <div onClick={(event) => {
-            // The links work without scripts; with them, the page changes area without reloading.
-            const link = (event.target as HTMLElement).closest("a");
-            const id = link ? new URL(link.href).searchParams.get("area") : null;
-            if (id) {
-              event.preventDefault();
-              update({ area: id, shape: null, month: null });
-            }
-          }}>
-            <AreaLinks areas={index?.areas ?? []} />
+        <div className="panel-body first-use">
+          <p className="eyebrow">Start here</p>
+          <h2>Where do you want to look?</h2>
+          <p>{INTRO[0]}</p>
+          <div className="choices">
+            <button type="button" className="choice" onClick={() => update({ area: "nile-delta", shape: null, month: null })}>
+              <strong>Start with the Nile Delta</strong>
+              <span>The autumn rice-straw burning, 26 years of it. The quickest way to see what Zij does.</span>
+            </button>
+            <details className="choice" open={pickOpen} onToggle={(e) => setPickOpen(e.currentTarget.open)}>
+              <summary><strong>Pick a place</strong><span>10 areas in Egypt, Portugal and Argentina.</span></summary>
+              <div onClick={(event) => {
+                // The links work without scripts; with them, the page changes area without reloading.
+                const link = (event.target as HTMLElement).closest("a");
+                const id = link ? new URL(link.href).searchParams.get("area") : null;
+                if (id) {
+                  event.preventDefault();
+                  update({ area: id, shape: null, month: null });
+                }
+              }}>
+                <AreaLinks areas={index?.areas ?? []} />
+              </div>
+            </details>
+            <button type="button" className="choice" onClick={() => startDraw("box")}>
+              <strong>Draw your own</strong>
+              <span>A box anywhere in {COVERED}. The numbers follow as you draw.</span>
+            </button>
           </div>
         </div>
       )}
@@ -519,6 +532,14 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
       <Modal open={goTo} onOpenChange={setGoTo} title="Go to coordinates">
         <GoTo onGo={goToPoint} onBox={() => { setGoTo(false); setShowCoords(true); setOpen((now) => ({ ...now, area: true })); update({ panel: closed ? "open" : state.panel }); }} />
       </Modal>
+      <Tip label={state.basemap === "satellite" ? "Switch to the Zij atlas" : "Switch to NASA satellite imagery"} side="right">
+        <button type="button" className={`basemap-tile is-${state.basemap === "satellite" ? "atlas" : "satellite"}`}
+          style={state.basemap === "satellite" ? undefined : { backgroundImage: `url("${satelliteThumb(mapDate)}")` }}
+          aria-label={state.basemap === "satellite" ? "Basemap: NASA satellite. Switch to the Zij atlas" : "Basemap: Zij atlas. Switch to NASA satellite imagery"}
+          onClick={() => update({ basemap: state.basemap === "satellite" ? "zij" : "satellite" })}>
+          <span>{state.basemap === "satellite" ? "Atlas" : "Satellite"}</span>
+        </button>
+      </Tip>
       {drawMode && (
         <p className="map-hint paper" role="status">
           {drawMode === "box" ? "Click one corner, move, and click the opposite corner." : "Click each corner; click the first point again to close the shape."}
