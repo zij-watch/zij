@@ -13,8 +13,9 @@ Zij counts both records in one unit, the **fire cell-day**: one map square of 0.
 - `pipeline/`: from raw FIRMS files to weekly fire cell-days per satellite and per sensor.
 - `app/`: the web app (not started yet).
 - `docs/event/DECISIONS.md`: every decision made during the event, with its reason.
+- `docs/event/VALIDATION.md`: how well the calibration predicts VIIRS from MODIS, per area and model.
 
-Status: the pipeline's first checkpoint. Calibration, validation, the harmonized record and the app come next.
+Status: the weekly record is built, and the MODIS to VIIRS calibration is fitted and validated on 8 areas (`docs/event/VALIDATION.md`). The harmonized record, the 2026 data and the app come next.
 
 ## Before the event
 
@@ -31,7 +32,7 @@ Needs [uv](https://docs.astral.sh/uv/) and the raw FIRMS files laid out as `firm
 cd pipeline
 uv sync
 $env:ZIJ_FIRMS_RAW = 'D:\Zij\firms-raw'   # only if the raw files are somewhere else
-uv run python -m zij all                  # or: build, checkpoint
+uv run python -m zij all                  # or: build, checkpoint, validate
 ```
 
 What `build` does, for Egypt and Portugal, 2000 to 2025:
@@ -55,6 +56,21 @@ What `build` does, for Egypt and Portugal, 2000 to 2025:
 `family` is the sensor (`MODIS`, `VIIRS`). `satellite` uses the FIRMS codes: `Terra`, `Aqua`, `N` (Suomi NPP), `N20` (NOAA-20). `cell_lat` and `cell_lon` are the cell's centre. `week_start` is the Monday. A cell and week with no row had no kept detection: that is zero fires if the sensor has a row in `weeks.parquet` with `no_data` false, and no data otherwise.
 
 `checkpoint` prints the Nile Delta check (September to November, 2012 to 2024, per satellite). The 13 November run is recorded in `docs/event/DECISIONS.md`.
+
+## Calibration and validation
+
+`validate` fits six ways of predicting weekly VIIRS fire days from weekly MODIS fire days, on 2012 to 2020, for 8 areas in Egypt and Portugal. It tests each one twice: leaving one year out, and predicting 2021 to 2025 from the 2012 to 2020 fit. Mean absolute error of the season total over the 8 areas:
+
+| Model | Leave one year out | 2021 to 2025 |
+|---|---|---|
+| raw MODIS, no calibration | 76.5% | 74.6% |
+| M0: one fixed multiplier | 24.1% | 36.6% |
+| M1: c + a M^b | 19.1% | 33.5% |
+| M2: M1 with a background per month | 19.6% | 33.3% |
+| M3: M2 with fire size | 16.6% | 27.2% |
+| M4: M3 with the background scaled by the year's activity | 14.2% | 25.2% |
+
+For the Nile Delta, M4 is off by 7.0% (10.3% for 2021 to 2025). The fits are plain least squares inside two small grid searches (numpy only), so they can run in the browser later. `validate` writes `data/processed/calibration/` (`fits.json`, `validation_years.parquet`, `validation_areas.parquet`, `validation_summary.json`, `area_series.parquet`) and `docs/event/VALIDATION.md`.
 
 ## Data sources
 
