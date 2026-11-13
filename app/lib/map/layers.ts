@@ -134,3 +134,31 @@ export function syncDataLayers(map: MapLibreMap, areas: AreaIndexEntry[], select
 }
 
 export const AREA_FILL_LAYER = "zij-areas-fill";
+
+// ---------------------------------------------------------------- the sketch
+// The shape under the hand while a right-drag draws it: a box, or the lasso's trace so far.
+// Made when first needed and gone after the next style change, like any short-lived mark.
+
+const SKETCH = "zij-sketch";
+
+/** Show the ring being drawn (closed or not, as [lon, lat]), or nothing. */
+export function setSketch(map: MapLibreMap, ring: number[][] | null): void {
+  const c = COLOURS;
+  const data = {
+    type: "FeatureCollection",
+    features: ring && ring.length >= 2 ? [{ type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [[...ring, ring[0]]] } }] : [],
+  } as AreaData;
+  try {
+    const source = map.getSource(SKETCH) as GeoJSONSource | undefined;
+    if (source) {
+      void source.setData(data);
+      return;
+    }
+    if (!ring) return;
+    map.addSource(SKETCH, { type: "geojson", data });
+    map.addLayer({ id: `${SKETCH}-fill`, type: "fill", source: SKETCH, paint: { "fill-color": c.brass, "fill-opacity": 0.18 } });
+    map.addLayer({ id: `${SKETCH}-line`, type: "line", source: SKETCH, paint: { "line-color": c.ink, "line-width": 2, "line-dasharray": [2, 1.5] } });
+  } catch {
+    // the style is being swapped: the sketch is drawn again on the next move
+  }
+}

@@ -1,16 +1,19 @@
 "use client";
 
-// Explore: the map is the page, and the tools float on it.
-//   top strip     the Seal, a live readout (pointer position, area, date), links
-//   left          zoom in, zoom out, go to coordinates
-//   right         one paper panel: Time, Area, Layers, Results; it closes, reopens and widens
-//   bottom        the dock (Draw, Location, Layers, Timeline, Capture, Share, Help) and the timeline
+// Explore: the map is the page. Everything else is paper lying on it.
+//   top           the running head: the Seal, a live readout (pointer, area, date), Downloads, Help
+//   left          two groups of tools: zoom, location (and north, when the map is turned);
+//                 draw, capture, share
+//   on the area   the area's menu: when to look, the timeline, the marks, save, clear
+//   right         Results, when there are results: one paper per answer, the tables last
+//   bottom left   the basemap tile, that day's sky, the credit
+// A right-drag draws a box, Alt + right-drag a free shape; a middle-drag turns the map.
 // Everything on screen is in the address, so a link reproduces it.
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { Map as MapLibreMap } from "maplibre-gl";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { captureMap, saveBlob } from "@/lib/capture";
 import { loadArea, loadFindings, loadIndex, loadNotes, type Area, type AreaFinding, type Index } from "@/lib/data";
 import { loadDay, loadHotspotDays, shapeOf, type DayResult } from "@/lib/dayData";
@@ -20,25 +23,31 @@ import type { AreaFacts } from "@/lib/facts";
 import type { Shape } from "@/lib/fit/cells";
 import { monthSpan } from "@/lib/format";
 import type { DayHotspot } from "@/lib/hotspots/day";
-import { BASEMAPS, satelliteThumb } from "@/lib/map/style";
+import { satelliteThumb } from "@/lib/map/style";
+import { forgetArea, saveArea, useSavedAreas } from "@/lib/presets";
+import { remember, useRemembered } from "@/lib/remember";
 import { TOUR, tourState } from "@/lib/tour";
 import { shapeParams, useAppState } from "@/lib/url";
-import DayPanel from "./DayPanel";
-import type { DrawMode } from "./MapView";
-import Panel from "./Panel";
-import { AreaLinks, FactsBlock, INTRO, Seal, VerdictLine } from "./Shell";
 import { areaVerdict, dayVerdicts } from "@/lib/verdict";
+import AreaMenu, { type Insets } from "./AreaMenu";
+import GoToDialog from "./GoToDialog";
+import Icon from "./icons";
+import type { DrawMode } from "./MapView";
+import Panel, { paperId, ResultPaper } from "./Panel";
+import Paper from "./Paper";
+import { FactsPapers, Seal } from "./Shell";
 import Timeline, { daysBetween, shortDate } from "./Timeline";
-import { Check, DayField, Modal, Pop, RangeField, Select, Tip, TooltipProvider } from "./ui";
+import { Lever, Pop, Tip, TooltipProvider } from "./ui";
 
-// MapLibre is the heaviest script on the page. It is loaded on its own, after the panel has its text.
+// MapLibre is the heaviest script on the page. It is loaded on its own, after the first text.
 const MapView = dynamic(() => import("./MapView"), { ssr: false, loading: () => <div className="map map-waiting">Loading the map…</div> });
 
 const NO_HOTSPOTS: DayHotspot[] = [];
-const VIEW_WORDS = { calendar: "Calendar", typical: "Typical year", series: "Seasons", ranked: "Busiest", anomalies: "Anomalies" } as const;
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const monthWords = (ym: string) => `${MONTHS[Number(ym.slice(5, 7)) - 1]} ${ym.slice(0, 4)}`;
 const addDays = (iso: string, n: number) => new Date(Date.parse(iso) + n * 86400000).toISOString().slice(0, 10);
+const HINT = "zij.hint.v1";
+const STRIP = 44;
 
 /** Last day of a YYYY-MM month, not after `cap`. */
 function lastDayOf(ym: string, cap: string): string {
@@ -64,104 +73,17 @@ function latestSeason(season: number[], ym: string): [string, string] | null {
   return [start, end];
 }
 
-const ICONS: Record<string, ReactNode> = {
-  draw: <path d="M4 20l4-1 11-11-3-3L5 16zM14 6l3 3" />,
-  location: <><circle cx="12" cy="12" r="6" /><path d="M12 2v5M12 17v5M2 12h5M17 12h5" /></>,
-  layers: <path d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5M3 17l9 5 9-5" />,
-  timeline: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
-  capture: <><path d="M3 8h4l2-3h6l2 3h4v11H3z" /><circle cx="12" cy="13" r="3.5" /></>,
-  share: <><circle cx="6" cy="12" r="2.5" /><circle cx="18" cy="6" r="2.5" /><circle cx="18" cy="18" r="2.5" /><path d="M8.2 10.9l7.6-3.8M8.2 13.1l7.6 3.8" /></>,
-  help: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01" /></>,
-  plus: <path d="M12 5v14M5 12h14" />,
-  minus: <path d="M5 12h14" />,
-  expand: <path d="M14 5h5v5M10 19H5v-5M19 5l-6 6M5 19l6-6" />,
-  shrink: <path d="M19 10h-5V5M5 14h5v5M14 10l6-6M10 14l-6 6" />,
-  close: <path d="M6 6l12 12M18 6L6 18" />,
-};
-function Icon({ name }: { name: string }) {
+function CoveragePaper({ result }: { result: Exclude<DrawnResult, { status: "ok" }> }) {
   return (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      {ICONS[name]}
-    </svg>
+    <ResultPaper letter="أ" id={paperId("verdict")} title={result.status === "two-countries" ? "Across two regions" : "No data here"}>
+      <p className="erratum">
+        {result.status === "two-countries"
+          ? `The shape touches ${result.countries.join(" and ")}: draw it inside one of them.`
+          : `Zij has processed ${COVERED}. Draw inside one of them.`}
+      </p>
+    </ResultPaper>
   );
 }
-
-function CoverageMessage({ result }: { result: Exclude<DrawnResult, { status: "ok" }> }) {
-  return (
-    <div className="panel-body">
-      <p className="eyebrow">Drawn area</p>
-      <h2>{result.status === "two-countries" ? "This area crosses two regions" : "No data here yet"}</h2>
-      {result.status === "two-countries" ? (
-        <p>The shape touches {result.countries.join(" and ")}. Zij reads one region at a time: draw the area inside one of them.</p>
-      ) : (
-        <p>This shape is outside the regions Zij has processed.</p>
-      )}
-      <p>Covered regions: {COVERED}.</p>
-    </div>
-  );
-}
-
-function CoordinateEntry({ shape, onBox }: { shape: Shape | null; onBox: (box: Shape) => void }) {
-  const start = Array.isArray(shape) ? shape : null;
-  const [south, setSouth] = useState(start ? String(start[1]) : "");
-  const [west, setWest] = useState(start ? String(start[0]) : "");
-  const [north, setNorth] = useState(start ? String(start[3]) : "");
-  const [east, setEast] = useState(start ? String(start[2]) : "");
-  const [problem, setProblem] = useState<string | null>(null);
-  const submit = (event: React.FormEvent) => {
-    event.preventDefault();
-    const [s, w, n, e] = [south, west, north, east].map((v) => Number(v.trim().replace(",", ".")));
-    if (![s, w, n, e].every(Number.isFinite) || [south, west, north, east].some((v) => v.trim() === "")) return setProblem("Give four numbers, in decimal degrees.");
-    if (s < -90 || n > 90 || w < -180 || e > 180) return setProblem("Latitude runs from -90 to 90, longitude from -180 to 180.");
-    if (!(s < n) || !(w < e)) return setProblem("South must be below north, and west left of east. South and west are negative numbers.");
-    setProblem(null);
-    onBox([w, s, e, n]);
-  };
-  const field = (label: string, value: string, set: (v: string) => void, hint: string) => (
-    <label>
-      <span>{label}</span>
-      <input inputMode="decimal" value={value} placeholder={hint} onChange={(e) => set(e.target.value)} size={7} />
-    </label>
-  );
-  return (
-    <form className="coords" onSubmit={submit}>
-      {field("South (lat)", south, setSouth, "30.0")}
-      {field("West (lon)", west, setWest, "29.8")}
-      {field("North (lat)", north, setNorth, "31.6")}
-      {field("East (lon)", east, setEast, "32.3")}
-      <button type="submit">Show box</button>
-      {problem && <p className="coords-problem" role="alert">{problem}</p>}
-    </form>
-  );
-}
-
-/** Go to coordinates: one point, typed as latitude and longitude. */
-function GoTo({ onGo, onBox }: { onGo: (lat: number, lon: number) => void; onBox: () => void }) {
-  const [lat, setLat] = useState("");
-  const [lon, setLon] = useState("");
-  const [problem, setProblem] = useState<string | null>(null);
-  const submit = (event: React.FormEvent) => {
-    event.preventDefault();
-    const [a, o] = [lat, lon].map((v) => Number(v.trim().replace(",", ".")));
-    if (lat.trim() === "" || lon.trim() === "" || !Number.isFinite(a) || !Number.isFinite(o)) return setProblem("Give two numbers, in decimal degrees.");
-    if (a < -85 || a > 85 || o < -180 || o > 180) return setProblem("Latitude runs from -85 to 85 here, longitude from -180 to 180.");
-    setProblem(null);
-    onGo(a, o);
-  };
-  return (
-    <form className="goto" onSubmit={submit}>
-      <div className="coords">
-        <label><span>Latitude</span><input inputMode="decimal" value={lat} placeholder="30.8" onChange={(e) => setLat(e.target.value)} size={8} autoFocus /></label>
-        <label><span>Longitude</span><input inputMode="decimal" value={lon} placeholder="31.0" onChange={(e) => setLon(e.target.value)} size={8} /></label>
-        <button type="submit">Go</button>
-      </div>
-      {problem && <p className="coords-problem" role="alert">{problem}</p>}
-      <p className="note">South and west are negative. To study a box instead, <button type="button" className="link" onClick={onBox}>type its four sides</button>.</p>
-    </form>
-  );
-}
-
-type Sections = { time: boolean; area: boolean; layers: boolean; results: boolean };
 
 export default function Explore({ initialIndex = null, facts = null }: { initialIndex?: Index | null; facts?: AreaFacts | null }) {
   const [state, update, query] = useAppState();
@@ -171,23 +93,25 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
   const [area, setArea] = useState<Area | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [drawMode, setDrawMode] = useState<DrawMode>(null);
-  const [showCoords, setShowCoords] = useState(false);
   const [drawn, setDrawn] = useState<DrawnResult | null>(null);
   const [draft, setDraft] = useState<DrawnResult | null>(null);
   const draftTicket = useRef(0);
   const loading = useLoading();
   const [mapWanted, setMapWanted] = useState(false);
   const [map, setMap] = useState<MapLibreMap | null>(null);
+  const [bearing, setBearing] = useState(0);
   const [drawMenu, setDrawMenu] = useState(false);
+  const [helpMenu, setHelpMenu] = useState(false);
   const [goTo, setGoTo] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [pickOpen, setPickOpen] = useState(false);
-  const [helpMenu, setHelpMenu] = useState(false);
   const cursorEl = useRef<HTMLSpanElement>(null);
-  const layersEl = useRef<HTMLDetailsElement>(null);
+  const saved = useSavedAreas();
+  const hintRead = useRemembered(HINT) !== null;
+  const [coarse, setCoarse] = useState(false);
   useEffect(() => {
     // Let the first paint and the area's data go first.
     const timer = setTimeout(() => setMapWanted(true), 300);
+    setCoarse(window.matchMedia("(pointer: coarse)").matches);
     return () => clearTimeout(timer);
   }, []);
   useEffect(() => {
@@ -195,6 +119,13 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
     const timer = setTimeout(() => setToast(null), 2600);
     return () => clearTimeout(timer);
   }, [toast]);
+  // The compass shows only while the map is turned.
+  useEffect(() => {
+    if (!map) return;
+    const turn = () => setBearing(map.getBearing());
+    map.on("rotate", turn);
+    return () => { map.off("rotate", turn); };
+  }, [map]);
   const [dayResult, setDayResult] = useState<DayResult | null>(null);
   const [dayLoading, setDayLoading] = useState(false);
 
@@ -215,17 +146,6 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
     update(tourState(state.tour));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.tour]);
-  // Bring what the caption talks about into view in the panel: the month's weeks, or the chart.
-  const tourAreaReady = Boolean(area || drawn);
-  useEffect(() => {
-    if (!state.tour || !tourAreaReady) return;
-    const timer = setTimeout(() => {
-      const target = document.querySelector(".sheet .tabs");
-      if (state.tour! <= 3) target?.scrollIntoView({ block: "start", behavior: "smooth" });
-      else document.querySelector(".sheet-body")?.scrollTo({ top: 0, behavior: "smooth" });
-    }, 700);
-    return () => clearTimeout(timer);
-  }, [state.tour, tourAreaReady]);
   const goTour = (step: number | null) => {
     tourApplied.current = step;
     setDrawMode(null);
@@ -236,12 +156,6 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
   const shapeKey = state.shape ? JSON.stringify(state.shape) : "";
   const areaEntry = !shapeKey && state.area ? index?.areas.find((a) => a.id === state.area) ?? null : null;
   const areaId = areaEntry?.id ?? null;
-  // Results is the one section open at first: the answer once an area is chosen, the three choices before.
-  const [open, setOpen] = useState<Sections>({ time: false, area: false, layers: false, results: true });
-  const toggle = (key: keyof Sections) => (event: React.SyntheticEvent<HTMLDetailsElement>) => {
-    const isOpen = event.currentTarget.open;
-    setOpen((now) => (now[key] === isOpen ? now : { ...now, [key]: isOpen }));
-  };
   useEffect(() => {
     if (!areaId) {
       setArea(null);
@@ -271,11 +185,19 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
 
   // The cell index is small: fetch it as soon as drawing starts, so the first shape is quick.
   useEffect(() => {
-    if (drawMode || showCoords) loadCellsIndex().catch(() => undefined);
+    if (drawMode) loadCellsIndex().catch(() => undefined);
     if (!drawMode) setDraft(null);
-  }, [drawMode, showCoords]);
+  }, [drawMode]);
+  useEffect(() => {
+    if (!drawMode) return;
+    const stop = (event: KeyboardEvent) => event.key === "Escape" && setDrawMode(null);
+    window.addEventListener("keydown", stop);
+    return () => window.removeEventListener("keydown", stop);
+  }, [drawMode]);
 
-  // While a shape is being drawn: a quick fit without bands. Only the newest one is shown.
+  const openResults = state.panel === "closed" ? "open" : state.panel;
+  const readHint = () => !hintRead && remember(HINT, 1);
+  // While a shape is being drawn with the Draw tool: a quick fit without bands. Only the newest one is shown.
   const onDraft = (shape: Shape) => {
     const ticket = ++draftTicket.current;
     resolveDrawn(shape, true).then((result) => ticket === draftTicket.current && setDraft(result)).catch(() => undefined);
@@ -283,7 +205,14 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
   const onDrawn = (shape: Shape) => {
     draftTicket.current += 1;
     setDrawMode(null);
-    update({ shape, area: null, month: null, panel: state.panel === "closed" ? "open" : state.panel });
+    readHint();
+    update({ shape, area: null, month: null, panel: openResults });
+  };
+  const choose = (id: string | null) => {
+    setDrawMode(null);
+    setDrawMenu(false);
+    if (id) readHint();
+    update({ area: id, shape: null, month: null, panel: openResults });
   };
   const startDraw = (mode: DrawMode) => {
     setDrawMenu(false);
@@ -293,12 +222,13 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
   const shown: DrawnResult | null = drawMode ? draft : shapeKey ? drawn : null;
   const panelArea = shown ? (shown.status === "ok" ? shown.area : null) : area && areaId === area.id ? area : null;
   const isDraft = Boolean(drawMode && shown && shown.status === "ok");
-  const hasPanel = Boolean(areaId || shapeKey || drawMode);
+  const hasSelection = Boolean(areaId || shapeKey);
+  const hasColumn = Boolean(error || hasSelection || (drawMode && shown));
 
   const span = panelArea && panelArea.months.year.length ? monthSpan(panelArea) : null;
   const from = span ? (state.from && state.from >= span[0] && state.from <= span[1] ? state.from : span[0]) : state.from ?? "2000-11";
   const to = span ? (state.to && state.to <= span[1] && state.to >= from ? state.to : span[1]) : state.to ?? (index?.last_full_day.slice(0, 7) ?? "2026-11");
-  // The day view. The satellite basemap follows the chosen day.
+  // The day view. The satellite basemap's day's sky follows the chosen day.
   const lastDay = index?.last_full_day ?? "2026-11-12";
   const day = state.day && state.day >= "2000-11-01" && state.day <= lastDay ? state.day : null;
   const mapDate = day ?? lastDayOf(to, lastDay);
@@ -374,11 +304,11 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
   useEffect(() => {
     if (!map || !areaEntry || !hidden("outlines")) return;
     const [w, s, e, n] = areaEntry.box;
-    map.fitBounds([[w, s], [e, n]], { padding: 90, maxZoom: 8, duration: 1200 }); // the panel's side is not kept clear here
+    map.fitBounds([[w, s], [e, n]], { padding: 90, maxZoom: 8, duration: 1200 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, areaEntry?.id]);
 
-  // Keep the chosen area clear of the panel, the dock and the timeline when the map moves to it.
+  // What the papers leave of the map: kept clear when the map moves to an area, and the area's menu stays inside it.
   const [screen, setScreen] = useState<[number, number]>([1440, 900]);
   useEffect(() => {
     const measure = () => setScreen([window.innerWidth, window.innerHeight]);
@@ -386,17 +316,29 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
   }, []);
-  const fitPadding = useMemo(() => {
+  const closed = state.panel === "closed";
+  const wide = state.panel === "wide";
+  const columnShown = hasColumn && !closed;
+  const docked = screen[0] <= 760;
+  const timelineShown = Boolean(state.timeline && tlRange && tlDays.length > 1);
+  const insets: Insets = useMemo(() => {
     const [w, h] = screen;
-    const timeline = state.timeline ? 86 : 0;
-    if (w <= 760) return { top: 84 + (state.timeline ? 110 : 0), left: 28, right: 28, bottom: 54 + (state.panel === "closed" ? 0 : Math.round(h * 0.46)) + 24 };
-    const sheet = state.panel === "closed" ? 0 : state.panel === "wide" ? w / 2 : w <= 1180 ? 404 : 464;
-    // During the tour the caption card sits at the top left: keep the area clear of it too.
-    return { top: 96, left: state.tour && w >= 1300 ? 500 : 72, right: Math.round(sheet) + 48, bottom: 104 + timeline };
-  }, [screen, state.panel, state.timeline, state.tour]);
+    // A phone: the tools and the credit lie along the top, the menu and Results along the bottom.
+    if (docked) return { top: STRIP + 96, left: 8, right: 8, bottom: (columnShown ? Math.round(h * 0.46) : 0) + 128 };
+    const column = columnShown ? Math.round(wide ? w / 2 : w <= 1180 ? 380 : 440) + 24 : 0;
+    // During the tour its card sits at the top left: on a wide screen the area and its menu keep clear of it.
+    const tour = state.tour && w >= 1300 ? 440 : 0;
+    return { top: STRIP + 8, left: 64 + tour, right: column + 8, bottom: 16 + (timelineShown ? 96 : 0) };
+  }, [screen, docked, columnShown, wide, timelineShown, state.tour]);
+  const fitPadding = useMemo(() => {
+    // Room above the area for its menu, which is about 100 px tall.
+    const menu = docked ? 0 : 120;
+    return { top: insets.top + menu, left: insets.left + 16, right: insets.right + 32, bottom: insets.bottom + 24 };
+  }, [insets, docked]);
 
   // The readout.
   const areaName = panelArea?.name ?? areaEntry?.name ?? (shapeKey || drawMode ? "Drawn area" : "No area chosen");
+  const country = panelArea?.country ?? areaEntry?.country ?? null;
   const dateText = day ? shortDate(day) : state.days ? `${shortDate(week[0])} to ${shortDate(week[1])}` : `${monthWords(from)} to ${monthWords(to)}`;
   const onCursor = useCallback((at: { lng: number; lat: number } | null) => {
     if (!cursorEl.current) return;
@@ -405,24 +347,18 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
       : "Move over the map";
   }, []);
 
-  // The quick chips.
+  // The quick choices of time.
   const thisMonth = lastDay.slice(0, 7);
   const season = latestSeason(panelArea?.fit.season ?? areaEntry?.season ?? [], thisMonth);
   const chips: { label: string; on: boolean; go: () => void; off?: string }[] = [
     { label: "Today", on: day === lastDay, go: () => update({ day: lastDay, days: null }) },
     { label: "7 days", on: !day && state.days === 7, go: () => update({ day: null, days: 7 }) },
     { label: "This month", on: !showingDays && state.from === thisMonth && state.to === thisMonth, go: () => update({ from: thisMonth, to: thisMonth, month: thisMonth, view: "calendar", day: null, days: null }) },
-    { label: "This season", on: !showingDays && !!season && state.from === season[0] && state.to === season[1], off: season ? undefined : "Choose an area first: each has its own season.",
+    { label: "This season", on: !showingDays && !!season && state.from === season[0] && state.to === season[1], off: season ? undefined : "This area has no fire season in the record.",
       go: () => season && update({ from: season[0], to: season[1], month: null, day: null, days: null }) },
     { label: "All years", on: !showingDays && !state.from && !state.to, go: () => update({ from: null, to: null, month: null, day: null, days: null }) },
   ];
 
-  // The dock.
-  const openLayers = () => {
-    update({ panel: state.panel === "closed" ? "open" : state.panel });
-    setOpen((now) => ({ ...now, layers: true }));
-    setTimeout(() => layersEl.current?.scrollIntoView({ block: "start", behavior: "smooth" }), 60);
-  };
   const capture = async () => {
     if (!map) return setToast("The map is still loading.");
     try {
@@ -446,14 +382,8 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
     setGoTo(false);
     setToast(`At ${Math.abs(lat).toFixed(3)}° ${lat >= 0 ? "N" : "S"}, ${Math.abs(lon).toFixed(3)}° ${lon >= 0 ? "E" : "W"}.`);
   };
-  const dock: { id: string; label: string; tip: string; on?: boolean; go: () => void }[] = [
-    { id: "location", label: "Location", tip: "Go to coordinates", go: () => { setDrawMenu(false); setGoTo(true); } },
-    { id: "layers", label: "Layers", tip: "Hotspots, outlines and basemap", go: openLayers },
-    { id: "timeline", label: "Timeline", tip: state.timeline ? "Close the timeline" : "Step through the days", on: state.timeline, go: () => update({ timeline: !state.timeline }) },
-    { id: "capture", label: "Capture", tip: "Save the map as a PNG", go: capture },
-    { id: "share", label: "Share", tip: "Copy a link to this view", go: share },
-  ];
-  // The verdict the panel opens with: the area's this month, or the chosen day's week and month.
+
+  // The verdict Results opens with: the area's this month, or the chosen day's week and month.
   const finding = areaId ? findings.find((f) => f.id === areaId) ?? null : null;
   // A named fire in the findings gives the intensity line its words: its detections and its cells.
   const fire = useMemo(() => {
@@ -463,90 +393,52 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
   const verdict = useMemo(() => (panelArea ? areaVerdict(panelArea, fire) : null), [panelArea, fire]);
   const dayVerdict = useMemo(() => (day && dayArea ? dayVerdicts(dayArea, day, fire) : { week: null, month: null }), [day, dayArea, fire]);
   const q = query ? `?${query}` : "";
-  const closed = state.panel === "closed";
-  const wide = state.panel === "wide";
   const progress = loading ? loadingWords(loading) : null;
+  const reportHref = panelArea ? `/brief?${areaId ? `area=${areaId}` : Object.entries(shapeParams(state.shape)).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join("&")}` : null;
+
+  // A link or a tour step that names a paper brings it into view once the area is in.
+  const column = useRef<HTMLElement>(null);
+  const target = day ? paperId("day") : state.view !== "calendar" ? paperId(state.view) : null;
+  useEffect(() => {
+    if (!panelArea || !column.current) return;
+    const timer = setTimeout(() => {
+      const element = target ? document.getElementById(target) : null;
+      if (element) element.scrollIntoView({ block: "start", behavior: "smooth" });
+      else if (state.tour) column.current?.scrollTo({ top: 0, behavior: "smooth" });
+    }, 650);
+    return () => clearTimeout(timer);
+  }, [target, panelArea?.id, state.tour, columnShown]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The selection the area's menu stands on.
+  const selection: Shape | null = shapeKey ? state.shape : areaEntry ? areaEntry.box : null;
+  const savedHere = shapeKey ? saved.find((a) => JSON.stringify(a.shape) === shapeKey) ?? null : null;
 
   const results = (
     <>
-      {error && <p className="panel-body">Could not load the data: {error}</p>}
-      {!error && !hasPanel && (
-        <div className="panel-body first-use">
-          <p className="eyebrow">Start here</p>
-          <h2>Where do you want to look?</h2>
-          <p>{INTRO[0]}</p>
-          <div className="choices">
-            <button type="button" className="choice" onClick={() => update({ area: "nile-delta", shape: null, month: null })}>
-              <strong>Start with the Nile Delta</strong>
-              <span>The autumn rice-straw burning, 26 years of it. The quickest way to see what Zij does.</span>
-            </button>
-            <details className="choice" open={pickOpen} onToggle={(e) => setPickOpen(e.currentTarget.open)}>
-              <summary><strong>Pick a place</strong><span>10 areas in Egypt, Portugal and Argentina.</span></summary>
-              <div onClick={(event) => {
-                // The links work without scripts; with them, the page changes area without reloading.
-                const link = (event.target as HTMLElement).closest("a");
-                const id = link ? new URL(link.href).searchParams.get("area") : null;
-                if (id) {
-                  event.preventDefault();
-                  update({ area: id, shape: null, month: null });
-                }
-              }}>
-                <AreaLinks areas={index?.areas ?? []} />
-              </div>
-            </details>
-            <button type="button" className="choice" onClick={() => startDraw("box")}>
-              <strong>Draw your own</strong>
-              <span>A box anywhere in {COVERED}. The numbers follow as you draw.</span>
-            </button>
-          </div>
-        </div>
-      )}
-      {!error && drawMode && !shown && <p className="panel-body" role="status">{progress ?? "Draw on the map. The numbers appear here as the shape grows."}</p>}
-      {!error && !drawMode && hasPanel && !panelArea && !(shown && shown.status !== "ok") && (
-        facts && facts.id === areaId ? (
-          <FactsBlock facts={facts} named={false} />
-        ) : (
-          <div className="panel-body" role="status">
-            <p>{progress ?? (shapeKey ? "Fitting your drawn area. This runs in your browser, once the page's scripts and the region's cells have loaded." : "Loading…")}</p>
-            {shapeKey && INTRO.map((text) => <p key={text} className="note">{text}</p>)}
-          </div>
+      {error && <ResultPaper letter="أ" id={paperId("verdict")} title="Not loaded"><p className="erratum">The data could not be loaded: {error}</p></ResultPaper>}
+      {!error && hasSelection && !panelArea && !(shown && shown.status !== "ok") && (
+        facts && facts.id === areaId ? <FactsPapers facts={facts} /> : (
+          <ResultPaper letter="أ" id={paperId("verdict")} title={shapeKey ? "Fitting your area" : "Loading"}>
+            <p className="marginal" role="status">{progress ?? (shapeKey ? "The record of your shape is worked out in this browser once the region's cells are in." : "Loading…")}</p>
+          </ResultPaper>
         )
       )}
-      {!error && shown && shown.status !== "ok" && <CoverageMessage result={shown} />}
-      {!error && day && !panelArea && !drawMode && (
-        <p className="panel-body">Choose an area to see {day}: its hotspots on the map and how the day compares.</p>
-      )}
-      {!error && !day && panelArea && !isDraft && verdict && <div className="panel-body verdict-wrap"><VerdictLine verdict={verdict} /></div>}
-      {!error && panelArea && !isDraft && (
-        <p className="panel-body brief-link">
-          <Link className="button-link" href={`/brief?${areaId ? `area=${areaId}` : Object.entries(shapeParams(state.shape)).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join("&")}`}>Brief</Link>
-          <span className="note">One printable page for this area: the verdict, the calendar, the critical period, and how sure the numbers are.</span>
-        </p>
-      )}
-      {!error && day && dayArea && (dayVerdict.week || dayVerdict.month) && (
-        <div className="panel-body verdict-wrap">
-          {dayVerdict.week && <VerdictLine verdict={dayVerdict.week} />}
-          {dayVerdict.month && <VerdictLine verdict={dayVerdict.month} />}
-        </div>
-      )}
-      {!error && day && dayArea && (
-        <div className="panel-body day-wrap">
-          <DayPanel area={dayArea} date={day} result={dayResult && dayResult.view.date === day ? dayResult : null} loading={dayLoading}
-            loadingText={progress} onClose={() => update({ day: null })} />
-        </div>
-      )}
+      {!error && shown && shown.status !== "ok" && <CoveragePaper result={shown} />}
       {!error && panelArea && (
-        <Panel area={panelArea} simple={state.mode === "simple"} onExpert={() => update({ mode: "expert" })} recorded={state.recorded} onRecorded={(recorded) => update({ recorded })} finding={finding} named={false} from={from} to={to} view={state.view} month={state.month} year={state.year}
-          note={notes[panelArea.id]} drawn={Boolean(shown)} draft={isDraft}
-          onView={(view) => update({ view })} onMonth={(month) => update({ month })} onYear={(year) => update({ year })} />
+        <Panel area={panelArea} verdict={verdict} day={day} dayVerdict={dayVerdict} dayResult={dayResult} dayLoading={dayLoading} loadingText={progress}
+          onCloseDay={() => update({ day: null })} finding={finding} note={notes[panelArea.id]} drawn={Boolean(shown)} draft={isDraft}
+          recorded={state.recorded} onRecorded={(recorded) => update({ recorded })} from={from} to={to} month={state.month} year={state.year}
+          onMonth={(month) => update({ month })} onYear={(year) => update({ year })} reportHref={reportHref} />
       )}
     </>
   );
 
+  const showHint = !hintRead && !hasSelection && !drawMode && !state.tour;
+
   return (
     <TooltipProvider delayDuration={350}>
-    <div className={`explore panel-${state.panel}${state.timeline && tlRange ? " has-timeline" : ""}${state.basemap === "satellite" ? " is-satellite" : ""}${state.tour ? " has-tour" : ""}`}>
-      <header className="strip paper">
+    <div className={`explore panel-${columnShown ? state.panel : "closed"}${timelineShown ? " has-timeline" : ""}${state.basemap === "satellite" ? " is-satellite" : ""}${state.tour ? " has-tour" : ""}`}>
+      <header className="strip">
         <a className="brand" href="/"><Seal /><h1 className="sr-only">Zij: fire on one scale</h1></a>
         <p className="readout">
           <span ref={cursorEl} className="readout-cursor">Move over the map</span>
@@ -555,185 +447,158 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
         </p>
         <nav aria-label="Pages">
           <Link href={`/downloads${q}`}>Downloads</Link>
-          <Link href={`/how-it-works${q}`}>How it works</Link>
+          <Pop open={helpMenu} onOpenChange={setHelpMenu} side="bottom" align="end" label="Help"
+            trigger={<button type="button" className={`nav-menu${helpMenu ? " is-open" : ""}`} aria-label="Help: the tour, and how it works">Help <Icon name="chevron" size={16} /></button>}>
+            <div className="menu">
+              <button type="button" onClick={() => { setHelpMenu(false); goTour(1); }}>Take the 60-second tour</button>
+              <Link className="menu-link" href={`/how-it-works${q}`} onClick={() => setHelpMenu(false)}>How it works</Link>
+            </div>
+          </Pop>
         </nav>
       </header>
 
       <div className="mapwrap">
         {!mapWanted && <div className="map map-waiting">Loading the map…</div>}
-        {mapWanted && <MapView basemap={state.basemap} date={mapDate} areas={hidden("outlines") ? [] : index?.areas ?? []} selected={areaId}
-          onSelect={(id) => update({ area: id, shape: null, month: null })}
+        {mapWanted && <MapView basemap={state.basemap} date={mapDate} sky={state.sky} areas={hidden("outlines") ? [] : index?.areas ?? []} selected={areaId}
+          onSelect={(id) => choose(id)} onSketchStart={() => loadCellsIndex().catch(() => undefined)}
           shape={drawMode || hidden("outlines") ? null : state.shape} drawMode={drawMode} onDraft={onDraft} onDrawn={onDrawn} hotspots={hotspots}
           chrome={false} tags onMap={setMap} onCursor={onCursor} fitPadding={fitPadding} />}
       </div>
 
-      <div className="left-tools" role="group" aria-label="Map controls">
-        <Tip label="Zoom in" side="right"><button type="button" onClick={() => map?.zoomIn()} aria-label="Zoom in"><Icon name="plus" /></button></Tip>
-        <Tip label="Zoom out" side="right"><button type="button" onClick={() => map?.zoomOut()} aria-label="Zoom out"><Icon name="minus" /></button></Tip>
-        <Tip label="Go to coordinates" side="right"><button type="button" onClick={() => { setDrawMenu(false); setGoTo(true); }} aria-label="Go to coordinates"><Icon name="location" /></button></Tip>
+      <div className="left-tools">
+        <div className="tool-group slip" role="group" aria-label="Move the map">
+          <Tip label="Zoom in" side="right"><button type="button" onClick={() => map?.zoomIn()} aria-label="Zoom in"><Icon name="plus" /></button></Tip>
+          <Tip label="Zoom out" side="right"><button type="button" onClick={() => map?.zoomOut()} aria-label="Zoom out"><Icon name="minus" /></button></Tip>
+          <Tip label="Go to coordinates" side="right"><button type="button" onClick={() => setGoTo(true)} aria-label="Go to coordinates"><Icon name="location" /></button></Tip>
+          {Math.abs(bearing) > 0.5 && (
+            <Tip label="Face north (middle-drag turns the map)" side="right">
+              <button type="button" className="compass" onClick={() => map?.easeTo({ bearing: 0, duration: 400 })} aria-label="Face north">
+                <span style={{ transform: `rotate(${-bearing}deg)` }}><Icon name="north" /></span>
+              </button>
+            </Tip>
+          )}
+        </div>
+        <div className="tool-group slip" role="group" aria-label="Tools">
+          <Pop open={drawMenu} onOpenChange={setDrawMenu} side="right" align="start" label="Draw or choose an area"
+            trigger={<button type="button" className={drawMenu || drawMode ? "is-active" : ""} aria-label="Draw or choose an area"><Icon name="draw" /></button>}>
+            <div className="menu draw-menu">
+              <p className="plate-mark">Draw</p>
+              <button type="button" className={drawMode === "box" ? "is-active" : ""} onClick={() => startDraw("box")}>A box</button>
+              <button type="button" className={drawMode === "polygon" ? "is-active" : ""} onClick={() => startDraw("polygon")}>A polygon</button>
+              <button type="button" className={drawMode === "lasso" ? "is-active" : ""} onClick={() => startDraw("lasso")}>A free shape</button>
+              {!coarse && <p className="marginal">Or on the map: right-drag for a box, Alt + right-drag for a free shape.</p>}
+              {saved.length > 0 && <p className="plate-mark">Your areas</p>}
+              {saved.map((a) => (
+                <div key={a.id} className="menu-row">
+                  <button type="button" className={JSON.stringify(a.shape) === shapeKey ? "is-active" : ""}
+                    onClick={() => { setDrawMenu(false); setDrawMode(null); update({ shape: a.shape, area: null, month: null, panel: openResults }); }}>{a.name}</button>
+                  <Tip label={`Forget ${a.name}`}><button type="button" className="icon-button" aria-label={`Forget ${a.name}`} onClick={() => forgetArea(a.id)}><Icon name="close" size={16} /></button></Tip>
+                </div>
+              ))}
+              <p className="plate-mark">Presets</p>
+              {(index?.areas ?? []).map((a) => (
+                <button key={a.id} type="button" className={a.id === areaId ? "is-active" : ""} onClick={() => choose(a.id)}>{a.name}<span className="menu-aside">{a.country}</span></button>
+              ))}
+            </div>
+          </Pop>
+          <Tip label="Save the map as a PNG" side="right"><button type="button" onClick={capture} aria-label="Save the map as a PNG"><Icon name="capture" /></button></Tip>
+          <Tip label="Copy a link to this view" side="right"><button type="button" onClick={share} aria-label="Copy a link to this view"><Icon name="share" /></button></Tip>
+        </div>
       </div>
 
-      <Modal open={goTo} onOpenChange={setGoTo} title="Go to coordinates">
-        <GoTo onGo={goToPoint} onBox={() => { setGoTo(false); setShowCoords(true); setOpen((now) => ({ ...now, area: true })); update({ panel: closed ? "open" : state.panel }); }} />
-      </Modal>
-      <Tip label={state.basemap === "satellite" ? "Switch to the Zij atlas" : "Switch to NASA satellite imagery"} side="right">
-        <button type="button" className={`basemap-tile is-${state.basemap === "satellite" ? "atlas" : "satellite"}`}
-          style={state.basemap === "satellite" ? undefined : { backgroundImage: `url("${satelliteThumb(mapDate)}")` }}
-          aria-label={state.basemap === "satellite" ? "Basemap: NASA satellite. Switch to the Zij atlas" : "Basemap: Zij atlas. Switch to NASA satellite imagery"}
-          onClick={() => update({ basemap: state.basemap === "satellite" ? "zij" : "satellite" })}>
-          <span>{state.basemap === "satellite" ? "Atlas" : "Satellite"}</span>
-        </button>
-      </Tip>
+      <GoToDialog open={goTo} onOpenChange={setGoTo} shape={state.shape} onGo={goToPoint}
+        onBox={(box) => { setGoTo(false); setDrawMode(null); update({ shape: box, area: null, month: null, panel: openResults }); }} />
+
+      <div className="basemap">
+        <Tip label={state.basemap === "satellite" ? "Switch to the Zij atlas" : "Switch to NASA satellite imagery"} side="right">
+          <button type="button" className={`basemap-tile is-${state.basemap === "satellite" ? "atlas" : "satellite"}`}
+            style={state.basemap === "satellite" ? undefined : { backgroundImage: `url("${satelliteThumb()}")` }}
+            aria-label={state.basemap === "satellite" ? "Basemap: NASA satellite. Switch to the Zij atlas" : "Basemap: Zij atlas. Switch to NASA satellite imagery"}
+            onClick={() => update({ basemap: state.basemap === "satellite" ? "zij" : "satellite" })}>
+            <span>{state.basemap === "satellite" ? "Atlas" : "Satellite"}</span>
+          </button>
+        </Tip>
+        {state.basemap === "satellite" && (
+          <div className="sky slip">
+            <Lever label="Satellite picture" off="Cloud-free" on="That day's sky" checked={state.sky} onChange={(sky) => update({ sky })} />
+            {state.sky && <span className="sky-date">{shortDate(mapDate)}</span>}
+          </div>
+        )}
+        <p className="map-credit">Fire data: NASA FIRMS · Imagery: NASA GIBS · Map: Natural Earth · Not affiliated with or endorsed by NASA</p>
+      </div>
+
+      {showHint && (
+        <Paper as="div" kind="slip" seed="hint" className="first-hint" role="note">
+          <p>{coarse ? "Press Draw to draw an area, or tap a named one." : <>Right-drag to draw a box · <kbd>Alt</kbd> + right-drag for a free shape · or click a named area</>}</p>
+          <button type="button" className="icon-button" aria-label="Got it" onClick={readHint}><Icon name="close" size={16} /></button>
+        </Paper>
+      )}
       {drawMode && (
-        <p className="map-hint paper" role="status">
-          {drawMode === "box" ? "Click one corner, move, and click the opposite corner." : "Click each corner; click the first point again to close the shape."}
-          {" "}The panel follows as you draw. <button type="button" className="link" onClick={() => setDrawMode(null)}>Stop drawing</button>
+        <p className="map-hint slip" role="status">
+          {drawMode === "box" ? "Drag a box, or click one corner and then the other." : drawMode === "lasso" ? "Hold and draw around the area." : "Click each corner; click the first point again to close the shape."}
+          {" "}<button type="button" className="catchword" onClick={() => setDrawMode(null)}>Stop</button>
         </p>
       )}
+      {selection && !drawMode && map && (
+        <AreaMenu map={map} shape={selection} insets={insets} docked={docked} chips={chips}
+          day={day} lastDay={lastDay} onDay={(next) => update({ day: next, days: null })}
+          from={from} to={to} rangeMin={span ? `${span[0]}-01` : "2000-11-01"} onRange={(a, b) => update({ from: a, to: b })}
+          timeline={state.timeline} onTimeline={() => update({ timeline: !state.timeline })}
+          layers={{ viirs: !hidden("viirs"), modis: !hidden("modis"), outlines: !hidden("outlines"), counts: countsReady ? counts : null, onLayer: setLayer }}
+          save={shapeKey && state.shape ? {
+            saved: savedHere,
+            onSave: (name) => { const a = saveArea(name, state.shape!); setToast(`Saved as ${a.name}: it is under Draw, Your areas.`); },
+            onForget: (id) => { forgetArea(id); setToast("Forgotten."); },
+          } : null}
+          clearLabel={shapeKey ? "Clear the drawn area" : "Deselect the area"} onClear={() => update({ shape: null, area: null, month: null, day: null, days: null })} />
+      )}
       {tourStep && state.tour && (
-        <section className="tour paper" aria-label="Tour" aria-live="polite">
-          <p className="tour-count">Tour, step {state.tour} of {TOUR.length}</p>
+        <Paper as="section" kind="card" seed={`tour-${state.tour}`} className="tour" aria-label="Tour" aria-live="polite">
+          <span className="pin" style={{ left: "50%", top: 12 }} aria-hidden="true" />
+          <p className="plate-mark">Tour · {state.tour} of {TOUR.length}</p>
           <h2>{tourStep.title}</h2>
           <p>{tourStep.text}</p>
           <div className="tour-acts">
-            <button type="button" disabled={state.tour === 1} onClick={() => goTour(state.tour! - 1)}>Back</button>
+            <button type="button" className="catchword" disabled={state.tour === 1} onClick={() => goTour(state.tour! - 1)}>Back</button>
             {state.tour < TOUR.length
-              ? <button type="button" className="is-active" onClick={() => goTour(state.tour! + 1)}>Next</button>
-              : tourStep.link && <Link className="button-link is-active" href={tourStep.link.href}>{tourStep.link.label}</Link>}
-            <button type="button" className="link" onClick={() => goTour(null)}>{state.tour < TOUR.length ? "Skip the tour" : "End the tour"}</button>
+              ? <button type="button" className="stamp" onClick={() => goTour(state.tour! + 1)}>Next</button>
+              : tourStep.link && <Link className="stamp" href={tourStep.link.href}>{tourStep.link.label}</Link>}
+            <button type="button" className="catchword tour-skip" onClick={() => goTour(null)}>{state.tour < TOUR.length ? "Skip the tour" : "End the tour"}</button>
           </div>
-        </section>
+        </Paper>
       )}
-      {progress && <p className="map-progress paper" role="status">{progress}</p>}
-      {toast && <p className="toast paper" role="status">{toast}</p>}
+      {progress && <p className="map-progress slip" role="status">{progress}</p>}
+      {toast && <p className="toast slip" role="status">{toast}</p>}
 
-      <aside className={`sheet paper${wide ? " is-wide" : ""}`} hidden={closed} aria-label="Panel">
-        <header className="sheet-head">
-          <p>{(panelArea?.country ?? areaEntry?.country) && <span>{shown ? "Your area, " : ""}{panelArea?.country ?? areaEntry?.country}</span>}<strong>{areaName}</strong></p>
-          <div className="switch mode-switch" role="radiogroup" aria-label="How much to show">
-            <button type="button" role="radio" aria-checked={state.mode === "simple"} className={state.mode === "simple" ? "is-active" : ""} onClick={() => update({ mode: "simple" })}>Simple</button>
-            <button type="button" role="radio" aria-checked={state.mode === "expert"} className={state.mode === "expert" ? "is-active" : ""} onClick={() => update({ mode: "expert" })}>Expert</button>
-          </div>
-          <Tip label={wide ? "Narrow the panel" : "Widen to half the screen"} side="bottom">
-            <button type="button" className="icon-button" onClick={() => update({ panel: wide ? "open" : "wide" })} aria-label={wide ? "Narrow the panel" : "Widen the panel to half the screen"}>
-              <Icon name={wide ? "shrink" : "expand"} />
-            </button>
-          </Tip>
-          <Tip label="Close the panel" side="bottom">
-            <button type="button" className="icon-button" onClick={() => update({ panel: "closed" })} aria-label="Close the panel"><Icon name="close" /></button>
-          </Tip>
-        </header>
-        <div className="sheet-body">
-          <details open={open.time} onToggle={toggle("time")}>
-            <summary><span>Time</span><em>{dateText}</em></summary>
-            <div className="section">
-              <div className="chips" role="group" aria-label="Quick choices">
-                {chips.map((chip) => (
-                  <button key={chip.label} type="button" className={chip.on ? "is-active" : ""} aria-pressed={chip.on} disabled={Boolean(chip.off)} title={chip.off} onClick={chip.go}>{chip.label}</button>
-                ))}
-              </div>
-              <div className="fields">
-                <div className="field">
-                  <span>Day</span>
-                  <DayField label="Day" value={day} min="2000-11-01" max={lastDay} onChange={(next) => update({ day: next, days: null })} />
-                </div>
-                <div className="field">
-                  <span>From and to</span>
-                  <RangeField label="From and to" from={from} to={to} min={span ? `${span[0]}-01` : "2000-11-01"} max={lastDay} onChange={(a, b) => update({ from: a, to: b })} />
-                </div>
-              </div>
-              <p className="note">The data ends on {shortDate(lastDay)}: “Today” is that day. A day shows its hotspots on the map; From and To set the calendar and charts.</p>
+      {columnShown && (
+        <aside ref={column} className={`results${wide ? " is-wide" : ""}`} aria-label="Results">
+          <header className="results-head slip">
+            <div className="results-title">
+              <p className="eyebrow">Results</p>
+              <h2>{areaName}</h2>
+              {country && <span className="results-country">{shown ? `Drawn, ${country}` : country}</span>}
             </div>
-          </details>
+            {!docked && (
+              <Tip label={wide ? "Narrow Results" : "Widen to half the screen"} side="bottom">
+                <button type="button" className="icon-button" onClick={() => update({ panel: wide ? "open" : "wide" })} aria-label={wide ? "Narrow Results" : "Widen Results to half the screen"}>
+                  <Icon name={wide ? "shrink" : "expand"} />
+                </button>
+              </Tip>
+            )}
+            <Tip label="Fold Results away" side="bottom">
+              <button type="button" className="icon-button" onClick={() => update({ panel: "closed" })} aria-label="Fold Results away"><Icon name="fold" /></button>
+            </Tip>
+          </header>
+          {results}
+        </aside>
+      )}
+      {hasColumn && closed && <button type="button" className="results-tab bookmark" onClick={() => update({ panel: "open" })}>Results</button>}
 
-          <details open={open.area} onToggle={toggle("area")}>
-            <summary><span>Area</span><em>{areaEntry ? `Preset, ${areaEntry.country}` : shapeKey ? (Array.isArray(state.shape) ? "Drawn box" : "Drawn polygon") : drawMode ? "Drawing" : "None chosen"}</em></summary>
-            <div className="section">
-              <div className="field">
-                <span>Preset areas</span>
-                <Select label="Preset areas" placeholder="Choose an area" value={areaId ?? (shapeKey ? "drawn" : null)}
-                  options={[...(shapeKey ? [{ value: "drawn", label: "Your drawn area" }] : []), ...(index?.areas ?? []).map((a) => ({ value: a.id, label: `${a.name}, ${a.country}` })), ...(areaId ? [{ value: "none", label: "No area" }] : [])]}
-                  onChange={(next) => { if (next === "drawn") return; setDrawMode(null); update({ area: next === "none" ? null : next, shape: null, month: null }); }} />
-              </div>
-              <div className="switch" role="group" aria-label="Draw your own area">
-                <button type="button" className={drawMode === "box" ? "is-active" : ""} aria-pressed={drawMode === "box"} onClick={() => startDraw("box")}>Draw box</button>
-                <button type="button" className={drawMode === "polygon" ? "is-active" : ""} aria-pressed={drawMode === "polygon"} onClick={() => startDraw("polygon")}>Draw polygon</button>
-                <button type="button" className={showCoords ? "is-active" : ""} aria-pressed={showCoords} onClick={() => setShowCoords(!showCoords)}>Type coordinates</button>
-                {shapeKey && <button type="button" onClick={() => update({ shape: null, month: null })}>Clear</button>}
-              </div>
-              {showCoords && <CoordinateEntry key={shapeKey} shape={state.shape} onBox={(box) => { setDrawMode(null); update({ shape: box, area: null, month: null }); }} />}
-              <p className="note">Your own area can be drawn in {COVERED}.</p>
-            </div>
-          </details>
-
-          <details ref={layersEl} open={open.layers} onToggle={toggle("layers")}>
-            <summary><span>Layers</span><em>{state.basemap === "satellite" ? "NASA satellite" : "Zij atlas"}{countsReady ? `, ${(counts.viirs + counts.modis).toLocaleString("en")} hotspots` : ""}{state.hide.length ? `, ${state.hide.length} off` : ""}</em></summary>
-            <div className="section">
-              <p className="section-label">Hotspots{showingDays ? `, ${dateText}` : ""}</p>
-              <Check label="VIIRS hotspots" checked={!hidden("viirs")} onChange={(on) => setLayer("viirs", on)}>
-                <span className="mark-viirs" /> VIIRS <b>{countsReady ? counts.viirs.toLocaleString("en") : "–"}</b>
-              </Check>
-              <Check label="MODIS hotspots" checked={!hidden("modis")} onChange={(on) => setLayer("modis", on)}>
-                <span className="mark-modis" /> MODIS <b>{countsReady ? counts.modis.toLocaleString("en") : "–"}</b>
-              </Check>
-              {!showingDays && <p className="note">No day or week is chosen, so there is nothing to count. Pick a day or “7 days” under Time, or open the Timeline.</p>}
-              {showingDays && !dayArea && <p className="note">Choose an area to count its hotspots for {dateText}.</p>}
-              {showingDays && dayArea && !countsReady && <p className="note">Counting the hotspots…</p>}
-              {countsReady && <p className="note">Kept detections in this area, {dateText}. The two counts are not on one scale: VIIRS sees smaller fires.</p>}
-              <p className="section-label">Outlines</p>
-              <Check label="Area outlines and names" checked={!hidden("outlines")} onChange={(on) => setLayer("outlines", on)}>Area outlines and names</Check>
-              <p className="section-label">Basemap</p>
-              <div className="switch" role="radiogroup" aria-label="Basemap">
-                {BASEMAPS.map((b) => (
-                  <button key={b.id} type="button" role="radio" className={state.basemap === b.id ? "is-active" : ""} aria-checked={state.basemap === b.id} onClick={() => update({ basemap: b.id })}>
-                    {b.id === "zij" ? "Zij atlas" : "NASA satellite"}
-                  </button>
-                ))}
-              </div>
-              {state.basemap === "satellite" && <p className="note">NASA GIBS true colour, {shortDate(mapDate)}.</p>}
-            </div>
-          </details>
-
-          <details open={open.results} onToggle={toggle("results")} className="results" aria-live="polite">
-            <summary><span>Results</span><em>{!hasPanel ? "Choose an area" : day ? shortDate(day) : state.mode === "simple" ? "The short answer" : VIEW_WORDS[state.view]}</em></summary>
-            {results}
-          </details>
-        </div>
-      </aside>
-      {closed && <button type="button" className="sheet-tab paper" onClick={() => update({ panel: "open" })}>Open the panel</button>}
-
-      {state.timeline && tlRange && tlDays.length > 1 && (
+      {timelineShown && (
         <Timeline days={tlDays} day={day} counts={tlCounts}
           note={!dayArea ? "Choose an area to see its hotspots" : !range ? "Loading the hotspots…" : null}
           onDay={(next) => update({ day: next, days: null }, true)} onClose={() => update({ timeline: false })} />
       )}
-
-      <nav className="dock paper" aria-label="Tools">
-        <Pop open={drawMenu} onOpenChange={setDrawMenu} side="top" align="center" label="Draw your own area"
-          trigger={<button type="button" className={drawMenu || drawMode ? "is-active" : ""} aria-label="Draw your own area"><Icon name="draw" /><span>Draw</span></button>}>
-          <div className="menu">
-            <button type="button" className={drawMode === "box" ? "is-active" : ""} onClick={() => startDraw("box")}>Draw a box</button>
-            <button type="button" className={drawMode === "polygon" ? "is-active" : ""} onClick={() => startDraw("polygon")}>Draw a polygon</button>
-            {shapeKey && <button type="button" onClick={() => { setDrawMenu(false); update({ shape: null, month: null }); }}>Clear the drawn area</button>}
-          </div>
-        </Pop>
-        {dock.map((tool) => (
-          <Tip key={tool.id} label={tool.tip}>
-            <button type="button" className={tool.on ? "is-active" : ""} aria-pressed={tool.on} aria-label={tool.tip} onClick={tool.go}>
-              <Icon name={tool.id} /><span>{tool.label}</span>
-            </button>
-          </Tip>
-        ))}
-        <Pop open={helpMenu} onOpenChange={setHelpMenu} side="top" align="center" label="Help"
-          trigger={<button type="button" className={helpMenu ? "is-active" : ""} aria-label="Help: the tour, and how it works"><Icon name="help" /><span>Help</span></button>}>
-          <div className="menu">
-            <button type="button" onClick={() => { setHelpMenu(false); goTour(1); }}>Take the 60-second tour</button>
-            <Link className="menu-link" href={`/how-it-works${q}`}>How it works: the method and the numbers</Link>
-          </div>
-        </Pop>
-      </nav>
-
-      <p className="map-credit">Fire data: NASA FIRMS. Imagery: NASA GIBS. Map: Natural Earth. Not affiliated with or endorsed by NASA.</p>
     </div>
     </TooltipProvider>
   );

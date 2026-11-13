@@ -12,6 +12,7 @@ import * as RTooltip from "@radix-ui/react-tooltip";
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { UNIT, UNIT_EXACT } from "@/lib/format";
 import { DayPicker, type DateRange, type DropdownProps } from "react-day-picker";
+import { PaperBack } from "./Paper";
 
 export * as Tabs from "@radix-ui/react-tabs";
 export const TooltipProvider = RTooltip.Provider;
@@ -92,6 +93,18 @@ export function UnitTerm() {
   );
 }
 
+/** A two-position brass lever: a real checkbox, with both of its positions named. */
+export function Lever({ label, off, on, checked, onChange }: { label: string; off: string; on: string; checked: boolean; onChange: (checked: boolean) => void }) {
+  return (
+    <label className="lever">
+      <input type="checkbox" role="switch" checked={checked} aria-label={`${label}: ${checked ? on : off}`} onChange={(e) => onChange(e.target.checked)} />
+      <span className="track" aria-hidden="true"><span className="knob" /></span>
+      <span className="off" aria-hidden="true">{off}</span>
+      <span className="on" aria-hidden="true">{on}</span>
+    </label>
+  );
+}
+
 // ------------------------------------------------------------------ popover, dialog
 
 export function Pop({ open, onOpenChange, trigger, children, side = "bottom", align = "start", label }: {
@@ -102,7 +115,8 @@ export function Pop({ open, onOpenChange, trigger, children, side = "bottom", al
     <RPopover.Root open={open} onOpenChange={onOpenChange}>
       <RPopover.Trigger asChild>{trigger}</RPopover.Trigger>
       <RPopover.Portal>
-        <RPopover.Content className="ui-pop" side={side} align={align} sideOffset={8} collisionPadding={8} aria-label={label}>
+        <RPopover.Content className="ui-pop paper is-card" side={side} align={align} sideOffset={8} collisionPadding={8} aria-label={label}>
+          <PaperBack kind="card" seed={`pop-${label}`} />
           {children}
         </RPopover.Content>
       </RPopover.Portal>
@@ -126,8 +140,10 @@ export function Modal({ open, onOpenChange, title, children }: { open: boolean; 
     <RDialog.Root open={open} onOpenChange={onOpenChange}>
       <RDialog.Portal>
         <RDialog.Overlay className="ui-overlay" />
-        <RDialog.Content className="ui-dialog" aria-describedby={undefined}
+        <RDialog.Content className="ui-dialog paper" aria-describedby={undefined}
           onCloseAutoFocus={(event) => { event.preventDefault(); outside.current?.focus(); }}>
+          <PaperBack kind="sheet" seed={`dialog-${title}`} />
+          <span className="jadwal" aria-hidden="true" />
           <div className="ui-dialog-head">
             <RDialog.Title className="ui-dialog-title">{title}</RDialog.Title>
             <RDialog.Close className="icon-button" aria-label="Close"><Cross /></RDialog.Close>

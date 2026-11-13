@@ -12,35 +12,36 @@ export interface TourStep {
 }
 
 // Everything a step does not set is put back to its default, so steps never inherit from each other.
+// `view` names the paper of Results the step talks about: it is brought into view.
 const CLEAN: Partial<AppState> = {
   area: null, shape: null, day: null, days: null, from: null, to: null, view: "calendar", month: null, year: null,
-  basemap: "zij", hide: [], panel: "open", timeline: false, mode: "simple", recorded: false,
+  basemap: "zij", sky: false, hide: [], panel: "open", timeline: false, recorded: false,
 };
 
 export const TOUR: TourStep[] = [
   {
     title: "The jump",
     text: "The Nile Delta's burning seasons as the satellites recorded them: MODIS in blue until 2011, VIIRS in red from 2012. The record leaps in one year. Nothing changed on the ground. The instrument did: VIIRS sees much smaller fires.",
-    state: { area: "nile-delta", mode: "expert", view: "series", recorded: true },
+    state: { area: "nile-delta", view: "series", recorded: true },
   },
   {
     title: "The correction",
     text: "The same seasons on one scale. Zij learns, from the years both flew, what VIIRS would have counted when MODIS counted a given amount. The ink whiskers are the likely range of each year converted from MODIS.",
-    state: { area: "nile-delta", mode: "expert", view: "series" },
+    state: { area: "nile-delta", view: "series" },
   },
   {
     title: "2018, found on its own",
     text: "Nobody told Zij about 2018. On one scale it stands out by itself: the quietest burning season of the record, far below the usual range. These are the seasons the record flags as unusual.",
-    state: { area: "nile-delta", mode: "expert", view: "anomalies" },
+    state: { area: "nile-delta", view: "anomalies" },
   },
   {
     title: "The Chilecito fire",
-    text: "29 July 2026, Argentina. Each dot is a VIIRS detection and each ring a MODIS one, over that day's satellite picture. The panel says how unusual the day's week and month were for this place.",
-    state: { area: "chilecito", day: "2026-07-29", basemap: "satellite" },
+    text: "29 July 2026, Argentina. Each dot is a VIIRS detection and each ring a MODIS one, over that day's sky seen from orbit. Results say how unusual the day's week and month were for this place.",
+    state: { area: "chilecito", day: "2026-07-29", basemap: "satellite", sky: true },
   },
   {
     title: "Draw your own area",
-    text: "The answer is not only for the ten areas. This box was drawn on the map, and its record was fitted in your browser. Press Draw to make your own, anywhere in Egypt, mainland Portugal or Argentina.",
+    text: "The answer is not only for the ten areas. This box was drawn on the map, and its record was fitted in your browser. Right-drag on the map to draw a box, or press Draw, anywhere in Egypt, mainland Portugal or Argentina.",
     state: { shape: [30.5, 30.6, 31.5, 31.4] },
   },
   {

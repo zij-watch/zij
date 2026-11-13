@@ -28,13 +28,23 @@ export const BASEMAPS: { id: Basemap; label: string }[] = [
 export interface BasemapOptions {
   /** Names of places, countries, seas and rivers. On unless set to false. */
   labels?: boolean;
+  /** Satellite only: that day's sky (clouds, smoke, the dark of polar night), not the cloud-free picture. */
+  sky?: boolean;
 }
 
 const ATLAS = "/atlas";
 export const MAX_ZOOM = 9;
 
-// NASA GIBS true-colour layers, by the dates each one covers.
+// NASA GIBS. The satellite basemap is Blue Marble: a cloud-free picture of the whole Earth (NASA's
+// Next Generation composite, 500 m), the same every day, with no polar night and no gaps between
+// orbits. On request it shows that day's sky instead: the true-colour picture of the chosen day,
+// with its clouds and smoke. That picture is daylight only: where the sun was too low (the high
+// north in November, say) GIBS has no picture and its JPEG tiles are black. Its PNG tiles are no
+// better: they are black there too (checked on 12 Nov 2026), so the faster JPEG is kept.
 const GIBS = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best";
+const BLUE_MARBLE = `${GIBS}/BlueMarble_NextGeneration/default/GoogleMapsCompatible_Level8`;
+
+// NASA GIBS true-colour layers, by the dates each one covers.
 function gibsLayer(date: string): string {
   if (date < "2012-01-20") return "MODIS_Terra_CorrectedReflectance_TrueColor";
   if (date <= "2026-11-01") return "VIIRS_SNPP_CorrectedReflectance_TrueColor";
@@ -44,9 +54,9 @@ function gibsLayer(date: string): string {
 const hasText = (layer: StyleSpecification["layers"][number]) =>
   layer.type === "symbol" && layer.layout !== undefined && "text-field" in layer.layout;
 
-/** One small satellite picture of the Nile Delta for a day, for the basemap tile in the corner of the map. */
-export function satelliteThumb(date: string): string {
-  return `${GIBS}/${gibsLayer(date)}/default/${date}/GoogleMapsCompatible_Level9/6/26/37.jpg`;
+/** One small cloud-free satellite picture of the Nile Delta, for the basemap tile in the corner of the map. */
+export function satelliteThumb(): string {
+  return `${BLUE_MARBLE}/6/26/37.jpeg`;
 }
 
 /** The "Zij" basemap: the atlas sheet. Everything it reads is served by this site. */
@@ -66,20 +76,28 @@ function zijStyle(options: BasemapOptions): StyleSpecification {
   return tiered(style);
 }
 
-/** The "Satellite" basemap: NASA GIBS true colour for one day, with borders and place names on top. */
+/** The "Satellite" basemap: NASA GIBS, cloud-free or that day's sky, with borders and place names on top. */
 function satelliteStyle(date: string, options: BasemapOptions): StyleSpecification {
   const c = COLOURS;
   const style: StyleSpecification = {
     version: 8,
     "font-faces": fontFaces(ATLAS),
     sources: {
-      gibs: {
-        type: "raster",
-        tiles: [`${GIBS}/${gibsLayer(date)}/default/${date}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`],
-        tileSize: 256,
-        maxzoom: 9,
-        attribution: "Imagery: NASA GIBS",
-      },
+      gibs: options.sky
+        ? {
+            type: "raster",
+            tiles: [`${GIBS}/${gibsLayer(date)}/default/${date}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`],
+            tileSize: 256,
+            maxzoom: 9,
+            attribution: "Imagery: NASA GIBS",
+          }
+        : {
+            type: "raster",
+            tiles: [`${BLUE_MARBLE}/{z}/{y}/{x}.jpeg`],
+            tileSize: 256,
+            maxzoom: 8,
+            attribution: "Imagery: NASA GIBS, Blue Marble",
+          },
       countries: { type: "geojson", data: versioned("/data/basemap/countries.json"), attribution: "Outlines: Natural Earth" },
     },
     layers: [
@@ -111,7 +129,7 @@ function satelliteStyle(date: string, options: BasemapOptions): StyleSpecificati
 }
 
 /**
- * The style of a basemap. `date` (YYYY-MM-DD) is used by the satellite basemap only.
+ * The style of a basemap. `date` (YYYY-MM-DD) is used by the satellite basemap, for that day's sky only.
  */
 export function getBasemapStyle(basemap: Basemap, date?: string, options: BasemapOptions = {}): StyleSpecification {
   if (basemap === "satellite" && date) return satelliteStyle(date, options);

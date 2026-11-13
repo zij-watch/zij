@@ -11,7 +11,7 @@ import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { useEffect, useRef } from "react";
 import type { Area } from "@/lib/data";
-import { num } from "@/lib/format";
+import { num, UNIT } from "@/lib/format";
 import { COLOURS, FONT_TEXT } from "@/lib/tokens";
 
 echarts.use([BarChart, CustomChart, GridComponent, TooltipComponent, MarkLineComponent, CanvasRenderer]);
@@ -27,10 +27,11 @@ export default function SeriesChart({ area, fromYear, toYear, normal, recorded =
     if (!element.current) return;
     const chart = echarts.init(element.current);
     chartRef.current = chart;
-    const resize = () => chart.resize();
-    window.addEventListener("resize", resize);
+    // It follows its paper: the window, and Results widening or narrowing.
+    const observer = new ResizeObserver(() => chart.resize());
+    observer.observe(element.current);
     return () => {
-      window.removeEventListener("resize", resize);
+      observer.disconnect();
       chart.dispose();
       chartRef.current = null;
     };
@@ -50,7 +51,7 @@ export default function SeriesChart({ area, fromYear, toYear, normal, recorded =
       animationDuration: 0,
       animationDurationUpdate: 800,
       animationEasingUpdate: "cubicOut",
-      grid: { left: 58, right: 14, top: 16, bottom: 30 },
+      grid: { left: 66, right: 14, top: 16, bottom: 30 },
       tooltip: {
         trigger: "axis",
         backgroundColor: c["ground-raised"],
@@ -64,7 +65,10 @@ export default function SeriesChart({ area, fromYear, toYear, normal, recorded =
         },
       },
       xAxis: { type: "category", data: rows.map((i) => String(s.year[i])), axisLine: { lineStyle: { color: c.rule } }, axisTick: { show: false }, axisLabel: text },
-      yAxis: { type: "value", axisLabel: text, splitLine: { lineStyle: { color: c.rule, opacity: 0.4 } } },
+      yAxis: {
+        type: "value", axisLabel: text, splitLine: { lineStyle: { color: c.rule, opacity: 0.4 } },
+        name: recorded ? "fire cell-days, raw" : `${UNIT} per season`, nameLocation: "middle", nameGap: 50, nameTextStyle: { ...text, fontSize: 13 },
+      },
       series: [
         {
           id: "bars",

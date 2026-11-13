@@ -23,11 +23,11 @@ export interface AppState {
   day: string | null; // YYYY-MM-DD, the day view
   days: number | null; // 7: the hotspots of the last 7 days on the map
   hide: string[]; // layers switched off: "viirs", "modis", "outlines"
-  panel: "open" | "wide" | "closed"; // the floating panel
+  panel: "open" | "wide" | "closed"; // the Results column, when there are results: closed means folded away
   timeline: boolean; // the day scrubber along the bottom
   recorded: boolean; // the Seasons tab shows what the satellites recorded, not the harmonized record
   tour: number | null; // the step of the tour, 1 to 6
-  mode: "simple" | "expert"; // how much the panel shows; simple unless the link says expert
+  sky: boolean; // the satellite basemap shows the chosen day's sky (clouds and smoke), not the cloud-free picture
 }
 
 export const LAYERS = ["viirs", "modis", "outlines"] as const;
@@ -61,6 +61,7 @@ export function parseState(params: URLSearchParams): AppState {
     const value = params.get(key);
     return value && pattern.test(value) ? value : null;
   };
+  // `view` names the paper of Results to bring into view; an older link's `mode` is ignored.
   const view = params.get("view") as View;
   return {
     area: pick("area", ID),
@@ -77,9 +78,7 @@ export function parseState(params: URLSearchParams): AppState {
     timeline: params.get("timeline") === "1",
     recorded: params.get("seasons") === "recorded",
     tour: /^[1-6]$/.test(params.get("tour") ?? "") ? Number(params.get("tour")) : null,
-    // Simple unless the link says otherwise. A link that asks for a view, a month's weeks or a year
-    // on the typical year is asking for something only Expert shows, so it opens in Expert.
-    mode: params.get("mode") === "expert" || (!params.get("mode") && (VIEWS.includes(view) && view !== "calendar" || params.has("month") || params.has("year"))) ? "expert" : "simple",
+    sky: params.get("sky") === "1",
     year: /^\d{4}$/.test(params.get("year") ?? "") ? Number(params.get("year")) : null,
   };
 }
@@ -95,6 +94,7 @@ export function useAppState(): [AppState, (patch: Partial<AppState>, quiet?: boo
     // which changes the day many times a minute.
     (patch: Partial<AppState>, quiet = false) => {
       const next = new URLSearchParams(quiet ? window.location.search : params.toString());
+      next.delete("mode"); // Simple and Expert are gone: Results shows everything
       const { shape, ...rest } = patch;
       if (shape !== undefined) {
         for (const [key, value] of Object.entries(shapeParams(shape))) {

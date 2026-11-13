@@ -2,9 +2,11 @@
 // what Zij is, the preset areas as plain links, and, for a preset URL, that area's headline facts.
 // No hooks: it renders on the server, and Explore and Downloads show it until their own data is in.
 
+import type { ReactNode } from "react";
 import type { AreaIndexEntry } from "@/lib/data";
 import type { AreaFacts } from "@/lib/facts";
 import type { Verdict } from "@/lib/verdict";
+import Paper from "./Paper";
 
 export const INTRO = [
   "Zij puts 26 years of satellite fire detections on one scale. MODIS has watched fires since 2000 and VIIRS since 2012, and VIIRS sees many more of them.",
@@ -34,44 +36,34 @@ export function VerdictLine({ verdict }: { verdict: Verdict }) {
   );
 }
 
-export function FactsBlock({ facts, named = true }: { facts: AreaFacts; named?: boolean }) {
+/** One paper of Results, as the server sends it (the same markup as ResultPaper in Panel.tsx). */
+function ShellPaper({ letter, title, id, children }: { letter: string; title: string; id: string; children: ReactNode }) {
   return (
-    <div className="panel-body shell-facts">
-      {named && <p className="eyebrow">{facts.country}</p>}
-      {named && <h2>{facts.name}</h2>}
-      {facts.verdict && <VerdictLine verdict={facts.verdict} />}
-      <p className="note">Unit: {facts.unitLabel}. Data to {facts.lastFullDay}. The calendar and charts are loading.</p>
-      <section className="block">
-        <h3>Busiest months</h3>
-        <p>{facts.busiestMonths.join(", ")}. Season: {facts.season}.</p>
-      </section>
-      {facts.thisMonth && (
-        <section className="block">
-          <h3>This month against the median</h3>
-          <p>{facts.thisMonth}</p>
-        </section>
-      )}
-      {facts.anomalies.length > 0 && (
-        <section className="block">
-          <h3>Most unusual seasons</h3>
-          <ul className="plain">
-            {facts.anomalies.map((line) => <li key={line}>{line}</li>)}
-          </ul>
-        </section>
-      )}
-    </div>
+    <Paper as="section" kind="sheet" id={id} seed={id} className="result">
+      <header className="result-head"><span className="abjad" aria-hidden="true">{letter}</span><h3 className="plate-mark">{title}</h3></header>
+      {children}
+    </Paper>
   );
 }
 
-export function IntroBlock({ areas, base = "/explore" }: { areas: AreaIndexEntry[]; base?: string }) {
+/** A preset's headline facts as papers: what the server can say before the charts load. */
+export function FactsPapers({ facts }: { facts: AreaFacts }) {
   return (
-    <div className="panel-body">
-      <p className="eyebrow">Zij</p>
-      <h2>26 years of fire, on one scale</h2>
-      {INTRO.map((text) => <p key={text}>{text}</p>)}
-      <p>Choose an area:</p>
-      <AreaLinks areas={areas} base={base} />
-    </div>
+    <>
+      <ShellPaper letter="أ" id="paper-verdict" title="Verdict">
+        {facts.verdict ? <VerdictLine verdict={facts.verdict} /> : <p className="marginal">No verdict for this area.</p>}
+        <p className="marginal" role="status">The calendar and charts are loading. Data to {facts.lastFullDay}.</p>
+      </ShellPaper>
+      {facts.thisMonth && <ShellPaper letter="ب" id="paper-month" title="This month so far"><p>{facts.thisMonth}</p></ShellPaper>}
+      <ShellPaper letter="ج" id="paper-ranked" title="Busiest months">
+        <p>{facts.busiestMonths.join(", ")}. Season: {facts.season}.</p>
+      </ShellPaper>
+      {facts.anomalies.length > 0 && (
+        <ShellPaper letter="د" id="paper-anomalies" title="Unusual seasons">
+          <ul className="plain">{facts.anomalies.map((line) => <li key={line}>{line}</li>)}</ul>
+        </ShellPaper>
+      )}
+    </>
   );
 }
 
@@ -92,13 +84,21 @@ export function Seal() {
 export function ExploreShell({ areas, facts }: { areas: AreaIndexEntry[]; facts: AreaFacts | null }) {
   return (
     <main className="explore panel-open">
-      <header className="strip paper">
+      <header className="strip">
         <a className="brand" href="/"><Seal /><h1 className="sr-only">Zij: fire on one scale</h1></a>
-        <p className="readout"><span className="readout-area">Fire on one scale</span></p>
+        <p className="readout"><span className="readout-area">{facts?.name ?? "Fire on one scale"}</span></p>
         <nav aria-label="Pages"><a href="/downloads">Downloads</a><a href="/how-it-works">How it works</a></nav>
       </header>
       <div className="mapwrap"><div className="map map-waiting" role="status">Loading the map…</div></div>
-      <aside className="sheet paper">{facts && <header className="sheet-head"><p><span>{facts.country}</span><strong>{facts.name}</strong></p></header>}<div className="sheet-body">{facts ? <FactsBlock facts={facts} named={false} /> : <IntroBlock areas={areas} />}</div></aside>
+      <aside className="results" aria-label="Results">
+        <header className="results-head slip"><div className="results-title"><p className="eyebrow">Results</p><h2>{facts?.name ?? "Zij"}</h2>{facts && <span className="results-country">{facts.country}</span>}</div></header>
+        {facts ? <FactsPapers facts={facts} /> : (
+          <ShellPaper letter="أ" id="paper-intro" title="26 years of fire, on one scale">
+            {INTRO.map((text) => <p key={text}>{text}</p>)}
+            <AreaLinks areas={areas} />
+          </ShellPaper>
+        )}
+      </aside>
     </main>
   );
 }

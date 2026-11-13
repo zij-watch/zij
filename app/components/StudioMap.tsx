@@ -170,6 +170,7 @@ export default function StudioMap() {
         <MapView
           basemap={state.basemap}
           date={date ?? index.last_full_day}
+          sky // the video shows each day's own picture
           areas={outline && area ? [area] : []}
           selected={area?.id ?? null}
           onSelect={noop}
