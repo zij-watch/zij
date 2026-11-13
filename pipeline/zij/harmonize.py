@@ -362,7 +362,7 @@ def build_area(con, name: str, country: str, box, country_cache: dict, last_day:
         if af["mode"] == "blend":
             band["own_season_pct"] = band["season_pct"]
             band["season_pct"] = band["terra_only_season_pct"] = list(p.BLEND_BAND_PCT)
-            band["basis"] = "pooled small-area band from pre-event research (30 to 99 MODIS fire weeks)"
+            band["basis"] = "pooled small-area band (30 to 99 MODIS fire weeks)"
         h = harmonize(rec, af, band)
 
     days = daily(h)

@@ -7,6 +7,8 @@ app/public/data/cells/index.json           weeks, days flown, the country fits, 
 app/public/data/cells/<country>.bin.gz     one row per cell, week and satellite with a kept detection
 ```
 
+**Load a country's file lazily.** The app fetches `index.json` (31 KB) when drawing starts, and a country's `.bin.gz` only when the user's area is in that country (`countriesFor` in `app/lib/fit/cells.ts` says which). Argentina's file is 4.2 MB zipped and 11 MB in memory; Egypt's and Portugal's are under 0.2 MB. Nothing here is needed for the presets.
+
 The numbers are the pipeline's `cell_week_sat` table, nothing else: fire cell-days and kept detections per 0.1 degree cell, ISO week and satellite. No FIRMS rows are in them.
 
 ## `index.json`
@@ -14,6 +16,8 @@ The numbers are the pipeline's `cell_week_sat` table, nothing else: fire cell-da
 | Key | Meaning |
 |---|---|
 | `version` | this format's version |
+| `contract`, `unit`, `unit_label` | as in `DATA_CONTRACT.md`, so a drawn area's document carries them like a preset's |
+| `baseline_years`, `percentiles`, `critical_share` | `[2001, 2025]`, `[10, 90]`, `0.8`: what the typical year, the anomalies and the critical period are measured with |
 | `built_at_utc`, `last_full_day` | when the files were built, and the last whole UTC day of data |
 | `grid_deg` | `0.1` |
 | `first_week`, `n_weeks` | the Monday of week 0, and how many weeks follow. Week `i` starts `7 i` days later |
@@ -57,4 +61,8 @@ For a box, take the cells whose centre is inside it. Then, as `pipeline/zij/buil
 - a sensor-week under `min_week_days` is no data, never zero;
 - a week belongs to the ISO year of its Monday and the month of its Thursday.
 
-`areaRecord` in `app/lib/fit/cells.ts` does exactly this and is tested against the pipeline's numbers for every named area.
+`areaRecord` in `app/lib/fit/cells.ts` does exactly this and is tested against the pipeline's numbers for every named area. It takes a box or a GeoJSON polygon; either way a cell is in the area when its centre is.
+
+## What the app gets from them
+
+`drawnAreaDocument` in `app/lib/fit/panel.ts` returns a document with the keys, units and rounding of a preset file (`DATA_CONTRACT.md`), so one panel renders both. Two differences: a drawn polygon's document has one more key, `polygon` (its `box` is then the box around it), and `built_at_utc` is the time in the browser. `hotspotCounts` gives the kept detections per sensor and satellite for a date range, widened to whole weeks: the cell files are weekly, so single days come from the day view's data, not from here.

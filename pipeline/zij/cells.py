@@ -21,6 +21,7 @@ from . import areas as p
 from . import config as c
 from . import models as m
 from . import validate as v
+from . import harmonize as h
 from .harmonize import EXPORT, slug
 
 OUT = EXPORT / "cells"
@@ -146,6 +147,8 @@ def run() -> None:
 
     index = {
         "version": VERSION,
+        "contract": h.CONTRACT_VERSION, "unit": p.UNIT, "unit_label": p.UNIT_LABEL,
+        "baseline_years": list(h.BASELINE_YEARS), "percentiles": [h.PCT_LOW, h.PCT_HIGH], "critical_share": h.CRITICAL_SHARE,
         "built_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "last_full_day": last_day.isoformat(),
         "grid_deg": c.GRID_DEG,

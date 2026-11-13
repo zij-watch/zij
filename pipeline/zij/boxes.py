@@ -3,7 +3,8 @@
 Our pre-event notes describe two sets and give no coordinates: 10 random
 0.3 degree boxes, and 83 random boxes of 0.2 to 0.8 degree whose blended ones
 (30 to 99 MODIS fire weeks) were pooled into one season band, -47% to +60%.
-The boxes here are drawn new, to that description, with a fixed seed.
+The boxes here are drawn new, to that description, with a fixed seed. The band
+measured on them, Argentina included, is the one in use (areas.BLEND_BAND_PCT).
 
 Each box goes through the same steps as a named area (harmonize.py): the
 single-satellite adjustment, M4 with the small-area rule, leave one year out
@@ -126,7 +127,9 @@ def report(ten: list[dict], pools: dict[str, list[dict]]) -> str:
     research = [r for k in RESEARCH_COUNTRIES for r in pools[k]]
     everything = [r for rs in pools.values() for r in rs]
     blend = _errors([r for r in research if r["mode"] == "blend"], "loyo_pct")
-    blend_all = _errors([r for r in everything if r["mode"] == "blend"], "loyo_pct")
+    blended = [r for r in everything if r["mode"] == "blend"]
+    blend_all = _errors(blended, "loyo_pct")
+    blend_own = _errors(blended, "own_fit_loyo_pct")
     ten_rows = [[r["country"], str(r["box"]), r["n_fire_weeks"], r["mode"],
                  _median_abs(_errors([r], "loyo_pct")), _median_abs(_errors([r], "out_of_time_pct"))] for r in ten]
     per_country = "\n\n".join(f"### {k}: {len(rs)} boxes\n\n{v._table(_classes(rs), header)}" for k, rs in pools.items())
@@ -140,7 +143,11 @@ Our pre-event notes describe the boxes (10 of 0.3 degree; 83 of 0.2 to 0.8 degre
 
 ## The blend band
 
-Pooled over every blended box in Egypt and Portugal and its leave-one-year-out years: **{_band(blend)}** ({len(blend)} box-years). Our pre-event research: -47% to +60%. With Argentina's boxes added: {_band(blend_all)} ({len(blend_all)} box-years).
+Pooled over every blended box in the three countries and its leave-one-year-out years: **{_band(blend_all)}** ({len(blend_all)} box-years). This is the band a blended area gets (`BLEND_BAND_PCT`, set to {p.BLEND_BAND_PCT[0]:+.0f}% and {p.BLEND_BAND_PCT[1]:+.0f}%; decided by Mohanad). Egypt and Portugal alone: {_band(blend)} ({len(blend)} box-years). Our pre-event research, on its own boxes in Egypt and Portugal: -47% to +60%.
+
+## The blend against the own fit
+
+In these boxes the blend was no better than the area's own fit. Over the blended boxes of the three countries, the median season error is {_median_abs(blend_all)} with the blend and {_median_abs(blend_own)} with the area's own fit alone; the tables below give both per country. Our pre-event research found the blend better than either fit alone. The rule is kept as it is (decided by Mohanad): 100 fire weeks for an own fit, a blend from 30 to 99, nothing under 30.
 
 ## {POOL_N} boxes of 0.2 to 0.8 degree, Egypt and Portugal
 

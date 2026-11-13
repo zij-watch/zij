@@ -1,6 +1,6 @@
 # Small areas
 
-Built 13 Nov 2026, 11:54 UTC by `uv run python -m zij boxes`. This file is generated: change the code, not the file.
+Built 13 Nov 2026, 12:01 UTC by `uv run python -m zij boxes`. This file is generated: change the code, not the file.
 
 A drawn area can be much smaller than our named areas. The small-area rule: 100 or more MODIS fire weeks in 2012 to 2020, the area gets its own fit; 30 to 99, a blend of its own fit and the country's fit scaled to the area; under 30, no harmonized values. This page checks the rule on random boxes and gives the season band for blended areas.
 
@@ -8,7 +8,11 @@ Our pre-event notes describe the boxes (10 of 0.3 degree; 83 of 0.2 to 0.8 degre
 
 ## The blend band
 
-Pooled over every blended box in Egypt and Portugal and its leave-one-year-out years: **-53% to +56%** (270 box-years). Our pre-event research: -47% to +60%. With Argentina's boxes added: -54% to +63% (459 box-years).
+Pooled over every blended box in the three countries and its leave-one-year-out years: **-54% to +63%** (459 box-years). This is the band a blended area gets (`BLEND_BAND_PCT`, set to -54% and +63%; decided by Mohanad). Egypt and Portugal alone: -53% to +56% (270 box-years). Our pre-event research, on its own boxes in Egypt and Portugal: -47% to +60%.
+
+## The blend against the own fit
+
+In these boxes the blend was no better than the area's own fit. Over the blended boxes of the three countries, the median season error is 26% with the blend and 26% with the area's own fit alone; the tables below give both per country. Our pre-event research found the blend better than either fit alone. The rule is kept as it is (decided by Mohanad): 100 fire weeks for an own fit, a blend from 30 to 99, nothing under 30.
 
 ## 83 boxes of 0.2 to 0.8 degree, Egypt and Portugal
 
