@@ -1,5 +1,5 @@
 # Data: raw FIRMS files and everything built from them stay out of git
-data/
+/data/
 firms-raw/
 *.duckdb
 *.duckdb.wal
