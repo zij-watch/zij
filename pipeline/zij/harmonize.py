@@ -182,8 +182,16 @@ def bands(train: pd.DataFrame, pred: np.ndarray, season: list[int], terra: pd.Da
         if actual > 0:
             errors.append(pred[rows].sum() / actual - 1)
     season_band = np.quantile(errors, [0.1, 0.9]) * 100
+    # Months: the same leave-one-year-out predictions, split over days and summed by calendar month.
+    both = pd.DataFrame({"week_start": np.repeat(train.week_start.to_numpy()[ok], 7),
+                         "actual": np.repeat(train.V.to_numpy(float)[ok], 7) / 7,
+                         "predicted": np.repeat(pred[ok], 7) / 7})
+    day = pd.to_datetime(both.week_start) + pd.to_timedelta(np.tile(np.arange(7), int(ok.sum())), unit="D")
+    by_month = both.groupby([day.dt.year, day.dt.month])[["actual", "predicted"]].sum()
+    month = np.exp(np.quantile(np.log((by_month.actual + 1) / (by_month.predicted + 1)), [0.1, 0.9]))
     terra_band = np.quantile(terra.after, [0.1, 0.9]) * 100 if len(terra) else season_band
     return {"week_mult": [round(float(x), 3) for x in week],
+            "month_mult": [round(float(x), 3) for x in month],
             "season_pct": [round(float(x), 1) for x in season_band],
             "terra_only_season_pct": [round(float(x), 1) for x in terra_band],
             "season_errors_pct": [round(float(e) * 100, 1) for e in errors]}
@@ -241,10 +249,10 @@ def months(days: pd.DataFrame, band: dict, last_day: date) -> pd.DataFrame:
             out[col] = np.nan
     out["source"] = np.where(out.MODIS.notna() & out.VIIRS.notna(), "mixed", np.where(out.VIIRS.notna(), "VIIRS", "MODIS"))
     out["complete"] = [n == calendar.monthrange(y, mo)[1] for y, mo, n in zip(out.year, out.month, out.days_with_data)]
-    lo_pct, hi_pct = band["season_pct"]
+    lo_mult, hi_mult = band["month_mult"]
     modis, viirs = out.MODIS.fillna(0), out.VIIRS.fillna(0)
-    out["lo"] = np.where(out.source == "VIIRS", np.nan, viirs + modis / (1 + hi_pct / 100))
-    out["hi"] = np.where(out.source == "VIIRS", np.nan, viirs + modis / (1 + lo_pct / 100))
+    out["lo"] = np.where(out.source == "VIIRS", np.nan, viirs + np.maximum((modis + 1) * lo_mult - 1, 0))
+    out["hi"] = np.where(out.source == "VIIRS", np.nan, viirs + (modis + 1) * hi_mult - 1)
     return out.drop(columns=["MODIS", "VIIRS"])
 
 
@@ -345,7 +353,7 @@ def build_area(con, name: str, country: str, box, country_cache: dict, last_day:
     pred, fits = loyo(train, country_train, season)
     terra = terra_only_test(train, sw, fits, season)
     if af["mode"] == "none":
-        band = {"week_mult": [None, None], "season_pct": [None, None], "terra_only_season_pct": [None, None],
+        band = {"week_mult": [None, None], "month_mult": [None, None], "season_pct": [None, None], "terra_only_season_pct": [None, None],
                 "season_errors_pct": [], "basis": "none"}
         h = harmonize(rec, af, {"week_mult": [1.0, 1.0]})
     else:
@@ -358,7 +366,7 @@ def build_area(con, name: str, country: str, box, country_cache: dict, last_day:
         h = harmonize(rec, af, band)
 
     days = daily(h)
-    season_band = band if af["mode"] != "none" else {"season_pct": [0, 0], "terra_only_season_pct": [0, 0]}
+    season_band = band if af["mode"] != "none" else {"month_mult": [1.0, 1.0], "season_pct": [0, 0], "terra_only_season_pct": [0, 0]}
     mo = months(days, season_band, last_day)
     clim_m, clim_w, critical = climatology(h, mo)
     mo = mo.merge(clim_m[["month", "p10", "p90", "median"]], on="month")
@@ -385,7 +393,7 @@ def build_area(con, name: str, country: str, box, country_cache: dict, last_day:
     n_cells = round((east - west) / c.GRID_DEG) * round((north - south) / c.GRID_DEG)
     doc = {
         "contract": CONTRACT_VERSION, "id": slug(name), "name": name, "country": country,
-        "box": list(box), "n_cells": int(n_cells), "unit": "fire_days",
+        "box": list(box), "n_cells": int(n_cells), "unit": p.UNIT, "unit_label": p.UNIT_LABEL,
         "built_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "last_full_day": last_day.isoformat(),
         "first_week": str(h.week_start.iloc[0])[:10], "last_week": str(h.week_start.iloc[-1])[:10],
@@ -438,7 +446,7 @@ def run() -> None:
         print(f"{name}: {rep['mode']} fit, {rep['n_fire_weeks']} MODIS fire weeks, season {rep['season']}, "
               f"{path.stat().st_size / 1024:.0f} KB", flush=True)
     (EXPORT / "index.json").write_text(json.dumps({
-        "contract": CONTRACT_VERSION, "method": "M4", "unit": "fire_days",
+        "contract": CONTRACT_VERSION, "method": "M4", "unit": p.UNIT, "unit_label": p.UNIT_LABEL,
         "built_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "last_full_day": last_day.isoformat(), "areas": index,
     }, indent=1), encoding="utf-8")
@@ -454,7 +462,8 @@ def print_report(con, reports: dict, last_day: date) -> None:
     for name, r in reports.items():
         b, t = r["band"], r["terra"]
         rows.append({"area": name, "fit": r["mode"], "fire weeks": r["n_fire_weeks"],
-                     "season %": b["season_pct"], "Terra-only season %": b["terra_only_season_pct"], "week x": b["week_mult"],
+                     "season %": b["season_pct"], "Terra-only season %": b["terra_only_season_pct"],
+                     "month x": b["month_mult"], "week x": b["week_mult"],
                      "Terra bias before %": round(t.before.mean() * 100, 1) if len(t) else None,
                      "after %": round(t.after.mean() * 100, 1) if len(t) else None,
                      "two satellites %": round(t.two_satellites.mean() * 100, 1) if len(t) else None})
@@ -474,6 +483,12 @@ def print_report(con, reports: dict, last_day: date) -> None:
         print(f"  {n}: {len(r['critical'])} weeks: {r['critical']}")
     west, south, east, north = p.AREAS["Chilecito"][1]
     in_box = f"country = 'Argentina' AND longitude >= {west} AND longitude < {east} AND latitude >= {south} AND latitude < {north}"
+    print("\nChilecito: the fire of late July 2026, detections per day in the box")
+    print(con.sql(f"""
+        SELECT acq_date, count(*) FILTER (WHERE family = 'VIIRS') AS viirs, count(*) FILTER (WHERE family = 'MODIS') AS modis
+        FROM classified WHERE {in_box} AND acq_date BETWEEN DATE '2026-07-01' AND DATE '2026-08-05'
+        GROUP BY ALL ORDER BY 1
+    """).df().to_string(index=False))
     print("\nChilecito, July 2026: detections per satellite")
     print(con.sql(f"""
         SELECT satellite, count(*) AS detections, count(*) FILTER (WHERE filter_reason = 'kept') AS kept,

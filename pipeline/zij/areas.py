@@ -17,7 +17,8 @@ AREAS: dict[str, tuple[str, tuple[float, float, float, float]]] = {
     "Central Portugal (Pinhal)": ("Portugal", (-8.6, 39.4, -7.0, 40.6)),
     "Alentejo": ("Portugal", (-8.9, 37.3, -6.9, 39.0)),
     "Parana Delta": ("Argentina", (-60.8, -34.5, -58.2, -32.0)),
-    "Chilecito": ("Argentina", (-68.0, -29.6, -67.0, -28.7)),
+    # Same size as the research box, moved 0.2 degree west to centre on the fire of 27 July to 1 August 2026.
+    "Chilecito": ("Argentina", (-68.2, -29.6, -67.2, -28.7)),
 }
 
 # The 8 areas of our pre-event research. The averages we compare with are over these.
@@ -45,3 +46,6 @@ MIN_FIRE_WEEKS_ANY = 30    # below this, no harmonized values
 BLEND_BAND_PCT = (-47.0, 60.0)  # season band for blended areas, pooled over small random boxes
 
 MODELS = ("raw", "M0", "M1", "M2", "M3", "M4")
+
+UNIT = "fire_days"                               # the name in code and files
+UNIT_LABEL = "hotspot-days (VIIRS-equivalent)"   # the name on screen

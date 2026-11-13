@@ -9,7 +9,7 @@ app/public/data/areas/<id>.json       one file per area, 200 to 300 KB
 
 ## Conventions
 
-- **Unit.** `fire_days`: fire cell-days per satellite. A 0.1 degree cell counts once per day for each satellite with a kept detection; a sensor's weekly value is its satellites' sum divided by the satellite-days flown, times 7. Harmonized values are in VIIRS-equivalent fire days. `hotspots` are FIRMS detections, summed over a sensor's satellites, never averaged and never harmonized.
+- **Unit.** `fire_days` is the name in the files. On screen it is `unit_label`: "hotspot-days (VIIRS-equivalent)". It counts fire cell-days per satellite. A 0.1 degree cell counts once per day for each satellite with a kept detection; a sensor's weekly value is its satellites' sum divided by the satellite-days flown, times 7. Harmonized values are in VIIRS-equivalent fire days. `hotspots` are FIRMS detections, summed over a sensor's satellites, never averaged and never harmonized.
 - **Weeks** are ISO weeks. `week_start` is the Monday, as `YYYY-MM-DD` (UTC days). A week belongs to the ISO year of its Monday and the month of its Thursday.
 - **Months** split each week evenly over its 7 days, so a week across two months gives each its share.
 - **Tables are columns.** Every table is an object of arrays of the same length: `weeks.value[i]` goes with `weeks.week_start[i]`.
@@ -24,7 +24,7 @@ app/public/data/areas/<id>.json       one file per area, 200 to 300 KB
 |---|---|
 | `contract` | this contract's version |
 | `method` | `M4` |
-| `unit` | `fire_days` |
+| `unit`, `unit_label` | `fire_days`, and the label to show: `hotspot-days (VIIRS-equivalent)` |
 | `built_at_utc`, `last_full_day` | when the files were built, and the last whole UTC day of data |
 | `areas[]` | `id`, `name`, `country`, `box`, `n_cells`, `fit` (`own`, `blend`, `none`), `n_fire_weeks`, `season` (3 months), `file`, `bytes` |
 
@@ -34,7 +34,7 @@ app/public/data/areas/<id>.json       one file per area, 200 to 300 KB
 
 | Key | Meaning |
 |---|---|
-| `contract`, `id`, `name`, `country`, `box`, `n_cells`, `unit` | as in the index |
+| `contract`, `id`, `name`, `country`, `box`, `n_cells`, `unit`, `unit_label` | as in the index |
 | `built_at_utc`, `last_full_day`, `first_week`, `last_week` | the build and what it covers |
 | `fit` | the area's M4 fit, below |
 | `bands` | the uncertainty bands, below |
@@ -62,7 +62,7 @@ app/public/data/areas/<id>.json       one file per area, 200 to 300 KB
 
 `year`, `month`, `value`, `lo`, `hi`, `source` (`VIIRS`, `MODIS`, `mixed`), `days_with_data`, `complete` (every day of the month has data), `anomaly_pct` (against the month's median), `flag` (as for weeks, against the same calendar month; complete months only). The month x year table is this list pivoted.
 
-`lo` and `hi` apply the season band to the MODIS part of the month.
+`lo` and `hi` apply `bands.month_mult` to the MODIS part of the month: `(P + 1) * lo - 1` to `(P + 1) * hi - 1`, floored at 0, plus the month's VIIRS part if it has one.
 
 ### `seasons`: one entry per year with a whole season
 
@@ -102,6 +102,7 @@ The area's value is the weighted sum of its parts.
 | Key | Meaning |
 |---|---|
 | `week_mult` | `[lo, hi]`: a converted week's band is `(P + 1) * lo - 1` to `(P + 1) * hi - 1`, floored at 0 |
+| `month_mult` | `[lo, hi]`: the same for a converted month total, from the month totals of the leave-one-year-out predictions |
 | `season_pct` | `[lo, hi]`: 10th and 90th percentile of the season error. The true total lies between `P / (1 + hi/100)` and `P / (1 + lo/100)` |
 | `terra_only_season_pct` | the same for seasons when MODIS was Terra alone |
 | `season_errors_pct` | the leave-one-year-out season errors behind `season_pct` |
