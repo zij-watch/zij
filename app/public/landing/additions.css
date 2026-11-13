@@ -137,3 +137,6 @@
 .still .hero h1 img, .still .hero h1::before { animation: none; }
 .still .hero h1::before { opacity: 0.35; }
 @media (prefers-reduced-motion: reduce) { .hero h1 img, .hero h1::before { animation: none; } .hero h1::before { opacity: 0.35; } }
+
+/* The opening line's "1,000" in lining figures: the face's old-style 1 reads as a small capital I. */
+#hero .line { font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1, "onum" 0; }
