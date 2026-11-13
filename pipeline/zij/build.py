@@ -10,7 +10,13 @@
 
 from __future__ import annotations
 
+import json
+from datetime import date, timedelta
+
 import duckdb
+import numpy as np
+import shapely
+import shapely.geometry
 
 from . import config as c
 
@@ -44,13 +50,13 @@ def connect() -> duckdb.DuckDBPyConnection:
 
 
 def load(con: duckdb.DuckDBPyConnection) -> None:
-    """Step a: every row of the yearly country files, all types, untouched."""
+    """Step a: every row of the yearly country files, then the 2026 API pulls."""
     con.execute(
         """
         CREATE OR REPLACE TABLE detections (
             country VARCHAR, source VARCHAR, family VARCHAR, satellite VARCHAR,
             acq_date DATE, acq_time VARCHAR, latitude DOUBLE, longitude DOUBLE,
-            confidence VARCHAR, frp DOUBLE, daynight VARCHAR, type INTEGER
+            confidence VARCHAR, frp DOUBLE, daynight VARCHAR, type INTEGER, processing VARCHAR
         )
         """
     )
@@ -59,25 +65,136 @@ def load(con: duckdb.DuckDBPyConnection) -> None:
             folder = c.FIRMS_RAW / "firms" / country / source
             files = sorted(str(p) for p in folder.glob("*.csv"))
             if not files:
-                raise FileNotFoundError(f"No FIRMS files in {folder}")
+                continue  # NOAA-21 has no yearly files
             con.execute(
                 """
                 INSERT INTO detections
                 SELECT ?, ?, ?, satellite, acq_date, acq_time, latitude, longitude,
-                       confidence, frp, daynight, type
+                       confidence, frp, daynight, type, 'SP'
                 FROM read_csv(?, header = true, union_by_name = true, types = ?)
+                WHERE acq_date <= ?
                 """,
-                [country, source, family, files, CSV_TYPES],
+                [country, source, family, files, CSV_TYPES, c.YEARLY_LAST_DAY],
             )
+    missing_type = con.execute("SELECT count(*) FROM detections WHERE type IS NULL").fetchone()[0]
+    if missing_type:
+        raise ValueError(f"{missing_type} yearly rows have no type; the yearly files should all have one")
+    load_api(con)
     unknown = con.execute(
         "SELECT DISTINCT satellite FROM detections WHERE satellite NOT IN ?",
         [list(c.SATELLITES)],
     ).fetchall()
     if unknown:
         raise ValueError(f"Unknown satellite codes in the raw files: {unknown}")
-    missing_type = con.execute("SELECT count(*) FROM detections WHERE type IS NULL").fetchone()[0]
-    if missing_type:
-        raise ValueError(f"{missing_type} rows have no type; the yearly files should all have one")
+
+
+def _api_manifest() -> list[tuple]:
+    """Every API pull on disk: the pre-event ones in the raw folder, then our top-ups."""
+    rows = []
+    for root in (c.FIRMS_RAW / "firms_api", c.DATA / "firms_api"):
+        for country in c.COUNTRIES:
+            for source in c.SOURCES:
+                manifest = root / country / source / "pulls.json"
+                if not manifest.exists():
+                    continue
+                for name, entry in json.loads(manifest.read_text(encoding="utf-8")).items():
+                    path = manifest.parent / name
+                    # An empty answer still says "nothing on these days", so it stays in the list.
+                    has_rows = entry["rows"] > 0 and path.exists()
+                    rows.append((str(path) if has_rows else None, country, source, entry["processing"],
+                                 date.fromisoformat(name[0:10]), date.fromisoformat(name[11:21]),
+                                 entry["pulled_at_utc"]))
+    return rows
+
+
+def last_full_day() -> date:
+    """The last whole UTC day the pulls cover."""
+    topup = c.DATA / "firms_api" / "topup.json"
+    if topup.exists():
+        return date.fromisoformat(json.loads(topup.read_text(encoding="utf-8"))["last_full_day"])
+    return max(row[5] for row in _api_manifest()) - timedelta(days=1)
+
+
+def load_api(con: duckdb.DuckDBPyConnection) -> None:
+    """The 2026 pulls.
+
+    For each country, source and day one file wins: standard processing over
+    near real time, then the most recent pull. Rows outside the country outline
+    (the API answers with a box) and rows of the unfinished last day are counted
+    and left out.
+    """
+    manifest = _api_manifest()
+    end = last_full_day()
+    con.execute("CREATE OR REPLACE TABLE build_info AS SELECT CAST(? AS DATE) AS last_full_day", [end])
+    con.execute(
+        "CREATE OR REPLACE TABLE api_files (path VARCHAR, country VARCHAR, source VARCHAR, processing VARCHAR, "
+        "first_day DATE, last_day DATE, pulled_at TIMESTAMPTZ)"
+    )
+    con.executemany("INSERT INTO api_files VALUES (?, ?, ?, ?, ?, ?, ?)", manifest)
+    files = [row[0] for row in manifest if row[0]]
+    con.execute(
+        """
+        CREATE OR REPLACE TEMP TABLE api_raw AS
+        SELECT filename AS path, satellite, acq_date, acq_time, latitude, longitude, confidence, frp, daynight, type
+        FROM read_csv(?, header = true, union_by_name = true, filename = true, types = ?)
+        """,
+        [files, CSV_TYPES],
+    )
+    con.execute(
+        """
+        CREATE OR REPLACE TEMP TABLE api_rows AS
+        WITH file_days AS (
+            SELECT f.*, CAST(g.day AS DATE) AS day
+            FROM api_files f, generate_series(f.first_day, f.last_day, INTERVAL 1 DAY) AS g(day)
+        ), winner AS (
+            SELECT country, source, day,
+                   arg_max(coalesce(path, ''), (processing = 'SP', pulled_at)) AS path,
+                   arg_max(processing, (processing = 'SP', pulled_at)) AS processing
+            FROM file_days GROUP BY ALL
+        )
+        SELECT row_number() OVER () AS id, w.country, w.source, w.processing, r.* EXCLUDE (path)
+        FROM api_raw r
+        JOIN api_files f ON f.path = r.path
+        JOIN winner w ON w.country = f.country AND w.source = f.source AND w.day = r.acq_date AND w.path = r.path
+        WHERE r.acq_date > ?
+        """,
+        [c.YEARLY_LAST_DAY],
+    )
+    points = con.sql("SELECT id, country, longitude, latitude FROM api_rows").df()
+    outlines = {f["properties"]["ADM0_A3"]: shapely.geometry.shape(f["geometry"])
+                for f in json.loads(c.OUTLINES.read_text(encoding="utf-8"))["features"]}
+    inside = np.zeros(len(points), dtype=bool)
+    for country, info in c.COUNTRY_INFO.items():
+        rows = (points.country == country).to_numpy()
+        outline = outlines[info["iso3"]]
+        shapely.prepare(outline)
+        inside[rows] = shapely.contains_xy(outline, points.longitude[rows].to_numpy(), points.latitude[rows].to_numpy())
+    inside_ids = points.loc[inside, ["id"]]  # read by name in the SQL below
+    con.register("inside_ids", inside_ids)
+    con.execute(
+        """
+        CREATE OR REPLACE TABLE api_left_out AS
+        SELECT r.country, r.source, r.processing,
+               CASE WHEN r.acq_date > ? THEN 'incomplete_day' ELSE 'outside_country' END AS reason,
+               count(*) AS n
+        FROM api_rows r
+        WHERE r.acq_date > ? OR r.id NOT IN (SELECT id FROM inside_ids)
+        GROUP BY ALL
+        """,
+        [end, end],
+    )
+    families = "CASE r.source " + " ".join(f"WHEN '{k}' THEN '{v}'" for k, v in c.SOURCES.items()) + " END"
+    con.execute(
+        f"""
+        INSERT INTO detections
+        SELECT r.country, r.source, {families}, r.satellite, r.acq_date, r.acq_time, r.latitude, r.longitude,
+               r.confidence, r.frp, r.daynight, r.type, r.processing
+        FROM api_rows r
+        WHERE r.acq_date <= ? AND r.id IN (SELECT id FROM inside_ids)
+        """,
+        [end],
+    )
+    con.unregister("inside_ids")
 
 
 def classify(con: duckdb.DuckDBPyConnection) -> None:
@@ -129,6 +246,8 @@ def flown(con: duckdb.DuckDBPyConnection) -> None:
     con.execute("CREATE OR REPLACE TABLE known_gaps (satellite VARCHAR, first_day DATE, last_day DATE)")
     rows = [(sat, a, b) for sat, gaps in c.KNOWN_GAPS.items() for a, b in gaps]
     con.executemany("INSERT INTO known_gaps VALUES (?, ?, ?)", rows)
+    con.execute("CREATE OR REPLACE TABLE mission_end (satellite VARCHAR, last_day DATE)")
+    con.executemany("INSERT INTO mission_end VALUES (?, ?)", list(c.MISSION_END.items()))
     con.execute(
         """
         CREATE OR REPLACE TABLE sat_days AS
@@ -137,13 +256,14 @@ def flown(con: duckdb.DuckDBPyConnection) -> None:
             FROM detections GROUP BY satellite
         )
         SELECT s.family, s.satellite, CAST(g.day AS DATE) AS day
-        FROM span s, generate_series(s.first_day, CAST(? AS DATE), INTERVAL 1 DAY) AS g(day)
+        FROM span s
+        LEFT JOIN mission_end e ON e.satellite = s.satellite,
+             generate_series(s.first_day, coalesce(e.last_day, (SELECT last_full_day FROM build_info)), INTERVAL 1 DAY) AS g(day)
         WHERE NOT EXISTS (
             SELECT 1 FROM known_gaps k
             WHERE k.satellite = s.satellite AND CAST(g.day AS DATE) BETWEEN k.first_day AND k.last_day
         )
-        """,
-        [c.LAST_DAY],
+        """
     )
     con.execute(
         """
@@ -277,6 +397,9 @@ def summary(con: duckdb.DuckDBPyConnection) -> None:
     print(con.sql(
         "PIVOT (SELECT country, filter_reason FROM classified) ON country USING count(*) GROUP BY filter_reason ORDER BY filter_reason"
     ).df().to_string(index=False))
+    print("\n2026 API rows left out")
+    print(con.sql("PIVOT (SELECT country, reason, n FROM api_left_out) ON country USING sum(n) GROUP BY reason").df().to_string(index=False))
+    print("\nLast full day:", con.sql("SELECT last_full_day FROM build_info").fetchone()[0])
     print("\nStatic-source cells (0.01 degree)")
     print(con.sql("SELECT country, count(*) AS cells FROM static_cells GROUP BY ALL ORDER BY ALL").df().to_string(index=False))
     print("\nFirst day flown per satellite")
