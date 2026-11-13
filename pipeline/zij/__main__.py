@@ -1,4 +1,4 @@
-"""Run from pipeline/:  uv run python -m zij pull | build | checkpoint | validate | harmonize | all"""
+"""Run from pipeline/:  uv run python -m zij pull | build | checkpoint | validate | harmonize | appdata | all"""
 
 from __future__ import annotations
 
@@ -24,13 +24,20 @@ def _harmonize() -> None:
     harmonize.run()
 
 
+def _appdata() -> None:
+    from . import appdata
+
+    appdata.run()
+
+
 COMMANDS = {
     "pull": (_pull,),
     "build": (build.run,),
     "checkpoint": (checkpoint.run,),
     "validate": (_validate,),
     "harmonize": (_harmonize,),
-    "all": (build.run, checkpoint.run, _validate, _harmonize),
+    "appdata": (_appdata,),
+    "all": (build.run, checkpoint.run, _validate, _harmonize, _appdata),
 }
 
 
