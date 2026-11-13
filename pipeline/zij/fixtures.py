@@ -85,8 +85,16 @@ def run() -> None:
         picks += [r for r in mine if r["mode"] == "blend"][:2]
         picks += [r for r in mine if r["mode"] == "none"][:1]
         picks += [r for r in mine if r["mode"] == "own"][:1]
+    last_day = con.sql("SELECT last_full_day FROM build_info").fetchone()[0]
+    documented = set()
     for r in picks:
-        cases.append(case(con, f"{r['country']} box {r['box']}", r["country"], tuple(r["box"]), train[r["country"]]))
+        name = f"{r['country']} box {r['box']}"
+        cases.append(case(con, name, r["country"], tuple(r["box"]), train[r["country"]]))
+        # The whole exported document for one blended and one unfitted box per country:
+        # no named area is either, so these are the only reference for those two paths.
+        if r["mode"] != "own" and (r["country"], r["mode"]) not in documented:
+            documented.add((r["country"], r["mode"]))
+            cases[-1]["document"] = h.build_area(con, name, r["country"], tuple(r["box"]), train, last_day)[0]
     con.close()
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
