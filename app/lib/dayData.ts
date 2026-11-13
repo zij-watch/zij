@@ -47,3 +47,21 @@ export async function hotspotsCsvFor(area: Area, from: string, to: string): Prom
   const csv = hotspotsCsv(selection, index, { area: area.name, country: area.country });
   return { csv, rows: Math.max(csv.split("\n").filter((line) => line && !line.startsWith("#")).length - 1, 0) };
 }
+
+/**
+ * Only the hotspots of a shape, day by day, for the bare map (app/studio/map).
+ * It needs no area document, so it works for any box or polygon the hotspot files cover.
+ */
+export async function loadHotspotDays(shape: Shape, from: string, to: string): Promise<Map<string, DayView["hotspots"]>> {
+  const { index, loader } = await hotspotSession();
+  const { files } = await loader.load(shape, from, to);
+  const isBox = Array.isArray(shape);
+  // dayView reads the week and the month from the document; with none it returns the hotspots alone.
+  const doc = { box: isBox ? shape : null, polygon: isBox ? null : shape, weeks: { week_start: [] }, months: { year: [] } } as unknown as AreaDocument;
+  const days = new Map<string, DayView["hotspots"]>();
+  for (let t = Date.parse(from); t <= Date.parse(to); t += 86400000) {
+    const date = new Date(t).toISOString().slice(0, 10);
+    days.set(date, dayView(files, index, doc, date).hotspots);
+  }
+  return days;
+}

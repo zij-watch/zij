@@ -7,7 +7,7 @@ import type { AreaIndexEntry } from "@/lib/data";
 import { boundsOf, type Shape } from "@/lib/fit/cells";
 import type { DayHotspot } from "@/lib/hotspots/day";
 import { AREA_FILL_LAYER, HOTSPOT_LAYERS, syncDataLayers } from "@/lib/map/layers";
-import { getBasemapStyle, type Basemap } from "@/lib/map/style";
+import { getBasemapStyle, MAX_ZOOM, prepareBasemap, type Basemap } from "@/lib/map/style";
 import { COLOURS, type Theme } from "@/lib/tokens";
 
 export type DrawMode = "box" | "polygon" | null;
@@ -24,6 +24,13 @@ interface Props {
   onDraft: (shape: Shape) => void; // while the shape is being drawn
   onDrawn: (shape: Shape) => void; // when it is finished
   hotspots: DayHotspot[]; // the chosen day's hotspots
+  // The rest is optional, for using the map on its own (see app/studio/map).
+  labels?: boolean; // names on the basemap; on by default
+  chrome?: boolean; // zoom buttons, credits and the area name tags; on by default
+  interactive?: boolean; // drag, scroll and click; on by default
+  follow?: boolean; // move to the chosen area or shape when it changes; on by default
+  view?: { center: [number, number]; zoom: number; bearing?: number; pitch?: number }; // where the map opens
+  onMap?: (map: MapLibreMap) => void; // called once, when the map can be moved
 }
 
 type Ring = number[][];
@@ -39,14 +46,15 @@ function toShape(ring: Ring, mode: DrawMode): Shape | null {
   return { type: "Polygon", coordinates: [ring] };
 }
 
-export default function MapView({ theme, basemap, date, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn, hotspots }: Props) {
+export default function MapView({ theme, basemap, date, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn, hotspots,
+  labels = true, chrome = true, interactive = true, follow = true, view, onMap }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [ready, setReady] = useState(false);
   const markers = useRef<Marker[]>([]);
-  const latest = useRef({ theme, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn, hotspots });
-  latest.current = { theme, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn, hotspots };
-  const styleKey = `${theme}|${basemap}|${basemap === "satellite" ? date : ""}`;
+  const latest = useRef({ theme, basemap, date, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn, hotspots, onMap });
+  latest.current = { theme, basemap, date, areas, selected, onSelect, shape, drawMode, onDraft, onDrawn, hotspots, onMap };
+  const styleKey = `${theme}|${basemap}|${basemap === "satellite" ? date : ""}|${labels}`;
   const appliedStyle = useRef(styleKey);
   const shapeKey = shape ? JSON.stringify(shape) : "";
 
@@ -54,24 +62,34 @@ export default function MapView({ theme, basemap, date, areas, selected, onSelec
   useEffect(() => {
     let cancelled = false;
     let map: MapLibreMap | null = null;
+    let announced = false;
     import("maplibre-gl").then((maplibre) => {
       if (cancelled || !container.current) return;
       // The worker is served from public/ (see scripts/copy-worker.mjs).
       maplibre.setWorkerUrl(`${window.location.origin}/vendor/maplibre/maplibre-gl-worker.mjs`);
       map = new maplibre.Map({
         container: container.current,
-        style: getBasemapStyle(theme, basemap, date),
-        center: [10, 15],
-        zoom: 1.6,
-        maxZoom: 9,
-        attributionControl: { compact: true },
+        style: getBasemapStyle(theme, basemap, date, { labels }),
+        center: view?.center ?? [10, 15],
+        zoom: view?.zoom ?? 1.6,
+        bearing: view?.bearing ?? 0,
+        pitch: view?.pitch ?? 0,
+        maxZoom: MAX_ZOOM,
+        interactive,
+        attributionControl: chrome ? { compact: true } : false,
       });
       mapRef.current = map;
-      map.addControl(new maplibre.NavigationControl({ showCompass: false }), "top-left");
+      if (chrome) map.addControl(new maplibre.NavigationControl({ showCompass: false }), "top-left");
       // Data layers go back on after every style load, whatever the basemap is.
       map.on("style.load", () => {
         const now = latest.current;
         syncDataLayers(map!, now.theme, now.areas, now.selected, now.shape, now.hotspots);
+        void prepareBasemap(map!, now.theme, now.basemap, now.date);
+        // Hand the map over as soon as it can be moved; it need not wait for every tile.
+        if (!announced) {
+          announced = true;
+          now.onMap?.(map!);
+        }
       });
       // A hotspot says in words what it is: sensor, satellite, time, strength.
       for (const layer of HOTSPOT_LAYERS) {
@@ -118,8 +136,9 @@ export default function MapView({ theme, basemap, date, areas, selected, onSelec
     const map = mapRef.current;
     if (!map || appliedStyle.current === styleKey) return;
     appliedStyle.current = styleKey;
-    map.setStyle(getBasemapStyle(theme, basemap, date));
-  }, [styleKey, theme, basemap, date]);
+    map.setStyle(getBasemapStyle(theme, basemap, date, { labels }));
+    void prepareBasemap(map, theme, basemap, date);
+  }, [styleKey, theme, basemap, date, labels]);
 
   // Area boxes, their name labels, the drawn shape, and the view.
   useEffect(() => {
@@ -130,7 +149,7 @@ export default function MapView({ theme, basemap, date, areas, selected, onSelec
       if (cancelled || !map) return;
       if (map.isStyleLoaded()) syncDataLayers(map, theme, areas, selected, shape, latest.current.hotspots);
       markers.current.forEach((marker) => marker.remove());
-      markers.current = areas.map((area) => {
+      markers.current = (chrome ? areas : []).map((area) => {
         const element = document.createElement("button");
         element.type = "button";
         element.className = `map-label${area.id === selected ? " is-selected" : ""}`;
@@ -145,7 +164,7 @@ export default function MapView({ theme, basemap, date, areas, selected, onSelec
       });
       const area = areas.find((a) => a.id === selected);
       const box = shape ? boundsOf(shape) : area?.box;
-      if (box && !latest.current.drawMode) {
+      if (box && follow && !latest.current.drawMode) {
         map.fitBounds([[box[0], box[1]], [box[2], box[3]]], { padding: 90, maxZoom: 8, duration: 1200 });
       }
     });

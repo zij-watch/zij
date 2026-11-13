@@ -96,7 +96,7 @@ FIRMS is NASA open data. It is credited here, in the app's footer and in the hea
 
 - **NASA FIRMS active fire detections**: MODIS Collection 6.1 (Terra, Aqua) and VIIRS 375 m (Suomi NPP, NOAA-20), yearly country files for Egypt, Portugal and Argentina, 2000 to 2025, and the FIRMS area API for 2026 (standard processing where it exists, near real time after, NOAA-21 included). https://firms.modaps.eosdis.nasa.gov
 - **NASA GIBS** true-colour imagery (MODIS Terra, VIIRS Suomi NPP, VIIRS NOAA-20 corrected reflectance), as the app's satellite basemap.
-- **Natural Earth** country outlines (1:10m Admin 0 Countries, public domain), used to clip the API's boxes to each country and, simplified, as the app's offline basemap. https://www.naturalearthdata.com
+- **Natural Earth** (1:10m, public domain): country outlines, used to clip the API's boxes to each country; and land, rivers, lakes, borders, places and physical regions, simplified, as the app's offline basemap. https://www.naturalearthdata.com
 
 We acknowledge the use of data and imagery from NASA's Fire Information for Resource Management System (FIRMS) (https://earthdata.nasa.gov/firms) and Global Imagery Browse Services (GIBS), part of NASA's Earth Science Data and Information System (ESDIS).
 
@@ -119,6 +119,7 @@ Exact versions are in `pipeline/pyproject.toml` and `pipeline/uv.lock`. The app 
 |---|---|---|
 | [Next.js](https://nextjs.org) and [React](https://react.dev) | the app | MIT |
 | [MapLibre GL JS](https://maplibre.org) | the map | BSD-3-Clause |
+| [zij-map](https://github.com/zij-watch/zij-map), the Zij atlas, by our team | the look of the map: style, patterns, signs and drawings | by our team; its repository has no licence file yet |
 | [Apache ECharts](https://echarts.apache.org) | the charts | Apache-2.0 |
 | [Terra Draw](https://terradraw.io) and its MapLibre adapter | drawing a box or polygon on the map | MIT |
 | [Fontsource](https://fontsource.org) packages of Cormorant Garamond, Reem Kufi and Amiri | fonts, bundled | fonts: SIL Open Font License 1.1 |

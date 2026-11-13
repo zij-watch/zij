@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Suspense, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import "@fontsource/cormorant-garamond/500.css";
 import "@fontsource/cormorant-garamond/600.css";
 import "@fontsource/reem-kufi/500.css";
@@ -7,7 +7,6 @@ import "@fontsource/amiri/400.css";
 import "@fontsource/amiri/400-italic.css";
 import "@fontsource/amiri/700.css";
 import "./globals.css";
-import Nav from "@/components/Nav";
 import { tokensCss } from "@/lib/tokens";
 
 export const metadata: Metadata = {
@@ -17,28 +16,14 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 
+// The bare frame: fonts, tokens and the theme. The top bar and credits are in app/(site)/layout.tsx.
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" data-theme="night">
       <head>
         <style dangerouslySetInnerHTML={{ __html: tokensCss() }} />
       </head>
-      <body>
-        <Suspense fallback={<header className="nav"><a href="/" className="wordmark">Zij</a><nav aria-label="Pages"><a href="/">Explore</a><a href="/downloads">Downloads</a><a href="/how-it-works">How it works</a></nav></header>}>
-          <Nav />
-        </Suspense>
-        <noscript>
-          <p className="noscript">
-            The map, the calendar and the downloads need JavaScript. Without it, <a href="/how-it-works">How it works</a> shows the
-            method and all the numbers.
-          </p>
-        </noscript>
-        {children}
-        <footer className="credits">
-          Fire data: NASA FIRMS (MODIS and VIIRS active fires). Imagery: NASA GIBS. Outlines: Natural Earth.
-          Zij is not affiliated with or endorsed by NASA.
-        </footer>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
