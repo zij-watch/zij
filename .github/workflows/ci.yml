@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: Library tests and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      # The README's graphics and numbers must match the exported data (standard library only).
+      - name: README and docs/assets are up to date
+        run: python3 scripts/readme_assets.py --check
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: app/package.json
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: app/pnpm-lock.yaml
+
+      - name: Install
+        working-directory: app
+        run: pnpm install --frozen-lockfile
+
+      - name: Library tests
+        working-directory: app
+        run: node --import ./lib/fit/test/register.mjs --test "lib/fit/test/*.test.mjs" "lib/hotspots/test/*.test.mjs"
+
+      - name: Build
+        working-directory: app
+        run: pnpm build
