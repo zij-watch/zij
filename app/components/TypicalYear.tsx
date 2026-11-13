@@ -38,10 +38,12 @@ export default function TypicalYear({ area, theme, year }: { area: Area; theme: 
     const median = index.map((i) => w.median[i] ?? 0);
     const p10 = index.map((i) => w.p10[i] ?? 0);
     const spread = index.map((i) => Math.max((w.p90[i] ?? 0) - (w.p10[i] ?? 0), 0));
-    const thisYear = weeks.map((k) => {
-      const i = area.weeks.year.findIndex((y, j) => y === year && area.weeks.iso_week[j] === k);
-      return i >= 0 ? area.weeks.value[i] : null;
-    });
+    const rowOf = weeks.map((k) => area.weeks.year.findIndex((y, j) => y === year && area.weeks.iso_week[j] === k));
+    const thisYear = rowOf.map((i) => (i >= 0 ? area.weeks.value[i] : null));
+    // The band of a converted year: lo to hi around each converted week.
+    const lo = rowOf.map((i) => (i >= 0 ? area.weeks.lo[i] : null));
+    const hiSpread = rowOf.map((i) => (i >= 0 && area.weeks.lo[i] !== null && area.weeks.hi[i] !== null ? (area.weeks.hi[i] as number) - (area.weeks.lo[i] as number) : null));
+    const converted = lo.some((v) => v !== null);
     const text = { color: c["ink-muted"], fontFamily: FONT_TEXT, fontSize: 14 };
     chart.setOption({
       animation: false,
@@ -55,7 +57,8 @@ export default function TypicalYear({ area, theme, year }: { area: Area; theme: 
           const i = items[0].dataIndex;
           const now = thisYear[i];
           return `Week ${weeks[i]}<br/>Median: ${num(median[i], 1)}<br/>Usual range: ${num(p10[i], 1)} to ${num(p10[i] + spread[i], 1)}` +
-            (now === null || now === undefined ? "" : `<br/>${year}: ${num(now, 1)}`);
+            (now === null || now === undefined ? "" : `<br/>${year}: ${num(now, 1)}`) +
+            (lo[i] === null || hiSpread[i] === null ? "" : ` (converted, likely ${num(lo[i], 1)} to ${num((lo[i] as number) + (hiSpread[i] as number), 1)})`);
         },
       },
       xAxis: {
@@ -80,6 +83,12 @@ export default function TypicalYear({ area, theme, year }: { area: Area; theme: 
             data: runs(area.climatology.critical_weeks).map(([a, b]) => [{ xAxis: String(a) }, { xAxis: String(b) }]),
           },
         },
+        ...(converted
+          ? [
+              { type: "line", data: lo, stack: "year-band", symbol: "none", lineStyle: { opacity: 0 }, silent: true },
+              { type: "line", data: hiSpread, stack: "year-band", symbol: "none", lineStyle: { opacity: 0 }, areaStyle: { color: c.rubric, opacity: 0.3 }, silent: true },
+            ]
+          : []),
         { type: "line", data: thisYear, symbol: "none", connectNulls: false, lineStyle: { color: c.rubric, width: 2 } },
       ],
     });

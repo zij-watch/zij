@@ -107,7 +107,14 @@ def method() -> None:
     (EXPORT / "method.json").write_text(json.dumps(clean(doc), separators=(",", ":"), default=str), encoding="utf-8")
 
 
+def notes() -> None:
+    """notes.json: area id -> the note shown at the top of its panel."""
+    doc = {slug(name): text for name, text in p.AREA_NOTES.items()}
+    (EXPORT / "notes.json").write_text(json.dumps(doc, indent=1, ensure_ascii=False), encoding="utf-8")
+
+
 def run() -> None:
     size = basemap()
     method()
+    notes()
     print(f"Wrote method.json and basemap/countries.json ({size / 1024:.0f} KB) to {EXPORT}")

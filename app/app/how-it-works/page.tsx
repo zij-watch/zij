@@ -3,7 +3,8 @@
 
 import method from "@/public/data/method.json";
 import { MONTHS, num } from "@/lib/format";
-import { heatRamp } from "@/lib/tokens";
+import { checkRamp, VISIONS } from "@/lib/cvd";
+import { COLOURS, heatRamp } from "@/lib/tokens";
 
 export const metadata = { title: "Zij: how it works" };
 
@@ -27,21 +28,6 @@ const REASON_WORDS: Record<string, string> = {
   offshore: "Offshore (type 3)",
   volcano: "Volcano (type 1)",
 };
-
-/** Greyscale lightness (CIE L*) of a hex colour. */
-function lightness(hex: string): number {
-  const [r, g, b] = [1, 3, 5].map((i) => {
-    const v = parseInt(hex.slice(i, i + 2), 16) / 255;
-    return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-  });
-  const y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  return y > 0.008856 ? 116 * Math.cbrt(y) - 16 : 903.3 * y;
-}
-
-function grey(hex: string): string {
-  const v = Math.round((lightness(hex) / 100) * 255);
-  return `rgb(${v},${v},${v})`;
-}
 
 export default function Page() {
   const areas = method.areas as unknown as AreaRow[];
@@ -180,18 +166,37 @@ export default function Page() {
           <li>The fit is made on {method.models.train_years[0]} to {method.models.train_years[1]}. In Portugal it runs high afterwards (see the out-of-time column).</li>
           <li>2026 uses near-real-time data for the latest months, which NASA later replaces with standard processing.</li>
           <li>NOAA-21 joins the VIIRS average in 2026. Suomi NPP&rsquo;s data ends on 2 November 2026.</li>
-          <li>Only the preset areas are available. Areas with fewer than 30 MODIS fire weeks could not be converted.</li>
+          <li>Drawn areas work in Egypt, mainland Portugal and Argentina. An area with fewer than 100 MODIS fire weeks in 2012 to 2020 leans on its country&rsquo;s fit and gets a wide band; under 30 it gets raw counts only.</li>
         </ul>
 
         <h2>7. Colour</h2>
-        <p>One heat ramp, five steps. In greyscale the steps still run in order (lightness L* shown), so the calendar reads without colour.</p>
-        {(["night", "folio"] as const).map((theme) => (
-          <div key={theme}>
-            <div className="swatches">{heatRamp(theme).map((hex) => <span key={hex} style={{ background: hex }} />)}</div>
-            <div className="swatches">{heatRamp(theme).map((hex) => <span key={hex} style={{ background: grey(hex) }} />)}</div>
-            <p className="note">{theme === "night" ? "Night" : "Folio"}: L* {heatRamp(theme).map((hex) => Math.round(lightness(hex))).join(", ")}</p>
-          </div>
-        ))}
+        <p>
+          One heat ramp: zero, then five steps. Each row below shows it as it looks with a common kind of colour blindness
+          (simulated after Machado, Oliveira and Fernandes, 2009, full severity) and in greyscale. The ramp passes when lightness
+          runs one way through all the steps and neighbouring steps stay clearly apart (a CIELAB difference of 10 or more).
+        </p>
+        {(["night", "folio"] as const).map((theme) => {
+          const checks = checkRamp([COLOURS[theme]["ground-raised"], ...heatRamp(theme)]);
+          return (
+            <div key={theme} className="table-scroll">
+              <table>
+                <thead><tr><th>{theme === "night" ? "Night theme" : "Folio theme"}</th><th>Ramp</th><th>Lightness L*</th><th>Smallest step</th><th>Result</th></tr></thead>
+                <tbody>
+                  {checks.map((check) => (
+                    <tr key={check.vision}>
+                      <td>{VISIONS.find((v) => v.id === check.vision)?.label}</td>
+                      <td><div className="swatches">{check.colours.map((hex, k) => <span key={k} style={{ background: hex }} />)}</div></td>
+                      <td>{check.lightness.join(", ")}</td>
+                      <td>{check.minStep}</td>
+                      <td>{check.ordered && check.minStep >= 10 ? "passes" : "fails"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        })}
+        <p className="note">Anomalies and converted values are also marked with a shape (a box, a corner), never by colour alone.</p>
 
         <h2>8. Sources</h2>
         <ul>

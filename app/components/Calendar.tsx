@@ -6,6 +6,7 @@
 
 import type { Area } from "@/lib/data";
 import { MONTHS, MONTHS_SHORT, num } from "@/lib/format";
+import { rawByMonth, strongAnomalies } from "@/lib/derive";
 import { heatBreaks, heatClass } from "@/lib/heat";
 import { COLOURS, FONT_DISPLAY, FONT_TEXT, heatRamp, type Theme } from "@/lib/tokens";
 
@@ -34,6 +35,8 @@ export default function Calendar({ area, from, to, theme, selected, onSelect, ti
   const firstYear = Number(from.slice(0, 4));
   const lastYear = Number(to.slice(0, 4));
   const years = Array.from({ length: Math.max(lastYear - firstYear + 1, 0) }, (_, i) => firstYear + i);
+  const strong = strongAnomalies(area);
+  const raw = rawByMonth(area);
   const byKey = new Map<string, number>();
   m.year.forEach((y, i) => byKey.set(`${y}-${String(m.month[i]).padStart(2, "0")}`, i));
 
@@ -74,25 +77,27 @@ export default function Calendar({ area, from, to, theme, selected, onSelect, ti
                 const i = byKey.get(ym);
                 const x = LEFT + k * (CELL_W + GAP);
                 const inRange = ym >= from && ym <= to;
-                if (i === undefined || !inRange) {
+                if (i === undefined || !inRange || m.value[i] === null) {
                   return <rect key={ym} x={x} y={y} width={CELL_W} height={CELL_H} fill={inRange ? "url(#zij-hatch)" : c.ground} />;
                 }
                 const k5 = heatClass(m.value[i], breaks);
                 const converted = m.source[i] !== "VIIRS";
                 const isSelected = selected === ym;
+                const flag = strong.get(ym);
                 const words = `${monthName} ${year}: ${num(m.value[i])} ${area.unit_label}` +
                   (converted ? `, converted from MODIS (${num(m.lo[i])} to ${num(m.hi[i])})` : "") +
                   (m.complete[i] ? "" : ", month not complete") +
-                  (m.flag[i] ? `, unusually ${m.flag[i]}` : "");
+                  (flag ? `, far ${flag === "high" ? "above" : "below"} normal` : "") +
+                  `. Raw: MODIS ${num(raw.get(ym)?.modis)}, VIIRS ${num(raw.get(ym)?.viirs)}`;
                 return (
                   <g key={ym} onClick={onSelect ? () => onSelect(ym) : undefined} style={onSelect ? { cursor: "pointer" } : undefined}>
                     <title>{words}</title>
                     <rect x={x} y={y} width={CELL_W} height={CELL_H} fill={k5 === 0 ? c["ground-raised"] : ramp[k5 - 1]}
                       opacity={m.complete[i] ? 1 : 0.55} />
                     {converted && <path d={`M${x} ${y}h9l-9 9z`} fill={c.lapis} />}
-                    {m.flag[i] && (
+                    {flag && (
                       <rect x={x + 1} y={y + 1} width={CELL_W - 2} height={CELL_H - 2} fill="none" stroke={c.ink} strokeWidth={1.5}
-                        strokeDasharray={m.flag[i] === "low" ? "3 2" : undefined} />
+                        strokeDasharray={flag === "low" ? "3 2" : undefined} />
                     )}
                     {isSelected && <rect x={x - 1} y={y - 1} width={CELL_W + 2} height={CELL_H + 2} fill="none" stroke={c.brass} strokeWidth={2.5} />}
                   </g>
@@ -118,9 +123,9 @@ export default function Calendar({ area, from, to, theme, selected, onSelect, ti
           <path d="M0 0h9l-9 9z" fill={c.lapis} />
           <text x={32} y={12} {...label}>converted from MODIS</text>
           <rect x={196} width={26} height={14} fill="none" stroke={c.ink} strokeWidth={1.5} />
-          <text x={228} y={12} {...label}>unusually high</text>
+          <text x={228} y={12} {...label}>far above normal</text>
           <rect x={336} width={26} height={14} fill="none" stroke={c.ink} strokeWidth={1.5} strokeDasharray="3 2" />
-          <text x={368} y={12} {...label}>unusually low</text>
+          <text x={368} y={12} {...label}>far below normal</text>
         </g>
         <g transform="translate(0 52)">
           <rect width={26} height={14} fill="url(#zij-hatch)" />

@@ -65,6 +65,8 @@ export interface Seasons {
   source: Source[];
   terra_only: boolean[];
   flag: Flag[];
+  modis: (number | null)[];
+  viirs: (number | null)[];
 }
 
 export interface SatelliteCounts {
@@ -84,12 +86,14 @@ export interface Area {
   unit_label: string;
   built_at_utc: string;
   last_full_day: string;
+  polygon?: { type: "Polygon"; coordinates: number[][][] }; // drawn polygons only
   fit: { model: string; mode: "own" | "blend" | "none"; n_fire_weeks: number; season: number[] };
   bands: {
     week_mult: [number | null, number | null];
     month_mult: [number | null, number | null];
     season_pct: [number | null, number | null];
     terra_only_season_pct: [number | null, number | null];
+    basis?: string;
   };
   weeks: Weeks;
   months: Months;
@@ -135,4 +139,11 @@ export function loadArea(id: string): Promise<Area> {
     areaCache.set(id, promise);
   }
   return promise;
+}
+
+/** Notes per area id, shown at the top of the panel. Written by the pipeline (appdata). */
+let notesPromise: Promise<Record<string, string>> | null = null;
+export function loadNotes(): Promise<Record<string, string>> {
+  notesPromise ??= getJson<Record<string, string>>("/data/notes.json").catch(() => ({}));
+  return notesPromise;
 }

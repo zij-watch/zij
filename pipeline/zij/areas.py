@@ -49,3 +49,9 @@ MODELS = ("raw", "M0", "M1", "M2", "M3", "M4")
 
 UNIT = "fire_days"                               # the name in code and files
 UNIT_LABEL = "hotspot-days (VIIRS-equivalent)"   # the name on screen
+
+# A note per area, shown at the top of its panel. Wording agreed in docs/event/DECISIONS.md.
+AREA_NOTES = {
+    "Chilecito": "The fire of 27 July to 1 August 2026: VIIRS and MODIS first see it one day apart, "
+                 "with about 900 VIIRS detections against 37 MODIS.",
+}

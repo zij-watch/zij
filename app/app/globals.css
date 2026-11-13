@@ -170,3 +170,19 @@ ol.bars li { display: grid; grid-template-columns: 112px 1fr 72px; align-items: 
 /* The calendar keeps a readable size on a phone and scrolls sideways inside its block. */
 .calendar-scroll { overflow-x: auto; }
 .calendar-scroll svg { min-width: 520px; display: block; }
+
+/* ---------------------------------------------------------------- drawing */
+.switch { margin-left: 0; }
+.basemap-switch { margin-left: auto; }
+.coords { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: end; gap: 8px 12px; }
+.coords input { width: 110px; }
+.coords-problem, .draw-hint { flex-basis: 100%; margin: 0; color: var(--ink); }
+.warning { border: 2px solid var(--ink); padding: 10px 14px; margin-bottom: 14px; background: var(--ground-raised); }
+.warning > :last-child { margin-bottom: 0; }
+.area-note { border-left: 3px solid var(--brass); padding: 2px 0 2px 12px; margin: 8px 0 0; }
+.raw-line { color: var(--ink-muted); font-size: 16px; line-height: 23px; }
+.year-pick { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+@media (max-width: 900px) { .basemap-switch { margin-left: 0; } .switch { flex-wrap: wrap; } }
+
+.page td .swatches { min-width: 220px; margin: 0; }
+.page td .swatches span { height: 22px; }
