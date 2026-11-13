@@ -14,6 +14,7 @@ Zij counts both records in one unit, the **fire cell-day**: one map square of 0.
 - `app/`: the web app: Explore (map, calendar, typical year, anomalies), Downloads and How it works, on 10 preset areas. `app/public/data/` holds the files the pipeline exports for it. See `app/README.md`.
 - `docs/event/DECISIONS.md`: every decision made during the event, with its reason.
 - `docs/event/VALIDATION.md`: how well the calibration predicts VIIRS from MODIS, per area and model.
+- `docs/event/FINDINGS.md`: what the record shows, and what it cannot: the Nile Delta after the 2004 ban and since 2018, and one sentence per area.
 - `docs/event/DATA_CONTRACT.md`: the format of the exported files.
 
 Status: the record runs from November 2000 to yesterday for 10 preset areas, and for any box or polygon drawn in Egypt, mainland Portugal or Argentina, fitted in the browser. The day view and the final How it works text come next.
@@ -35,7 +36,7 @@ cd pipeline
 uv sync
 $env:ZIJ_FIRMS_RAW = 'D:\Zij\firms-raw'   # only if the raw files are somewhere else
 uv run python -m zij pull                 # optional: top up 2026 from the FIRMS API (needs MAP_KEY)
-uv run python -m zij all                  # or: build, checkpoint, validate, harmonize, appdata
+uv run python -m zij all                  # or: build, checkpoint, validate, harmonize, appdata, findings
 ```
 
 What `build` does, for Egypt, Portugal and Argentina, from November 2000 to the last full day pulled:

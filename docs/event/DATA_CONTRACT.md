@@ -7,6 +7,7 @@ app/public/data/index.json            the list of areas, read first
 app/public/data/areas/<id>.json       one file per area, 200 to 300 KB
 app/public/data/notes.json            optional note per area id, shown at the top of its panel
 app/public/data/method.json           the numbers on the How it works page
+app/public/data/findings.json         three findings, with the numbers behind them (below; written by `findings`)
 app/public/data/basemap/countries.json  simplified Natural Earth outlines
 app/public/data/cells/                per-cell files for drawn areas: docs/event/CELLS_FORMAT.md
 ```
@@ -119,6 +120,56 @@ One entry per satellite that ever flew (`Terra`, `Aqua`, `Suomi NPP`, `NOAA-20`,
 - `days`: days flown that week, known gaps left out; `null` when it was not flying;
 - `fire_days`: its fire cell-days that week, a plain count, not scaled to 7 days;
 - `hotspots`: its kept detections.
+
+## `findings.json`
+
+Optional, like `notes.json`: an app that does not read it loses nothing, so the contract version stays 1. Written by `uv run python -m zij findings` from the area files and the database; the same content, with tables, is `docs/event/FINDINGS.md`. Percent values are in percent and negative when lower. A range is `[low, high]`.
+
+| Key | Meaning |
+|---|---|
+| `built_at_utc`, `last_full_day`, `unit`, `unit_label` | as in the index |
+| `band_note` | how the ranges are made, in a sentence |
+| `ban` | did burning in the Nile Delta change after the 2004 ban |
+| `since_2018` | the Delta, Kafr El Sheikh and Sharqia in 2018 to 2026 against 2005 to 2017 |
+| `areas[]` | one sentence per named area, in the order of the index |
+
+A **period** is `years` (`[first, last]`), `n` seasons, `n_converted` (those converted from MODIS), `mean`, `lo`, `hi` (the mean with every converted season at the low, then the high end of its band) and `median`. A **change** is `pct`, `lo_pct`, `hi_pct`: one period's mean against another's, and the widest range the two periods' ranges allow.
+
+### `ban`
+
+| Key | Meaning |
+|---|---|
+| `area`, `ban_year`, `season` | `nile-delta`, `2004` (taken from the question, not from the data), the season's months |
+| `verdict` | `seasons` (`higher_after`), `day_night` (`cannot_tell`), `effect_of_ban` (`cannot_tell`) |
+| `answer` | the answer in words, with its numbers |
+| `season_band_pct`, `terra_only_season_band_pct` | the area's two season bands |
+| `seasons[]` | 2001 to 2017: `year`, `value`, `lo`, `hi`, `source`, `terra_only`, and `terra_cell_days`, `aqua_cell_days`: what each MODIS satellite counted alone, scaled to a whole season, `null` before it has a whole one |
+| `comparisons[]` | every pair of periods compared: `before`, `after` (periods), `change`, `why` |
+| `one_satellite` | `Terra`, `Aqua`: `before_years`, `before_seasons`, `before_mean`, `after[]` (`years`, `mean`, `times_before`), `by_year` |
+| `day_night.shares[]` | per satellite and period: `period` (`before`, `after`), `satellite`, `years`, `seasons`, `day`, `night` (fire cell-days), `night_share_pct`, `ci95_pct` (Wilson), `night_per_season` (`[fewest, most]`) |
+| `day_night.by_year[]` | `year`, `terra_day`, `terra_night`, `aqua_day`, `aqua_night` |
+| `day_night.overpass` | `Terra`, `Aqua`: `day_median_local`, `night_median_local` (hours, local solar time, 2001 to 2017), `stable_years`, `day_mean_range_stable`, `day_mean_by_year` (2018 on) |
+
+### `since_2018`
+
+`reference_years`, `recent_years`, `verdict` (`delta`: `lower`; `same_in_kafr_el_sheikh_and_sharqia`: `both_lower_gap_cannot_tell`), `answer`, and `areas[]`, one entry for each of the three areas:
+
+| Key | Meaning |
+|---|---|
+| `area`, `name`, `season`, `season_band_pct` | the area and its season band |
+| `reference`, `recent`, `change` | the two periods and recent against reference |
+| `change_median_pct` | the same with medians |
+| `viirs_only` | `reference` (2012 to 2017, no converted season) and `change_pct` |
+| `without_last_season` | `recent` and `change` with 2026 left out |
+| `one_season_left_out_pct` | the change of the mean when each recent season is dropped in turn: `[lowest, highest]` |
+| `years[]` | per recent season: `year`, `value`, `change`, `below_every_reference_season` |
+| `seasons_below_every_reference_season` | how many are below the low end of the lowest reference season |
+| `last_season_near_real_time_pct` | share of the 2026 season's kept VIIRS detections that are near real time |
+| `suomi_npp_day_night` | Suomi NPP alone, fire cell-days a season: `day_before`, `day_after`, `night_before`, `night_after`, `day_change_pct`, `night_change_pct`, `before_years`, `after_years`, `day_median_local`, `night_median_local` |
+
+### `areas[]`
+
+`id`, `name`, `country`, `sentence` (one sentence, readable without the method), `numbers` (what the sentence rests on; the keys differ per area and always include `unit`), and sometimes `note` (a caution to show with it).
 
 ## Drawn areas
 
