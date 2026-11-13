@@ -19,7 +19,8 @@ from . import config as c
 from .harmonize import EXPORT, slug
 
 SIMPLIFY_DEG = 0.05      # outline detail kept for the basemap, about 5 km
-COORD_DECIMALS = 2
+SIMPLIFY_LOADED_DEG = 0.005  # finer for the countries with areas, about 500 m
+COORD_DECIMALS = 3
 
 
 def _round(geometry: dict) -> dict:
@@ -33,8 +34,10 @@ def _round(geometry: dict) -> dict:
 def basemap() -> int:
     source = json.loads(c.OUTLINES.read_text(encoding="utf-8"))
     features = []
+    loaded = {info["iso3"] for info in c.COUNTRY_INFO.values()}
     for f in source["features"]:
-        shape = shapely.simplify(shapely.geometry.shape(f["geometry"]), SIMPLIFY_DEG, preserve_topology=True)
+        detail = SIMPLIFY_LOADED_DEG if f["properties"].get("ADM0_A3") in loaded else SIMPLIFY_DEG
+        shape = shapely.simplify(shapely.geometry.shape(f["geometry"]), detail, preserve_topology=True)
         if shape.is_empty:
             continue
         features.append({"type": "Feature",
