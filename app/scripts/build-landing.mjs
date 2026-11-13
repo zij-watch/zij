@@ -54,7 +54,7 @@ const [train0, train1] = method.models.train_years;
 // ---- the record: the two-state chart ----------------------------------------------------------
 const record = `
     <section class="record" id="record" aria-labelledby="h-record">
-      <div class="sheet" data-theme="folio" data-paper="sheet">
+      <div class="sheet" data-theme="folio" data-paper="sheet" data-ink>
         <p class="t-eyebrow">The Nile Delta, fire seasons ${rows[0].year} to ${rows[years - 1].year} · from the record</p>
         <h2 id="h-record">The satellites changed in ${firstViirs.year}. The fires did not.</h2>
         <input type="radio" name="rec" id="rec-raw" class="sr-only" checked>
@@ -118,7 +118,7 @@ const shows = [
 ];
 const showsSection = `
     <section class="record shows" id="shows" aria-labelledby="h-shows">
-      <div class="sheet" data-theme="folio" data-paper="sheet">
+      <div class="sheet" data-theme="folio" data-paper="sheet" data-ink>
         <p class="t-eyebrow">From the record · ${rows[0].year} to ${rows[years - 1].year}</p>
         <h2 id="h-shows">What ${years} years show</h2>
         <ol class="shows-list">
@@ -173,6 +173,39 @@ js = swap(js, js.slice(js.indexOf("  // Chapter three: the table, a seeded illus
 
 `, "the table of chapter three");
 js = swap(js, "'../assets/marks/dial-night.svg'", "'/landing/assets/marks/dial-night.svg'", "the dial");
+
+// The record and its findings sit before chapter one, outside every chapter, so nothing spread their
+// ink: each now gets its drop when it comes into view, as the chapters' sheets do.
+js = swap(js, "  lineStops.forEach((s) => stopIO.observe(s));", `  lineStops.forEach((s) => stopIO.observe(s));
+  const recordIO = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { recordIO.unobserve(e.target); later(() => inkIn(e.target), still ? 0 : 350); }
+  }, { threshold: 0.2 });
+  document.querySelectorAll('.desk > .record [data-ink]').forEach((s) => recordIO.observe(s));`, "the record's ink");
+
+// The record lies above the lantern (additions.css), so the thread from the spool to chapter one ran
+// under it. It is drawn again inside each record section, cut to that section's box: on top of the
+// sheet, still under nothing it shouldn't be. The copies are added to each thread's elements, so they
+// are drawn in the same stroke as the thread itself.
+js = swap(js, "    layThreads();", `    layThreads();
+    threadsOverRecord();`, "the thread over the record");
+js = swap(js, "  function drawThread(t) {", `  function threadsOverRecord() {
+    const src = $('desk-threads'), dr = desk.getBoundingClientRect();
+    desk.querySelectorAll(':scope > .record').forEach((sec) => {
+      let svg = sec.querySelector(':scope > .record-threads');
+      if (!svg) {
+        svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'desk-threads record-threads'); svg.setAttribute('aria-hidden', 'true');
+        sec.appendChild(svg);
+      }
+      const r = sec.getBoundingClientRect(), w = sec.offsetWidth, h = sec.offsetHeight;
+      svg.setAttribute('width', w); svg.setAttribute('height', h);
+      svg.setAttribute('viewBox', \`\${n1(r.left - dr.left)} \${n1(r.top - dr.top)} \${n1(w)} \${n1(h)}\`);
+      svg.innerHTML = src.innerHTML;
+      const copies = svg.querySelectorAll('.t');
+      threads.forEach((t, i) => { const path = copies[i]; if (path) t.els.push(path.previousElementSibling, path); });
+    });
+  }
+  function drawThread(t) {`, "drawThread");
 
 // ---- the page ---------------------------------------------------------------------------------
 const head0 = html.indexOf('<link rel="preconnect" href="https://fonts.googleapis.com">');

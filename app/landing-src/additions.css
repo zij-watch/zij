@@ -101,3 +101,7 @@
 .shows-list p { margin: 0; font-size: 17px; line-height: 1.5; }
 .shows .rec-unit a { color: var(--brass); }
 @media (max-width: 760px) { .shows-list li { grid-template-columns: 1fr; } }
+
+/* The thread from the spool, drawn again over the record and its findings (build-landing.mjs):
+   cut to the section's box, over the sheet and its ink, never in the way of a click. */
+.record > .record-threads { overflow: hidden; z-index: 4; }

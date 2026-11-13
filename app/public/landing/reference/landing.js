@@ -2239,6 +2239,23 @@
       for (const p of t.pinEls) p.style.opacity = t.drawn ? '1' : '0';
     });
   }
+  function threadsOverRecord() {
+    const src = $('desk-threads'), dr = desk.getBoundingClientRect();
+    desk.querySelectorAll(':scope > .record').forEach((sec) => {
+      let svg = sec.querySelector(':scope > .record-threads');
+      if (!svg) {
+        svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'desk-threads record-threads'); svg.setAttribute('aria-hidden', 'true');
+        sec.appendChild(svg);
+      }
+      const r = sec.getBoundingClientRect(), w = sec.offsetWidth, h = sec.offsetHeight;
+      svg.setAttribute('width', w); svg.setAttribute('height', h);
+      svg.setAttribute('viewBox', `${n1(r.left - dr.left)} ${n1(r.top - dr.top)} ${n1(w)} ${n1(h)}`);
+      svg.innerHTML = src.innerHTML;
+      const copies = svg.querySelectorAll('.t');
+      threads.forEach((t, i) => { const path = copies[i]; if (path) t.els.push(path.previousElementSibling, path); });
+    });
+  }
   function drawThread(t) {
     if (!t || t.drawn) return;
     t.drawn = true;
@@ -2302,6 +2319,10 @@
     runLine();
   }, { rootMargin: '0px 0px -18% 0px', threshold: 0.6 });
   lineStops.forEach((s) => stopIO.observe(s));
+  const recordIO = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { recordIO.unobserve(e.target); later(() => inkIn(e.target), still ? 0 : 350); }
+  }, { threshold: 0.2 });
+  document.querySelectorAll('.desk > .record [data-ink]').forEach((s) => recordIO.observe(s));
 
   // paper is painted while the page is idle, one sheet at a time, long before it is needed; a sheet
   // that comes near first is painted then
@@ -2373,6 +2394,7 @@
     desk.querySelectorAll('.sheet').forEach((s) => { if (s._paper) paintPaper(s); });
     desk.querySelectorAll('[data-ink]').forEach(inkLayout);
     layThreads();
+    threadsOverRecord();
     mapDesk();
     if (lamp.mode === 0 && !lamp.moving) { lamp.x = opening.x; lamp.y = opening.y; placeLamp(lamp.x, lamp.y, 0); }
     else if (lamp.mode === 1 && !lamp.moving) { placeLamp(lamp.x, lamp.y, 0); lamp.recheck = true; }
