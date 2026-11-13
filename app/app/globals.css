@@ -4,7 +4,7 @@
 
 * { box-sizing: border-box; }
 
-html, body { margin: 0; height: 100%; }
+html, body { margin: 0; height: 100%; max-width: 100%; overflow-x: hidden; }
 
 body {
   display: flex;
@@ -153,7 +153,10 @@ ol.bars li { display: grid; grid-template-columns: 112px 1fr 72px; align-items: 
 /* ---------------------------------------------------------------- phone */
 
 @media (max-width: 900px) {
-  .stage { display: flex; flex-direction: column; }
+  .stage { display: flex; flex-direction: column; min-width: 0; }
+  .panel, .panel-body, .block { min-width: 0; max-width: 100vw; }
+  .toolbar input, .toolbar select { width: 100%; min-width: 0; }
+  .tabs button { padding: 5px 6px; }
   .map { height: 38dvh; min-height: 240px; flex: none; }
   .explore.has-area .map { height: 26dvh; min-height: 180px; }
   .panel { border-left: 0; border-top: 1px solid var(--rule); max-height: none; overflow: visible; }
@@ -163,3 +166,7 @@ ol.bars li { display: grid; grid-template-columns: 112px 1fr 72px; align-items: 
   h2 { font-size: 26px; line-height: 32px; }
   ol.bars li { grid-template-columns: 92px 1fr 60px; }
 }
+
+/* The calendar keeps a readable size on a phone and scrolls sideways inside its block. */
+.calendar-scroll { overflow-x: auto; }
+.calendar-scroll svg { min-width: 520px; display: block; }

@@ -32,6 +32,8 @@ export default function MapView({ theme, basemap, date, areas, selected, onSelec
     let map: MapLibreMap | null = null;
     import("maplibre-gl").then((maplibre) => {
       if (cancelled || !container.current) return;
+      // The worker is served from public/ (see scripts/copy-worker.mjs).
+      maplibre.setWorkerUrl(`${window.location.origin}/vendor/maplibre/maplibre-gl-worker.mjs`);
       map = new maplibre.Map({
         container: container.current,
         style: getBasemapStyle(theme, basemap, date),

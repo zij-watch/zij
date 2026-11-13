@@ -260,7 +260,9 @@ export default function Panel({ area, theme, from, to, view, month, onView, onMo
       {view === "calendar" && (
         <>
           <section className="block">
-            <Calendar area={area} from={from} to={to} theme={theme} selected={month} onSelect={(ym) => onMonth(ym === month ? null : ym)} />
+            <div className="calendar-scroll">
+              <Calendar area={area} from={from} to={to} theme={theme} selected={month} onSelect={(ym) => onMonth(ym === month ? null : ym)} />
+            </div>
             <p className="note">Click a month for its weeks and the raw counts per satellite.</p>
           </section>
           {month && <WeekDetail area={area} ym={month} onClose={() => onMonth(null)} />}
