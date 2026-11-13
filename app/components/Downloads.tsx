@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { loadArea, loadIndex, type Area, type Index } from "@/lib/data";
 import { hotspotsCsvFor } from "@/lib/dayData";
+import { loadingWords, useLoading } from "@/lib/download";
 import { COVERED, resolveDrawn } from "@/lib/drawnArea";
 import type { Shape } from "@/lib/fit/cells";
 import { monthSpan } from "@/lib/format";
@@ -76,8 +77,30 @@ function svgText(): string | null {
   return `<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(svg)}`;
 }
 
+const EXPORT_FONTS = [
+  { family: "Cormorant Garamond", weight: 600, file: "/vendor/fonts/cormorant-garamond-latin-600-normal.woff2" },
+  { family: "Amiri", weight: 400, file: "/vendor/fonts/amiri-latin-400-normal.woff2" },
+];
+
+/** @font-face rules with the font files inside them, so a picture drawn from the SVG uses the real fonts. */
+async function embeddedFonts(): Promise<string> {
+  const rules = await Promise.all(EXPORT_FONTS.map(async (font) => {
+    const response = await fetch(font.file);
+    if (!response.ok) return "";
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return `@font-face{font-family:"${font.family}";font-weight:${font.weight};src:url(data:font/woff2;base64,${btoa(binary)}) format("woff2");}`;
+  }));
+  return rules.join("");
+}
+
 async function savePng(name: string, background: string) {
-  const text = svgText();
+  let text = svgText();
+  if (text) {
+    const fonts = await embeddedFonts().catch(() => "");
+    if (fonts) text = text.replace(/(<svg[^>]*>)/, `$1<style>${fonts}</style>`);
+  }
   const svg = document.getElementById(SVG_ID) as SVGSVGElement | null;
   if (!text || !svg) return;
   const box = svg.viewBox.baseVal;
@@ -114,6 +137,7 @@ export default function Downloads() {
   const [problem, setProblem] = useState<string | null>(null);
   const [hotspotNote, setHotspotNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const loading = useLoading();
   // A drawn area (box= or poly= in the URL) is fitted here, like on Explore; otherwise a preset.
   const shapeKey = state.shape ? JSON.stringify(state.shape) : "";
   const areaId = shapeKey ? null : state.area ?? index?.areas[0]?.id ?? null;
@@ -189,7 +213,7 @@ export default function Downloads() {
         </div>
 
         {problem && <p className="placeholder">{problem}</p>}
-        {!problem && !area && <p>Loading the area&hellip;</p>}
+        {!problem && !area && <p role="status">{loading ? loadingWords(loading) : "Loading the area…"}</p>}
         {area && (
           <>
             <p><strong>{area.name}</strong>, {area.country}.</p>
@@ -207,6 +231,7 @@ export default function Downloads() {
             </p>
             <div className="actions">
               <button type="button" disabled={busy} onClick={saveHotspots}>{busy ? "Building…" : "Hotspots CSV"}</button>
+              {busy && loading && <span role="status">{loadingWords(loading)}</span>}
             </div>
             {hotspotNote && <p className="note">{hotspotNote}</p>}
 

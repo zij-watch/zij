@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { loadArea, loadIndex, loadNotes, type Area, type Index } from "@/lib/data";
 import { loadDay, type DayResult } from "@/lib/dayData";
@@ -9,7 +10,11 @@ import { monthSpan } from "@/lib/format";
 import { BASEMAPS } from "@/lib/map/style";
 import { useAppState } from "@/lib/url";
 import DayPanel from "./DayPanel";
-import MapView, { type DrawMode } from "./MapView";
+import type { DrawMode } from "./MapView";
+import { loadingWords, useLoading } from "@/lib/download";
+
+// MapLibre is the heaviest script on the page. It is loaded on its own, after the panel has its text.
+const MapView = dynamic(() => import("./MapView"), { ssr: false, loading: () => <div className="map map-waiting">Loading the map…</div> });
 import Panel from "./Panel";
 
 const THEME = "night" as const;
@@ -83,6 +88,13 @@ export default function Explore() {
   const [draft, setDraft] = useState<DrawnResult | null>(null);
   const [working, setWorking] = useState(false);
   const draftTicket = useRef(0);
+  const loading = useLoading();
+  const [mapWanted, setMapWanted] = useState(false);
+  useEffect(() => {
+    // Let the first paint and the area's data go first.
+    const timer = setTimeout(() => setMapWanted(true), 300);
+    return () => clearTimeout(timer);
+  }, []);
   const [dayResult, setDayResult] = useState<DayResult | null>(null);
   const [dayLoading, setDayLoading] = useState(false);
 
@@ -217,9 +229,10 @@ export default function Explore() {
       </div>
 
       <div className="stage">
-        <MapView theme={THEME} basemap={state.basemap} date={mapDate} areas={index?.areas ?? []} selected={areaId}
+        {!mapWanted && <div className="map map-waiting">Loading the map…</div>}
+        {mapWanted && <MapView theme={THEME} basemap={state.basemap} date={mapDate} areas={index?.areas ?? []} selected={areaId}
           onSelect={(id) => update({ area: id, shape: null, month: null })}
-          shape={drawMode ? null : state.shape} drawMode={drawMode} onDraft={onDraft} onDrawn={onDrawn} hotspots={hotspots} />
+          shape={drawMode ? null : state.shape} drawMode={drawMode} onDraft={onDraft} onDrawn={onDrawn} hotspots={hotspots} />}
         {state.basemap === "satellite" && <p className="map-note">NASA GIBS true colour, {mapDate}</p>}
         <aside className="panel" aria-live="polite">
           {error && <p className="panel-body">Could not load the data: {error}</p>}
@@ -239,9 +252,9 @@ export default function Explore() {
               </ul>
             </div>
           )}
-          {!error && drawMode && !shown && <p className="panel-body">Draw on the map. The numbers appear here as the shape grows.</p>}
+          {!error && drawMode && !shown && <p className="panel-body" role="status">{loading ? loadingWords(loading) : "Draw on the map. The numbers appear here as the shape grows."}</p>}
           {!error && !drawMode && hasPanel && !panelArea && !(shown && shown.status !== "ok") && (
-            <p className="panel-body">{working && shapeKey ? "Reading the cells of this region and fitting your area…" : "Loading…"}</p>
+            <p className="panel-body" role="status">{loading ? loadingWords(loading) : working && shapeKey ? "Fitting your area…" : "Loading…"}</p>
           )}
           {!error && shown && shown.status !== "ok" && <CoverageMessage result={shown} />}
           {!error && day && !panelArea && !drawMode && (
@@ -249,7 +262,8 @@ export default function Explore() {
           )}
           {!error && day && dayArea && (
             <div className="panel-body day-wrap">
-              <DayPanel area={dayArea} date={day} result={dayResult && dayResult.view.date === day ? dayResult : null} loading={dayLoading} onClose={() => update({ day: null })} />
+              <DayPanel area={dayArea} date={day} result={dayResult && dayResult.view.date === day ? dayResult : null} loading={dayLoading}
+                loadingText={loading ? loadingWords(loading) : null} onClose={() => update({ day: null })} />
             </div>
           )}
           {!error && panelArea && (

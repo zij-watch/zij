@@ -94,14 +94,28 @@ export function syncDataLayers(map: MapLibreMap, theme: Theme, areas: AreaIndexE
     type: "circle",
     source: HOTSPOTS,
     filter: ["==", ["get", "sensor"], "VIIRS"],
-    paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 2, 9, 4.5], "circle-color": c.rubric, "circle-stroke-color": c.ground, "circle-stroke-width": 0.75 },
+    paint: {
+      // Small and see-through when zoomed out, so a big fire reads as a cloud of points, not a blob.
+      "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 1, 6, 1.8, 8, 3.2, 9, 4.5],
+      "circle-opacity": ["interpolate", ["linear"], ["zoom"], 3, 0.45, 7, 0.7, 9, 1],
+      "circle-color": c.rubric,
+      "circle-stroke-color": c.ground,
+      "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 6, 0, 9, 0.75],
+    },
   });
   map.addLayer({
     id: "zij-hotspots-modis",
     type: "circle",
     source: HOTSPOTS,
     filter: ["==", ["get", "sensor"], "MODIS"],
-    paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 5, 9, 9], "circle-color": c.ground, "circle-opacity": 0, "circle-stroke-color": c.lapis, "circle-stroke-width": 2.5 },
+    paint: {
+      "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 2.5, 6, 4, 9, 9],
+      "circle-color": c.ground,
+      "circle-opacity": 0,
+      "circle-stroke-color": c.lapis,
+      "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 3, 1, 6, 1.5, 9, 2.5],
+      "circle-stroke-opacity": ["interpolate", ["linear"], ["zoom"], 3, 0.6, 8, 1],
+    },
   });
 }
 

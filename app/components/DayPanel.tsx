@@ -29,19 +29,23 @@ export function HotspotLegend() {
   );
 }
 
-export default function DayPanel({ area, date, result, loading, onClose }: { area: Area; date: string; result: DayResult | null; loading: boolean; onClose: () => void }) {
+export default function DayPanel({ area, date, result, loading, loadingText, onClose }: { area: Area; date: string; result: DayResult | null; loading: boolean; loadingText?: string | null; onClose: () => void }) {
   const view = result?.view;
   const sensors = view ? (["VIIRS", "MODIS"] as const).map((name) => ({ name, ...view.summary.sensors[name] })) : [];
   const week = view?.week;
   const month = view?.month;
   const toDate = month?.to_date;
+  // The running week: only its first days exist. Its value is a rate per 7 days, so the days so
+  // far and the same share of the median week are compared, like the running month.
+  const daysOfWeek = week ? Math.round((Date.parse(`${area.last_full_day}T00:00:00Z`) - Date.parse(`${week.week_start}T00:00:00Z`)) / 86400000) + 1 : 7;
+  const runningWeek = Boolean(week && daysOfWeek >= 1 && daysOfWeek < 7);
   return (
     <section className="block day">
       <div className="detail-head">
         <h3>{dayWords(date)}</h3>
         <button type="button" onClick={onClose}>Close day</button>
       </div>
-      {loading && <p>Loading the hotspots of this region&hellip;</p>}
+      {loading && <p role="status">{loadingText ?? "Loading the hotspots of this region…"}</p>}
       {result && !result.covered && (
         <p className="warning">
           Single hotspots are not shipped for this part of {area.country}: in Argentina they cover only the Chilecito and Parana Delta
@@ -72,7 +76,15 @@ export default function DayPanel({ area, date, result, loading, onClose }: { are
           </div>
         </>
       )}
-      {week && week.value !== null && week.median !== null && (
+      {week && runningWeek && week.value !== null && week.median !== null && (
+        <p>
+          <strong>Its week</strong> (from {week.week_start}) is still running: {num((week.value * daysOfWeek) / 7, 1)} {area.unit_label} in
+          its first {daysOfWeek} {daysOfWeek === 1 ? "day" : "days"}. The same days of this week in past years have a median of{" "}
+          {num((week.median * daysOfWeek) / 7, 1)}: <strong>{againstNormal(week.value, week.median)}</strong>.
+          {week.in_critical_period ? " This week is inside the critical period." : ""}
+        </p>
+      )}
+      {week && !runningWeek && week.value !== null && week.median !== null && (
         <p>
           <strong>Its week</strong> (from {week.week_start}): {num(week.value, 1)} {area.unit_label}
           {week.source === "MODIS" && week.lo !== null ? `, converted from MODIS (likely ${num(week.lo, 1)} to ${num(week.hi, 1)})` : ""}.

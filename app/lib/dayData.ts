@@ -3,6 +3,7 @@
 // chosen or the hotspots CSV is asked for, and then only the region the area is in.
 
 import type { Area } from "./data";
+import { fetchData } from "./download";
 import type { Shape } from "./fit/cells";
 import type { AreaDocument } from "./fit/panel";
 import { dayView, type DayView } from "./hotspots/day";
@@ -13,7 +14,11 @@ function hotspotSession() {
   session ??= fetch("/data/hotspots/index.json").then(async (response) => {
     if (!response.ok) throw new Error(`Could not load the hotspot index (${response.status})`);
     const index = (await response.json()) as HotspotIndex;
-    return { index, loader: createHotspotLoader(index) };
+    // File sizes and names for the progress line, from the index.
+    const sizes = new Map<string, { bytes: number; name: string }>();
+    for (const region of index.regions) for (const file of region.files) sizes.set(`/data/${file.file}`, { bytes: file.bytes, name: region.name });
+    const fetchBytes = (url: string) => fetchData(url, `the hotspots of ${sizes.get(url)?.name ?? "this region"}`, sizes.get(url)?.bytes ?? 0);
+    return { index, loader: createHotspotLoader(index, "/data/", fetchBytes) };
   });
   return session;
 }

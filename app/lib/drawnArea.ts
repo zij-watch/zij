@@ -3,7 +3,8 @@
 // the cell index when drawing starts, and a country's cell file the first time a shape falls in it.
 
 import type { Area } from "./data";
-import { boundsOf, countriesFor, loadCells, type Cells, type CellsIndex, type Shape } from "./fit/cells";
+import { fetchData } from "./download";
+import { boundsOf, countriesFor, decodeCells, type Cells, type CellsIndex, type Shape } from "./fit/cells";
 import { fitDrawnArea } from "./fit/drawn";
 import { areaDocument } from "./fit/panel";
 
@@ -30,7 +31,9 @@ const files = new Map<string, Promise<Cells>>();
 function cellsOf(index: CellsIndex, country: string): Promise<Cells> {
   let promise = files.get(country);
   if (!promise) {
-    promise = loadCells(`/data/${index.countries[country].file}`);
+    const file = index.countries[country];
+    promise = fetchData(`/data/${file.file}`, `the cells of ${country}`, file.bytes).then(decodeCells);
+    promise.catch(() => files.delete(country)); // a failed download can be tried again
     files.set(country, promise);
   }
   return promise;

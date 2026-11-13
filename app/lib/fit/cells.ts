@@ -54,8 +54,14 @@ export const DAY_MS = 86400000;
 
 // ---------------------------------------------------------------- files
 
-/** Unzips a .gz file's bytes. Works in browsers and in Node 18 and later. */
+/**
+ * Unzips a .gz file's bytes. Works in browsers and in Node 18 and later.
+ * Bytes that are not gzip (no 1f 8b at the start) are returned as they are: a host may have
+ * unzipped the file already, and the app unzips with its own bundled inflate (lib/download.ts).
+ */
 export async function gunzip(bytes: ArrayBuffer): Promise<ArrayBuffer> {
+  const head = new Uint8Array(bytes, 0, Math.min(2, bytes.byteLength));
+  if (head.length < 2 || head[0] !== 0x1f || head[1] !== 0x8b) return bytes;
   const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
   return new Response(stream).arrayBuffer();
 }

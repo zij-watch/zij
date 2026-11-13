@@ -18,15 +18,16 @@ from . import checkpoint
 from . import config as c
 from .harmonize import EXPORT, slug
 
-SIMPLIFY_DEG = 0.05      # outline detail kept for the basemap, about 5 km
+SIMPLIFY_DEG = 0.15      # outline detail kept for the basemap, about 15 km
 SIMPLIFY_LOADED_DEG = 0.005  # finer for the countries with areas, about 500 m
-COORD_DECIMALS = 3
+MIN_PART_DEG2 = 0.05     # islands smaller than this (about 500 km2) are left out, except in those countries
+COORD_DECIMALS = 2
 
 
-def _round(geometry: dict) -> dict:
+def _round(geometry: dict, decimals: int) -> dict:
     def walk(x):
         if isinstance(x[0], (int, float)):
-            return [round(x[0], COORD_DECIMALS), round(x[1], COORD_DECIMALS)]
+            return [round(x[0], decimals), round(x[1], decimals)]
         return [walk(y) for y in x]
     return {"type": geometry["type"], "coordinates": walk(geometry["coordinates"])}
 
@@ -38,11 +39,14 @@ def basemap() -> int:
     for f in source["features"]:
         detail = SIMPLIFY_LOADED_DEG if f["properties"].get("ADM0_A3") in loaded else SIMPLIFY_DEG
         shape = shapely.simplify(shapely.geometry.shape(f["geometry"]), detail, preserve_topology=True)
+        if detail == SIMPLIFY_DEG and shape.geom_type == "MultiPolygon":
+            parts = [g for g in shape.geoms if g.area >= MIN_PART_DEG2]
+            shape = shapely.geometry.MultiPolygon(parts) if parts else max(shape.geoms, key=lambda g: g.area)
         if shape.is_empty:
             continue
         features.append({"type": "Feature",
                          "properties": {"name": f["properties"].get("NAME"), "iso3": f["properties"].get("ADM0_A3")},
-                         "geometry": _round(shapely.geometry.mapping(shape))})
+                         "geometry": _round(shapely.geometry.mapping(shape), 3 if detail == SIMPLIFY_LOADED_DEG else COORD_DECIMALS)})
     out = EXPORT / "basemap"
     out.mkdir(parents=True, exist_ok=True)
     path = out / "countries.json"

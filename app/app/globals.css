@@ -202,3 +202,5 @@ table.wrap td, table.wrap th { white-space: normal; }
 table.wrap td:last-child { white-space: nowrap; }
 
 .day td:last-child { white-space: normal; }
+
+.map-waiting { display: flex; align-items: center; justify-content: center; color: var(--ink-muted); }
