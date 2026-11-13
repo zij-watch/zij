@@ -19,6 +19,7 @@ export default function PageError({ error, reset }: { error: Error & { digest?: 
       code="500 · Downlink lost"
       title="The ink ran over this page"
       art={<InkBook />}
+      plate="Folios 499 and 500, under the ink"
       log={[
         { label: "Downlink", value: "Lost while the page was written", bad: true },
         { label: "Satellite", value: "Safe mode: ready for the next pass" },

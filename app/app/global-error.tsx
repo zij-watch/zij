@@ -18,7 +18,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
     console.error(error);
   }, [error]);
   return (
-    <html lang="en">
+    <html lang="en" data-theme="night">
       <head>
         <title>Zij could not open</title>
         <style dangerouslySetInnerHTML={{ __html: tokensCss() }} />
@@ -29,6 +29,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
           code="Error · Both satellites in eclipse"
           title="The book came apart"
           art={<LooseLeaves />}
+          plate="Folios 2, 7, 12 and 30, out of their binding"
           log={[
             { label: "MODIS", value: "In Earth's shadow: no signal", bad: true },
             { label: "VIIRS", value: "In Earth's shadow: no signal", bad: true },

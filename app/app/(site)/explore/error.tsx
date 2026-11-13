@@ -21,6 +21,7 @@ export default function ExploreError({ error, reset }: { error: Error & { digest
       code="Error · Cloud over the scene"
       title="The map is under cloud"
       art={<CloudMap />}
+      plate="The Nile Delta, under cloud"
       log={[
         { label: "Scene", value: "Covered: the map did not draw", bad: true },
         { label: "Fires", value: "Not seen, which is not the same as absent" },

@@ -25,6 +25,34 @@ export const COLOURS: Record<string, string> = {
   "heat-5": "#3a0e0a",
 };
 
+// Night, the design system's other theme (its tokens.css, as the landing page uses it): the sky and
+// the room after dark, ink in light. Only the error pages use it, with their drawings on Folio paper
+// inside it: data-theme="night" on a wrapper, data-theme="folio" on a sheet within.
+export const NIGHT: Record<string, string> = {
+  ground: "#100c09",
+  "ground-raised": "#1b150f",
+  sky: "#0a0f1e",
+  rule: "#4a3c2a",
+  ink: "#ede3cc",
+  "ink-muted": "#a99a7e",
+  brass: "#c9a35a",
+  rubric: "#f0643c",
+  "on-rubric": "#100c09",
+  lapis: "#7ea2e6",
+  shadow: "#030201",
+  wood: "#3a2618",
+  flame: "#ffc56b",
+  "heat-0": "#1b150f",
+  "heat-1": "#4a1810",
+  "heat-2": "#9e2a16",
+  "heat-3": "#e2582f",
+  "heat-4": "#f2a541",
+  "heat-5": "#f7dda0",
+};
+
+// What Folio adds for a room: the wood of the desk and the lamp's flame.
+const FOLIO_ROOM: Record<string, string> = { wood: "#5a3a22", flame: "#f4c063" };
+
 export const FONT_DISPLAY = '"Cormorant Garamond", "Reem Kufi", Amiri, Georgia, serif';
 export const FONT_TEXT = 'Amiri, Georgia, serif';
 
@@ -32,10 +60,20 @@ export function heatRamp(): string[] {
   return [1, 2, 3, 4, 5].map((i) => COLOURS[`heat-${i}`]);
 }
 
-/** The tokens as CSS custom properties. */
-export function tokensCss(): string {
-  const block = Object.entries(COLOURS)
+const props = (colours: Record<string, string>) =>
+  Object.entries(colours)
     .map(([name, value]) => `--${name}:${value};`)
     .join("");
-  return `:root{${block}color-scheme:light;--font-display:${FONT_DISPLAY};--font-text:${FONT_TEXT};}`;
+
+/**
+ * The tokens as CSS custom properties: Folio on :root, and both themes as scopes, Night first so a
+ * Folio sheet inside a Night wrapper is Folio again.
+ */
+export function tokensCss(): string {
+  const folio = props({ ...COLOURS, ...FOLIO_ROOM });
+  return (
+    `:root{${folio}color-scheme:light;--font-display:${FONT_DISPLAY};--font-text:${FONT_TEXT};}` +
+    `[data-theme="night"]{${props(NIGHT)}color-scheme:dark;}` +
+    `[data-theme="folio"]{${folio}color-scheme:light;}`
+  );
 }

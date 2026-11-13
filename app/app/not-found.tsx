@@ -13,6 +13,7 @@ export default function NotFound() {
       code="404 · Not in the record"
       title="This leaf was cut from the book"
       art={<CutBook />}
+      plate="Folio 404, cut from the book close to the binding"
       log={[
         { label: "MODIS · Terra, Aqua", value: "No pixel at this address" },
         { label: "VIIRS · NOAA-20, NOAA-21", value: "No pixel at this address" },

@@ -1,64 +1,154 @@
 /* The error pages (components/ErrorPage.tsx) and their drawings (components/ErrorArt.tsx).
-   Folio, as every reading page: ink on paper, brass for headings and buttons, rubric for fire and
-   for what failed, lapis for MODIS. Corners are square. Tokens only, never a hex value. */
+   The page is the design system's Night, as the landing page opens: the sky, its stars and the
+   lamp, light ink, brass for the ways on, rubric for what failed. The drawing lies on a sheet of
+   Folio paper pinned to it, as the landing's plates are. Colours are tokens (lib/tokens.ts): never
+   a hex value here. Controls follow app/ui.css: radius --r-2, 40px targets, a brass focus ring.
 
-.err { flex: 1; background: var(--ground); color: var(--ink); }
+   Motion: every element rests in its last frame. Animations only bring it there (fill-mode both),
+   so with prefers-reduced-motion, or a failed stylesheet animation, the page is simply finished. */
+
+/* ---------------------------------------------------------------- the night */
+.err-night { flex: 1; display: flex; flex-direction: column; background: var(--sky); color: var(--ink); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+.err-night .strip.paper { background: color-mix(in srgb, var(--ground-raised) 92%, transparent); border-color: var(--rule); }
+.err-night .strip nav a { color: var(--ink-muted); }
+.err-night .strip nav a:hover { color: var(--ink); border-bottom-color: var(--brass); }
+.err-credits { background: var(--ground); color: var(--ink-muted); border-top-color: var(--rule); }
+
+.err {
+  flex: 1; position: relative; overflow: hidden; isolation: isolate;
+  background:
+    radial-gradient(ellipse 90% 45% at 50% 108%, color-mix(in srgb, var(--wood) 70%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--sky) 0%, color-mix(in srgb, var(--sky) 55%, var(--ground)) 70%, var(--ground) 100%);
+}
+.err-sky { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+/* stars, as the landing's sky: small, warm and cool, thinning towards the horizon */
+.err-stars {
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(1.2px 1.2px at 12% 18%, var(--ink), transparent 60%),
+    radial-gradient(1px 1px at 34% 8%, var(--ink), transparent 60%),
+    radial-gradient(1.4px 1.4px at 58% 22%, var(--brass), transparent 60%),
+    radial-gradient(1px 1px at 76% 12%, var(--ink), transparent 60%),
+    radial-gradient(1.2px 1.2px at 88% 30%, var(--lapis), transparent 60%),
+    radial-gradient(1px 1px at 22% 40%, var(--ink), transparent 60%),
+    radial-gradient(1px 1px at 66% 44%, var(--ink), transparent 60%);
+  background-size: 340px 260px;
+  opacity: 0.8;
+  mask-image: linear-gradient(180deg, black 0, black 45%, transparent 82%);
+  animation: err-twinkle 5.5s ease-in-out infinite alternate;
+}
+.err-stars.is-far { background-size: 190px 170px; opacity: 0.4; animation-duration: 7.5s; animation-delay: -2s; }
+/* the lamp: warm light pooled around the plate, breathing as the landing's flame does */
+.err-lamp {
+  position: absolute; left: 4%; top: 6%; width: min(70vw, 900px); aspect-ratio: 1;
+  background: radial-gradient(circle, color-mix(in srgb, var(--flame) 20%, transparent) 0, color-mix(in srgb, var(--flame) 7%, transparent) 38%, transparent 66%);
+  animation: err-lamp 3.6s ease-in-out infinite alternate;
+}
+
 .err-inner {
-  max-width: 1120px; margin: 0 auto; padding: 40px 20px 64px;
-  display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 40px; align-items: center;
+  position: relative; max-width: 1180px; margin: 0 auto; padding: 48px 24px 72px;
+  display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); gap: 56px; align-items: center;
 }
-.err-art { margin: 0; }
-.err-art svg { display: block; width: 100%; height: auto; }
 
-.err-code {
-  font: 600 15px/20px var(--font-display); letter-spacing: 0.16em; text-transform: uppercase;
-  color: var(--rubric); margin: 0 0 6px;
+/* ---------------------------------------------------------------- the plate: Folio, pinned */
+.err-plate {
+  margin: 0; padding: 30px 20px 14px; rotate: -1.2deg;
+  box-shadow:
+    0 22px 44px -14px color-mix(in srgb, black 80%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--rule) 60%, transparent),
+    inset 0 0 60px color-mix(in srgb, var(--shadow) 10%, transparent);
+  animation: err-plate-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
-.err h1 { font-size: clamp(34px, 4.2vw, 48px); line-height: 1.08; margin-bottom: 16px; text-wrap: balance; }
-.err-text p { font-size: 19px; line-height: 30px; }
-.err-text .note { font-size: 17px; line-height: 26px; }
+.err-pin {
+  position: absolute; top: 11px; z-index: 2; width: 14px; height: 14px; border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, var(--flame) 0, color-mix(in srgb, var(--brass) 80%, var(--flame)) 26%, color-mix(in srgb, var(--brass) 55%, var(--shadow)) 72%, color-mix(in srgb, var(--brass) 30%, var(--shadow)) 100%);
+  box-shadow: 2px 3px 2px -1px color-mix(in srgb, var(--shadow) 75%, transparent), 4px 6px 6px -2px color-mix(in srgb, var(--shadow) 40%, transparent);
+  animation: err-pin-in 0.35s cubic-bezier(0.3, 1.5, 0.5, 1) 0.55s both;
+}
+.err-pin.is-left { left: 16px; }
+.err-pin.is-right { right: 16px; animation-delay: 0.68s; }
+.err-plate-mark {
+  position: absolute; top: 8px; left: 50%; translate: -50% 0;
+  padding: 1px 10px; border: 1px solid var(--rule); border-radius: var(--r-1);
+  font: 600 12px/18px var(--font-display); letter-spacing: 0.14em; color: var(--ink-muted); white-space: nowrap;
+}
+.err-plate svg { display: block; width: 100%; height: auto; margin-top: 10px; }
+.err-plate-caption {
+  margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--rule);
+  font: italic 400 15px/22px var(--font-text); color: var(--ink-muted); text-align: center;
+}
+
+/* ---------------------------------------------------------------- the words, on the night */
+.err-code { margin: 0 0 8px; font: 600 15px/20px var(--font-display); letter-spacing: 0.18em; text-transform: uppercase; color: var(--rubric); }
+.err-text h1 {
+  margin-bottom: 16px; font-size: clamp(36px, 4.4vw, 54px); line-height: 1.06; text-wrap: balance; color: var(--ink);
+  text-shadow: 0 0 28px color-mix(in srgb, var(--flame) 16%, transparent);
+}
+.err-text p { font-size: 19px; line-height: 30px; color: var(--ink); }
+.err-text .note { font-size: 17px; line-height: 27px; color: var(--ink-muted); }
 .err code {
   font-family: inherit; font-variant-numeric: tabular-nums; word-break: break-all;
-  background: var(--ground-raised); border: 1px solid var(--rule); padding: 0 6px;
+  background: var(--ground-raised); color: var(--ink); border: 1px solid var(--rule); border-radius: var(--r-1); padding: 0 6px;
 }
 
-/* the pass report: a slip of paper with what each instrument saw */
-.err-log { margin: 20px 0 24px; padding: 10px 16px 6px; background: var(--ground-raised); border: 1px solid var(--rule); border-left: 3px solid var(--brass); }
-.err-log-head { margin: 0 0 4px !important; font: 600 13px/18px var(--font-display) !important; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass); }
+/* the pass report: a slip of the instruments' own words */
+.err-log {
+  margin: 22px 0 26px; padding: 10px 16px 6px; border-radius: var(--r-2);
+  background: color-mix(in srgb, var(--ground-raised) 88%, transparent);
+  border: 1px solid var(--rule); border-left: 3px solid var(--brass);
+  backdrop-filter: blur(3px);
+}
+.err-text .err-log-head { margin: 0 0 4px; font: 600 13px/18px var(--font-display); letter-spacing: 0.18em; text-transform: uppercase; color: var(--brass); }
 .err-log dl { margin: 0; }
 .err-log dl > div { display: grid; grid-template-columns: minmax(9em, 38%) 1fr; gap: 12px; padding: 6px 0; border-top: 1px solid var(--rule); }
-.err-log dt { font: 600 14px/23px var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
-.err-log dd { margin: 0; font-size: 16px; line-height: 23px; }
+.err-log dt { font: 600 14px/23px var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+.err-log dd { margin: 0; font-size: 16px; line-height: 23px; color: var(--ink); }
 .err-log dd.is-bad { color: var(--rubric); }
 
 .err-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .err-btn {
-  display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px;
-  border: 1px solid var(--brass); border-radius: 0; background: var(--ground-raised); color: var(--ink);
+  display: inline-flex; align-items: center; min-height: var(--hit, 40px); padding: 0 20px;
+  border: 1px solid var(--brass); border-radius: var(--r-2); background: transparent; color: var(--ink);
   font: 600 19px/1 var(--font-display); text-decoration: none; cursor: pointer;
-  transition: background-color 180ms, color 180ms;
+  transition: background-color var(--fade, 180ms), color var(--fade, 180ms), border-color var(--fade, 180ms);
 }
-.err-btn:hover { background: var(--ground); }
-.err-btn.is-primary { background: var(--brass); color: var(--ground-raised); }
-.err-btn.is-primary:hover { background: var(--ink); border-color: var(--ink); }
+.err-btn:hover, button.err-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--brass) 18%, transparent); }
+.err-btn.is-primary { background: var(--brass); color: var(--ground); }
+.err-btn.is-primary:hover, button.err-btn.is-primary:hover:not(:disabled) { background: color-mix(in srgb, var(--brass) 82%, var(--ink)); }
 
-@media (max-width: 860px) {
-  .err-inner { grid-template-columns: 1fr; gap: 16px; padding: 20px 16px 48px; }
-  .err-art { max-width: 560px; }
+/* the words come in one after another, as the drawing is inked */
+.err-text > * { animation: err-rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.err-text > :nth-child(1) { animation-delay: 0.2s; }
+.err-text > :nth-child(2) { animation-delay: 0.3s; }
+.err-text > :nth-child(3) { animation-delay: 0.45s; }
+.err-text > :nth-child(4) { animation-delay: 0.55s; }
+.err-text > :nth-child(5) { animation-delay: 0.7s; }
+.err-text > :nth-child(6) { animation-delay: 0.85s; }
+
+@media (max-width: 900px) {
+  .err-inner { grid-template-columns: 1fr; gap: 28px; padding: 24px 16px 56px; }
+  .err-plate { max-width: 600px; }
 }
 @media (max-width: 480px) {
   .err-log dl > div { grid-template-columns: 1fr; gap: 0; }
+  .err-plate { padding: 28px 10px 10px; }
 }
 
-/* ---------------------------------------------------------------- the drawings */
+@keyframes err-twinkle { from { opacity: 0.45; } to { opacity: 0.9; } }
+@keyframes err-lamp { from { opacity: 0.82; transform: scale(0.98); } to { opacity: 1; transform: scale(1.03); } }
+@keyframes err-plate-in { from { opacity: 0; translate: 0 -18px; } }
+@keyframes err-pin-in { from { opacity: 0; scale: 1.9; } }
+@keyframes err-rise { from { opacity: 0; translate: 0 10px; } }
+
+/* ---------------------------------------------------------------- the drawings (on Folio) */
 .ea text { font-family: var(--font-display); }
 .ea-shadow { fill: var(--shadow); opacity: 0.22; }
 .ea-cover { fill: var(--brass); stroke: var(--ink); stroke-width: 1.2; }
 .ea-stack { fill: var(--ground); stroke: var(--ink); stroke-width: 1; }
 .ea-page { fill: var(--ground-raised); stroke: var(--ink); stroke-width: 1.2; }
-.ea-gutter { fill: url(#ea-gutter); }
+.ea-gutter { fill: url(#ea-gutter); pointer-events: none; }
 .ea-cell { stroke: var(--rule); stroke-width: 0.5; }
-.ea-text line { stroke: var(--ink-muted); stroke-width: 2; stroke-linecap: round; opacity: 0.45; }
+.ea-text line { stroke: var(--ink-muted); stroke-width: 2; stroke-linecap: round; opacity: 0.45; stroke-dasharray: 1; }
 .ea-head { font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; fill: var(--brass); }
 .ea-folio { font-size: 15px; font-weight: 600; fill: var(--ink-muted); }
 .ea-folio.is-missing { fill: var(--rubric); font-size: 22px; }
@@ -67,8 +157,6 @@
 .ea-body { fill: var(--brass); stroke: var(--ink); stroke-width: 1.2; }
 .ea-panel { fill: var(--lapis); stroke: var(--ink); stroke-width: 1.2; }
 .ea-panel-grid { stroke: var(--ground-raised); stroke-width: 0.8; opacity: 0.6; }
-.ea-sat.is-dark .ea-body, .ea-sat.is-dark .ea-panel { fill: var(--ink-muted); }
-.ea-sat.is-dark { opacity: 0.75; }
 .ea-swath { fill: var(--lapis); fill-opacity: 0.1; stroke: var(--lapis); stroke-width: 1; stroke-dasharray: 4 5; stroke-opacity: 0.6; }
 
 /* 404 */
@@ -76,7 +164,7 @@
 .ea-gap-hatch { fill: url(#ea-hatch); }
 .ea-hatch-line { stroke: var(--ink); stroke-width: 1.2; opacity: 0.22; }
 .ea-stub { fill: var(--ground-raised); stroke: var(--ink); stroke-width: 1; }
-.ea-cutline { stroke: var(--ink); stroke-width: 1.2; stroke-dasharray: 6 6; opacity: 0.55; }
+.ea-cutline { stroke: var(--ink); stroke-width: 1.2; stroke-dasharray: 0.024 0.024; opacity: 0.55; }
 .ea-scissor { fill: none; stroke: var(--ink); stroke-width: 1.6; }
 .ea-scissor-blade { stroke: var(--ink); stroke-width: 2; stroke-linecap: round; }
 .ea-leaf { fill: var(--ground-raised); stroke: var(--ink); stroke-width: 1.1; }
@@ -85,52 +173,118 @@
 /* 500 */
 .ea-bars .is-modis { fill: var(--lapis); }
 .ea-bars .is-viirs { fill: var(--rubric); }
-.ea-ink { fill: var(--ink); opacity: 0.93; transform-box: view-box; transform-origin: 552px 104px; }
-.ea-ink.is-halo { opacity: 0.32; }
+.ea-ink { fill: var(--ink); opacity: 0.94; }
+.ea-ink.is-halo { opacity: 0.3; }
 .ea-ink-solid { fill: var(--ink); }
-.ea-drip { fill: none; stroke: var(--ink); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 60; stroke-dashoffset: 0; }
+.ea-drip { fill: none; stroke: var(--ink); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 1; }
 .ea-well { fill: var(--brass); stroke: var(--ink); stroke-width: 1.4; }
 .ea-reed { stroke: var(--brass); stroke-width: 5; stroke-linecap: round; }
 .ea-link { fill: none; stroke: var(--lapis); stroke-width: 2; stroke-dasharray: 5 5; }
+.ea-link.is-whole { opacity: 0; }
 .ea-cross { stroke: var(--rubric); stroke-width: 3; stroke-linecap: round; }
 
 /* Explore */
 .ea-fold { fill: var(--ground); opacity: 0.7; }
 .ea-foldline { stroke: var(--rule); stroke-width: 1.2; }
-.ea-coast { fill: none; stroke: var(--lapis); stroke-width: 1.6; opacity: 0.7; }
-.ea-river { fill: none; stroke: var(--lapis); stroke-width: 2.2; }
+.ea-coast { fill: none; stroke: var(--lapis); stroke-width: 1.6; opacity: 0.7; stroke-dasharray: 1; }
+.ea-river { fill: none; stroke: var(--lapis); stroke-width: 2.2; stroke-dasharray: 1; }
 .ea-fan { fill: var(--heat-1); opacity: 0.35; }
 .ea-fire { fill: var(--rubric); stroke: var(--ground-raised); stroke-width: 1; }
-.ea-cloud { fill: var(--ground-raised); stroke: var(--ink-muted); stroke-width: 1.2; opacity: 0.96; }
+.ea-cloud { fill: var(--ground-raised); stroke: var(--ink-muted); stroke-width: 1.2; opacity: 0.97; }
 
 /* the whole app */
 .ea-limb { fill: none; stroke: var(--lapis); stroke-width: 1.4; stroke-dasharray: 2 6; opacity: 0.5; }
-.ea-spine { fill: none; stroke: var(--ink); stroke-width: 1.4; }
+.ea-spine { fill: none; stroke: var(--ink); stroke-width: 1.4; stroke-dasharray: 1; }
 .ea-thread-end { fill: var(--brass); stroke: var(--ink); stroke-width: 0.8; }
+.ea-sat.is-dimming { opacity: 0.78; }
+.ea-sat.is-dimming .ea-body, .ea-sat.is-dimming .ea-panel { fill: var(--ink-muted); }
 
-/* ---------------------------------------------------------------- motion */
-@keyframes ea-scan { from { transform: translateX(-118px); } to { transform: translateX(46px); } }
-@keyframes ea-fall { from { transform: translate(0, 0) rotate(0deg); } to { transform: translate(-6px, 12px) rotate(5deg); } }
-@keyframes ea-flood { from { transform: scale(0.04); } to { transform: scale(1); } }
-@keyframes ea-drip { from { stroke-dashoffset: 60; } to { stroke-dashoffset: 0; } }
-@keyframes ea-tumble { from { transform: rotate(-12deg); } to { transform: rotate(16deg); } }
-@keyframes ea-blink { 0%, 55% { opacity: 1; } 60%, 100% { opacity: 0.15; } }
-@keyframes ea-drift { from { transform: translateX(-14px); } to { transform: translateX(16px); } }
+/* ---------------------------------------------------------------- act one: inked in */
+.ea-sketch { stroke-dasharray: 1; animation: ea-sketch 1.1s cubic-bezier(0.4, 0, 0.2, 1) var(--d, 0s) both; }
+.ea-cell { transform-box: fill-box; transform-origin: center; animation: ea-cell 0.32s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: calc(var(--d, 0.7s) + var(--i, 0) * 8ms); }
+.ea-text line, .ea-pen { animation: ea-pen 0.6s ease-out var(--d, 1.4s) both; }
+.ea-pen { animation-duration: 1s; }
+.ea-appear { animation: ea-appear 0.5s ease-out var(--d, 0s) both; }
+.ea-late { animation: ea-appear 0.5s ease-out var(--late, 3s) both; }
+.err-cut .ea-late { --late: 3.8s; }
+.err-ink .ea-late { --late: 2.9s; }
+.err-cloud .ea-late { --late: 3.6s; }
+.err-loose .ea-late { --late: 3.3s; }
 
-.ea-scan { animation: ea-scan 7s ease-in-out infinite alternate; }
-.ea-fall { transform-box: fill-box; transform-origin: 50% 0; animation: ea-fall 4.6s ease-in-out infinite alternate; }
-.ea-fall.is-back { animation-duration: 5.4s; animation-direction: alternate-reverse; }
-.ea-ink { animation: ea-flood 3.4s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-.ea-ink.is-halo { animation-duration: 3s; }
-.ea-drip { animation: ea-drip 1.6s ease-in 2.6s both; }
-.ea-drip.is-late { animation-delay: 3.1s; }
-.ea-drip.is-later { animation-delay: 3.5s; }
+/* ---------------------------------------------------------------- act two: the accidents */
+/* 404: the scissors run down the gutter, the leaf drops out, the gap shows */
+.ea-gap, .ea-gap-hatch, .ea-stub { animation: ea-appear 0.3s linear 1.4s both; }
+.ea-cutaway { opacity: 0; animation: ea-vanish 3.05s linear both; }
+.ea-cutline { transform-box: fill-box; transform-origin: 50% 0; animation: ea-grow-y 0.95s cubic-bezier(0.5, 0, 0.5, 1) 2.05s both; }
+.ea-snip { transform: translateX(250px); animation: ea-snip 0.95s cubic-bezier(0.5, 0, 0.5, 1) 2.05s both; }
+.ea-blades { animation: ea-appear 0.3s ease-out 1.75s both; }
+.ea-drop { animation: ea-drop 1.05s cubic-bezier(0.55, 0, 0.7, 0.55) 3.05s both; }
+.ea-fall { transform-box: fill-box; transform-origin: 50% 0; animation: ea-fall 4.6s ease-in-out 4.1s infinite alternate; }
+.ea-fall.is-back { animation-duration: 5.4s; animation-direction: alternate-reverse; animation-delay: 3.4s; }
+.ea-arrive { animation: ea-arrive 1s cubic-bezier(0.2, 0.7, 0.2, 1) 1s both; }
+.ea-scan { animation: ea-scan 7s ease-in-out 1s infinite alternate; }
+
+/* 500: the bars rise, the inkwell is set down and tips over, the ink runs, the link breaks */
+.ea-bars rect { transform-box: fill-box; transform-origin: 50% 100%; animation: ea-bar 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 1s) both; }
+.ea-tip { transform: rotate(-64deg); animation: ea-appear 0.4s ease-out 1.1s both, ea-tip 0.55s cubic-bezier(0.55, 0, 0.6, 1.35) 2s both; }
+.ea-ink { transform-box: view-box; transform-origin: 522px 87px; animation: ea-flood 3.2s cubic-bezier(0.2, 0.7, 0.2, 1) 2.35s both; }
+.ea-ink.is-halo { animation-duration: 2.8s; animation-delay: 2.25s; }
+.ea-ink-gloss { transform-box: view-box; transform-origin: 522px 87px; animation: ea-flood 3.2s cubic-bezier(0.2, 0.7, 0.2, 1) 2.35s both; }
+.ea-drip { animation: ea-drip 1.6s ease-in 4.8s both; }
+.ea-drip.is-late { animation-delay: 5.2s; }
+.ea-drip.is-later { animation-delay: 5.5s; }
+.ea-link.is-whole { animation: ea-march 0.8s linear infinite, ea-vanish 2.5s linear both; }
+.ea-link.is-broken { animation: ea-appear 0.2s linear 2.5s both; }
 .ea-tumble { transform-box: fill-box; transform-origin: 50% 50%; animation: ea-tumble 3.2s ease-in-out infinite alternate; }
-.ea-blink { animation: ea-blink 1.4s steps(1) infinite; }
-.ea-drift { animation: ea-drift 8s ease-in-out infinite alternate; }
+.ea-blink { animation: ea-blink 1.4s steps(1) 3s infinite; }
+
+/* Explore: the map unfolds, the rivers are drawn, the fires light, the cloud rolls in */
+.ea-unfold { transform-box: fill-box; transform-origin: 50% 50%; animation: ea-unfold 0.95s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s both; }
+.ea-fire { transform-box: fill-box; transform-origin: center; animation: ea-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) var(--d, 1.5s) both; }
+.ea-roll { animation: ea-roll 1.3s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 2.5s) both; }
+.ea-roll.is-left { --from: -300px; }
+.ea-roll.is-right { --from: 300px; }
+.ea-drift { animation: ea-drift 8s ease-in-out 4s infinite alternate; }
 .ea-drift.is-slow { animation-duration: 11s; }
 .ea-drift.is-back { animation-duration: 9s; animation-direction: alternate-reverse; }
 
+/* the whole app: the binding snaps, the leaves scatter, the shadow takes the satellites */
+.ea-half { animation: ea-split 0.55s cubic-bezier(0.3, 1.4, 0.5, 1) 1.45s both; }
+.ea-half.is-left { --sx: 8px; --sr: 2deg; }
+.ea-half.is-right { --sx: -8px; --sr: -2deg; }
+.ea-scatter { animation: ea-scatter 1.05s cubic-bezier(0.2, 0.75, 0.25, 1) var(--d, 1.7s) both; }
+.ea-eclipse { animation: ea-eclipse 1.5s cubic-bezier(0.3, 0.6, 0.3, 1) 1.9s both; }
+.ea-sat.is-dimming .ea-body { animation: ea-dim-body 0.9s ease-in 2.7s both; }
+.ea-sat.is-dimming .ea-panel { animation: ea-dim-panel 0.9s ease-in 2.7s both; }
+
+@keyframes ea-sketch { from { stroke-dashoffset: 1; fill-opacity: 0; } 55% { fill-opacity: 0; } to { stroke-dashoffset: 0; fill-opacity: 1; } }
+@keyframes ea-cell { from { opacity: 0; transform: scale(0.3); } }
+@keyframes ea-pen { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes ea-appear { from { opacity: 0; } }
+@keyframes ea-vanish { 0%, 99% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes ea-grow-y { from { transform: scaleY(0); } }
+@keyframes ea-snip { from { transform: translateX(0); } to { transform: translateX(250px); } }
+@keyframes ea-drop { from { transform: rotate(-14deg) translate(-130px, -137px) scale(1.8); opacity: 0; } 3% { opacity: 1; } to { transform: none; opacity: 1; } }
+@keyframes ea-fall { from { transform: translate(0, 0) rotate(0deg); } to { transform: translate(-6px, 12px) rotate(5deg); } }
+@keyframes ea-arrive { from { opacity: 0; transform: translateX(-70px); } }
+@keyframes ea-scan { from { transform: translateX(-118px); } to { transform: translateX(46px); } }
+@keyframes ea-bar { from { transform: scaleY(0); } }
+@keyframes ea-tip { from { transform: rotate(0deg); } to { transform: rotate(-64deg); } }
+@keyframes ea-flood { from { transform: scale(0.03); } to { transform: scale(1); } }
+@keyframes ea-drip { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes ea-march { to { stroke-dashoffset: -10; } }
+@keyframes ea-tumble { from { transform: rotate(-12deg); } to { transform: rotate(16deg); } }
+@keyframes ea-blink { 0%, 55% { opacity: 1; } 60%, 100% { opacity: 0.15; } }
+@keyframes ea-unfold { from { transform: scaleX(0.16); opacity: 0; } 30% { opacity: 1; } }
+@keyframes ea-pop { from { transform: scale(0); } }
+@keyframes ea-roll { from { transform: translateX(var(--from, -300px)); opacity: 0; } 40% { opacity: 1; } }
+@keyframes ea-drift { from { transform: translateX(-14px); } to { transform: translateX(16px); } }
+@keyframes ea-split { from { transform: translateX(var(--sx, 0)) rotate(var(--sr, 0deg)); } }
+@keyframes ea-scatter { from { transform: translate(var(--dx, 0), var(--dy, 0)) rotate(var(--a, 0deg)); } }
+@keyframes ea-eclipse { from { transform: translate(-280px, -60px); opacity: 0.2; } }
+@keyframes ea-dim-body { from { fill: var(--brass); } }
+@keyframes ea-dim-panel { from { fill: var(--lapis); } }
+
 @media (prefers-reduced-motion: reduce) {
-  .ea *, .ea { animation: none !important; }
+  .err-night *, .err-night *::before, .err-night *::after { animation: none !important; }
 }
