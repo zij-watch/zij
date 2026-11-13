@@ -6,16 +6,17 @@ Built at NASA Space Apps Cairo, 13 to 14 November 2026, by Team Zij. Contact: in
 
 Zij puts 26 years of satellite fire detections on one scale.
 
-NASA has two families of fire sensors. MODIS (on Terra and Aqua) has watched since 2000 with 1 km pixels. VIIRS (on Suomi NPP and NOAA-20) has watched since 2012 with 375 m pixels, and it sees many more small fires. Over the Nile Delta in autumn, Suomi NPP reports 11 to 20 times as many fire pixels as Aqua in most years, and 42 times as many in 2018. So a fire record that starts in 2000 can't be read year against year as it is.
+NASA has two families of fire sensors. MODIS (on Terra and Aqua) has watched since 2000 with 1 km pixels. VIIRS (on Suomi NPP, NOAA-20 and NOAA-21) has watched since 2012 with 375 m pixels, and it sees many more small fires. Over the Nile Delta in autumn, Suomi NPP reports 11 to 20 times as many fire pixels as Aqua in most years, and 42 times as many in 2018. So a fire record that starts in 2000 can't be read year against year as it is.
 
 Zij counts both records in one unit, the **fire cell-day**: one map square of 0.1 degree (about 10 km) with at least one fire detection on one day, for one satellite.
 
 - `pipeline/`: from raw FIRMS files to weekly fire cell-days per satellite and per sensor.
-- `app/`: the web app (not started yet).
+- `app/`: the web app (not started yet). `app/public/data/` holds the files the pipeline exports for it.
 - `docs/event/DECISIONS.md`: every decision made during the event, with its reason.
 - `docs/event/VALIDATION.md`: how well the calibration predicts VIIRS from MODIS, per area and model.
+- `docs/event/DATA_CONTRACT.md`: the format of the exported files.
 
-Status: the weekly record is built, and the MODIS to VIIRS calibration is fitted and validated on 8 areas (`docs/event/VALIDATION.md`). The harmonized record, the 2026 data and the app come next.
+Status: the record runs from November 2000 to yesterday for 10 areas in Egypt, Portugal and Argentina, in one unit, with bands, a typical year, critical periods and anomalies, exported for the app. The app comes next.
 
 ## Before the event
 
@@ -26,22 +27,23 @@ Status: the weekly record is built, and the MODIS to VIIRS calibration is fitted
 
 ## The pipeline
 
-Needs [uv](https://docs.astral.sh/uv/) and the raw FIRMS files laid out as `firms/<Country>/<source>/*.csv`, with the sources `modis`, `viirs-snpp` and `viirs-jpss1`.
+Needs [uv](https://docs.astral.sh/uv/) and the raw FIRMS files laid out as `firms/<Country>/<source>/*.csv` (yearly files) and `firms_api/<Country>/<source>/` (2026 API pulls with their `pulls.json`). Sources: `modis`, `viirs-snpp`, `viirs-jpss1`, `viirs-jpss2`. The country outlines are Natural Earth's, in `boundaries/`.
 
 ```powershell
 cd pipeline
 uv sync
 $env:ZIJ_FIRMS_RAW = 'D:\Zij\firms-raw'   # only if the raw files are somewhere else
-uv run python -m zij all                  # or: build, checkpoint, validate
+uv run python -m zij pull                 # optional: top up 2026 from the FIRMS API (needs MAP_KEY)
+uv run python -m zij all                  # or: build, checkpoint, validate, harmonize
 ```
 
-What `build` does, for Egypt and Portugal, 2000 to 2025:
+What `build` does, for Egypt, Portugal and Argentina, from November 2000 to the last full day pulled:
 
-1. **Load** every row of the FIRMS yearly country files into DuckDB (`data/zij.duckdb`).
-2. **Filter.** Keep `type` 0 (vegetation fire). Keep MODIS confidence 30 and above, and VIIRS nominal and high.
+1. **Load** every row of the FIRMS yearly country files (2000 to 2025) into DuckDB (`data/zij.duckdb`), then the 2026 API pulls. The API answers with a box, so its rows are clipped to the country outline. Standard processing wins over near real time, and a newer pull over an older one.
+2. **Filter.** Keep `type` 0 (vegetation fire); near-real-time rows have no `type` and pass this step. Keep MODIS confidence 30 and above, and VIIRS nominal and high.
 3. **Static-source mask.** A 0.01 degree cell where `type` 2 or 3 detections (gas flares, industry, offshore) occur on 20 or more days loses every detection, in every year.
 4. **Grid.** Snap to a 0.1 degree grid. A cell counts once per day for each satellite: that is a fire cell-day.
-5. **Outages.** A day inside a known satellite gap is "no data" for that satellite, never zero.
+5. **Outages.** A day inside a known satellite gap is "no data" for that satellite, never zero. Suomi NPP stops counting after 1 November 2026, the end of its data.
 6. **Weekly.** Sum per satellite and ISO week. A sensor's value is its satellites' sum, divided by the satellite-days flown that week, times 7, so two satellites don't count double. A sensor-week with fewer than 3 satellite-days is "no data".
 7. **Write** Parquet to `data/processed/<Country>/`.
 
@@ -53,7 +55,7 @@ What `build` does, for Egypt and Portugal, 2000 to 2025:
 | `weeks.parquet` | sensor and week it flew | `family`, `week_start`, `n_satellites`, `satellites`, `is_partial`, `no_data` |
 | `filters.parquet` | satellite, year and filter reason | `family`, `satellite`, `year`, `filter_reason`, `n` |
 
-`family` is the sensor (`MODIS`, `VIIRS`). `satellite` uses the FIRMS codes: `Terra`, `Aqua`, `N` (Suomi NPP), `N20` (NOAA-20). `cell_lat` and `cell_lon` are the cell's centre. `week_start` is the Monday. A cell and week with no row had no kept detection: that is zero fires if the sensor has a row in `weeks.parquet` with `no_data` false, and no data otherwise.
+`family` is the sensor (`MODIS`, `VIIRS`). `satellite` uses the FIRMS codes: `Terra`, `Aqua`, `N` (Suomi NPP), `N20` (NOAA-20), `N21` (NOAA-21). `cell_lat` and `cell_lon` are the cell's centre. `week_start` is the Monday. A cell and week with no row had no kept detection: that is zero fires if the sensor has a row in `weeks.parquet` with `no_data` false, and no data otherwise.
 
 `checkpoint` prints the Nile Delta check (September to November, 2012 to 2024, per satellite). The 13 November run is recorded in `docs/event/DECISIONS.md`.
 
@@ -72,9 +74,16 @@ What `build` does, for Egypt and Portugal, 2000 to 2025:
 
 For the Nile Delta, M4 is off by 7.0% (10.3% for 2021 to 2025). The fits are plain least squares inside two small grid searches (numpy only), so they can run in the browser later. `validate` writes `data/processed/calibration/` (`fits.json`, `validation_years.parquet`, `validation_areas.parquet`, `validation_summary.json`, `area_series.parquet`) and `docs/event/VALIDATION.md`.
 
+## The harmonized record
+
+`harmonize` builds, for each named area, one weekly record from November 2000 to the last full day, in VIIRS-equivalent fire days: VIIRS itself from 2012, and before that MODIS converted with M4, each converted value with a band. Before July 2002 MODIS is Terra alone, so those weeks are first put on the Terra + Aqua footing, by month and area. From the record it derives month and season totals, the typical year over 2001 to 2025, the critical period (the fewest weeks holding 80% of a typical year), anomalies (outside the 10th to 90th percentile), and the running month against the same days of past years.
+
+It writes one JSON file per area to `app/public/data/areas/`, with the raw counts per satellite alongside, and `app/public/data/index.json`. The format is in `docs/event/DATA_CONTRACT.md`. These files hold weekly totals, not FIRMS rows.
+
 ## Data sources
 
-- **NASA FIRMS active fire detections**: MODIS Collection 6.1 (Terra, Aqua) and VIIRS 375 m (Suomi NPP, NOAA-20), yearly country files for Egypt and Portugal, 2000 to 2025. https://firms.modaps.eosdis.nasa.gov
+- **NASA FIRMS active fire detections**: MODIS Collection 6.1 (Terra, Aqua) and VIIRS 375 m (Suomi NPP, NOAA-20), yearly country files for Egypt, Portugal and Argentina, 2000 to 2025, and the FIRMS area API for 2026 (standard processing where it exists, near real time after, NOAA-21 included). https://firms.modaps.eosdis.nasa.gov
+- **Natural Earth** country outlines (1:10m Admin 0 Countries, public domain), used to clip the API's boxes to each country. https://www.naturalearthdata.com
 
 We acknowledge the use of data from NASA's Fire Information for Resource Management System (FIRMS) (https://earthdata.nasa.gov/firms), part of NASA's Earth Science Data and Information System (ESDIS).
 
@@ -88,6 +97,7 @@ Zij is not affiliated with or endorsed by NASA.
 | [pandas](https://pandas.pydata.org) | the checkpoint tables | BSD-3-Clause |
 | [NumPy](https://numpy.org) | arrays under pandas | BSD-3-Clause |
 | [Apache Arrow (PyArrow)](https://arrow.apache.org) | Parquet | Apache-2.0 |
+| [Shapely](https://shapely.readthedocs.io) | which API rows fall inside a country outline | BSD-3-Clause |
 | [uv](https://docs.astral.sh/uv/) | Python and package management | Apache-2.0 or MIT |
 
 Exact versions are in `pipeline/pyproject.toml` and `pipeline/uv.lock`. The app's libraries will be listed here when the app is added.
