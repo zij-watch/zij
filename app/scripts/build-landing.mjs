@@ -218,10 +218,12 @@ const edits = [
 ];
 for (const [from, to, what] of edits) html = swap(html, from, to, what);
 html = html.replaceAll('"../logo/', '"/landing/logo/');
+// The page's own styles point at the patterns beside the reference; here they are under /landing.
+html = html.replaceAll('"../assets/', '"/landing/assets/');
 // The two files that change with the data or the styles carry a stamp, so a cached copy is never stale.
 const stamp = createHash("sha1").update(js).update(read("../landing-src/additions.css")).digest("hex").slice(0, 8);
 html = html.replace('/landing/additions.css"', `/landing/additions.css?v=${stamp}"`).replace('/landing/reference/landing.js"', `/landing/reference/landing.js?v=${stamp}"`);
-if (/fonts\.g(oogleapis|static)|href="\.\.\/|src="\.\.\//.test(html)) throw new Error("build-landing: an outside or relative reference is left in the page");
+if (/fonts\.g(oogleapis|static)|\.\.\//.test(html)) throw new Error("build-landing: an outside or relative reference is left in the page");
 
 writeFileSync(here("../public/landing.html"), html);
 writeFileSync(here("../public/landing/reference/landing.js"), js);
