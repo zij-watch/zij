@@ -1,4 +1,4 @@
-"""Run from pipeline/:  uv run python -m zij pull | build | checkpoint | validate | harmonize | appdata | cells | boxes | fixtures | all"""
+"""Run from pipeline/:  uv run python -m zij pull | build | checkpoint | validate | harmonize | appdata | cells | boxes | fixtures | hotspots | all"""
 
 from __future__ import annotations
 
@@ -48,6 +48,12 @@ def _fixtures() -> None:
     fixtures.run()
 
 
+def _hotspots() -> None:
+    from . import hotspots
+
+    hotspots.run()
+
+
 COMMANDS = {
     "pull": (_pull,),
     "build": (build.run,),
@@ -58,6 +64,7 @@ COMMANDS = {
     "cells": (_cells,),
     "boxes": (_boxes,),
     "fixtures": (_fixtures,),
+    "hotspots": (_hotspots,),
     "all": (build.run, checkpoint.run, _validate, _harmonize, _appdata),
 }
 
