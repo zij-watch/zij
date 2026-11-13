@@ -102,6 +102,10 @@ button.link, button.link:hover:not(:disabled) { min-height: 0; background: none;
   flex: none; display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; min-height: 0; padding: 0;
   border: 1px solid var(--brass); border-radius: var(--r-1); background: var(--ground-raised); color: var(--ground-raised);
 }
+/* The tick sits dead centre: the indicator is a flex box and the drawing has no text baseline under it. */
+.ui-checkbox { line-height: 0; box-sizing: border-box; }
+.ui-checkbox > span { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+.ui-checkbox svg { display: block; width: 14px; height: 14px; }
 /* The box is 20px; the row it sits in is the 40px target. */
 .ui-checkbox[data-state="checked"], .ui-checkbox[data-state="checked"]:hover:not(:disabled) { background: var(--brass); }
 
