@@ -22,7 +22,7 @@ import { monthSpan } from "@/lib/format";
 import type { DayHotspot } from "@/lib/hotspots/day";
 import { BASEMAPS, satelliteThumb } from "@/lib/map/style";
 import { TOUR, tourState } from "@/lib/tour";
-import { useAppState } from "@/lib/url";
+import { shapeParams, useAppState } from "@/lib/url";
 import DayPanel from "./DayPanel";
 import type { DrawMode } from "./MapView";
 import Panel from "./Panel";
@@ -508,6 +508,12 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
         <p className="panel-body">Choose an area to see {day}: its hotspots on the map and how the day compares.</p>
       )}
       {!error && !day && panelArea && !isDraft && verdict && <div className="panel-body verdict-wrap"><VerdictLine verdict={verdict} /></div>}
+      {!error && panelArea && !isDraft && (
+        <p className="panel-body brief-link">
+          <Link className="button-link" href={`/brief?${areaId ? `area=${areaId}` : Object.entries(shapeParams(state.shape)).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join("&")}`}>Brief</Link>
+          <span className="note">One printable page for this area: the verdict, the calendar, the critical period, and how sure the numbers are.</span>
+        </p>
+      )}
       {!error && day && dayArea && (dayVerdict.week || dayVerdict.month) && (
         <div className="panel-body verdict-wrap">
           {dayVerdict.week && <VerdictLine verdict={dayVerdict.week} />}
