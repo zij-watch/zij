@@ -1,0 +1,31 @@
+{
+  "name": "Zij map",
+  "note": "The map palette. Everything is a mix of Zij tokens (design/tokens.json) except two named map pigments. Rubric is never used by the base map: red ink means fire. Lapis is only ever used diluted, so MODIS marks still read on top.",
+  "pigments": {
+    "verdigris": {
+      "value": { "night": "#7d9a78", "folio": "#5c7a4f" },
+      "usage": "Copper green, the pigment of cultivated land on old sheets. Fields, the river valley, oases. Never text."
+    },
+    "ochre": {
+      "value": { "night": "#b98a44", "folio": "#b0782c" },
+      "usage": "Yellow earth. Relief (drawn hills, range washes), the warm tint of land along a coast, desert stipple. Never text."
+    }
+  },
+  "mix": {
+    "note": "Each colour is color-mix(in srgb, a, b amount%) — amount is the share of b. Tune these in the harness (Palette panel) and paste the export back here.",
+    "land": ["ground", "ochre", 0.13],
+    "landTint": ["ochre", "brass", 0.25],
+    "sea": ["sky", "verdigris", 0.2],
+    "seaLine": ["lapis", "verdigris", 0.5],
+    "waterInk": ["ink", "lapis", 0.42],
+    "lake": ["sky", "verdigris", 0.14],
+    "relief": ["ochre", "wood", 0.35],
+    "reliefShade": ["ochre", "wood", 0.7],
+    "desert": ["ochre", "ink-muted", 0.35],
+    "field": ["verdigris", "ground", 0.0],
+    "border": ["ink-muted", "ground", 0.2],
+    "graticule": ["brass", "ground", 0.35],
+    "labelWater": ["ink", "lapis", 0.55],
+    "labelRegion": ["ink-muted", "brass", 0.3]
+  }
+}

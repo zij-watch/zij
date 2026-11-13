@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     return [
       { source: "/data/:path*", headers: [{ key: "Cache-Control", value: CACHE }] },
       { source: "/vendor/:path*", headers: [{ key: "Cache-Control", value: CACHE }] },
+      { source: "/atlas/:path*", headers: [{ key: "Cache-Control", value: CACHE }] },
     ];
   },
   // The Explore page reads the index and the area files on the server, for its first HTML.
