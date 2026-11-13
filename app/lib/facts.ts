@@ -3,6 +3,7 @@
 
 import type { Area } from "./data";
 import { MONTHS, againstNormal, num } from "./format";
+import { areaVerdict, type Verdict } from "./verdict";
 
 export interface AreaFacts {
   id: string;
@@ -14,6 +15,7 @@ export interface AreaFacts {
   season: string; // "August to October"
   thisMonth: string | null; // the running month against the same days of past years
   anomalies: string[]; // the strongest unusual seasons, newest first
+  verdict: Verdict | null; // the opening sentence and badge
 }
 
 function median(values: number[]): number {
@@ -54,6 +56,7 @@ export function areaFacts(area: Area): AreaFacts {
       (s.source[i] !== "VIIRS" ? " (converted from MODIS)" : "") + ".");
 
   return {
+    verdict: areaVerdict(area),
     id: area.id,
     name: area.name,
     country: area.country,

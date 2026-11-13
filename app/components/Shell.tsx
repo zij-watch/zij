@@ -4,6 +4,7 @@
 
 import type { AreaIndexEntry } from "@/lib/data";
 import type { AreaFacts } from "@/lib/facts";
+import type { Verdict } from "@/lib/verdict";
 
 export const INTRO = [
   "Zij puts 26 years of satellite fire detections on one scale. MODIS has watched fires since 2000 and VIIRS since 2012, and VIIRS sees many more of them.",
@@ -22,11 +23,22 @@ export function AreaLinks({ areas, base = "/explore" }: { areas: AreaIndexEntry[
   );
 }
 
+/** The verdict: a badge and one plain sentence. Rules in lib/verdict.ts. */
+export function VerdictLine({ verdict }: { verdict: Verdict }) {
+  return (
+    <p className="verdict">
+      <span className={`badge badge-${verdict.level}`}>{verdict.badge}</span>
+      <span>{verdict.sentence}</span>
+    </p>
+  );
+}
+
 export function FactsBlock({ facts, named = true }: { facts: AreaFacts; named?: boolean }) {
   return (
     <div className="panel-body shell-facts">
       {named && <p className="eyebrow">{facts.country}</p>}
       {named && <h2>{facts.name}</h2>}
+      {facts.verdict && <VerdictLine verdict={facts.verdict} />}
       <p className="note">Unit: {facts.unitLabel}. Data to {facts.lastFullDay}. The calendar and charts are loading.</p>
       <section className="block">
         <h3>Busiest months</h3>

@@ -226,3 +226,16 @@ button.link, button.link:hover:not(:disabled) { min-height: 0; background: none;
   .tab { font-size: 14px; padding: 0 2px; }
   .switch button { font-size: 15px; }
 }
+
+/* ---------------------------------------------------------------- the verdict
+   A badge and one sentence. Cool for under normal, brass for normal, the heat colours for over. */
+.verdict { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-2); margin: 0 0 var(--s-3); font-size: 18px; line-height: 27px; }
+.verdict:last-child { margin-bottom: 0; }
+.verdict-wrap { padding-bottom: var(--s-1); }
+.verdict-wrap + .panel-body { padding-top: var(--s-2); }
+.badge { display: inline-flex; align-items: center; min-height: 28px; padding: 0 var(--s-3); border: 1px solid var(--brass); border-radius: var(--r-2); font: 600 17px/24px var(--font-display); letter-spacing: 0.02em; white-space: nowrap; }
+.badge-normal { background: var(--ground-raised); color: var(--ink); }
+.badge-below { background: color-mix(in srgb, var(--lapis) 14%, var(--ground-raised)); border-color: var(--lapis); color: var(--lapis); }
+.badge-far-below { background: var(--lapis); border-color: var(--lapis); color: var(--ground-raised); }
+.badge-above { background: var(--heat-1); border-color: var(--heat-3); color: var(--ink); }
+.badge-far-above { background: var(--rubric); border-color: var(--rubric); color: var(--on-rubric); }

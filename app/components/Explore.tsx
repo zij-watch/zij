@@ -25,7 +25,8 @@ import { useAppState } from "@/lib/url";
 import DayPanel from "./DayPanel";
 import type { DrawMode } from "./MapView";
 import Panel from "./Panel";
-import { AreaLinks, FactsBlock, INTRO, Seal } from "./Shell";
+import { AreaLinks, FactsBlock, INTRO, Seal, VerdictLine } from "./Shell";
+import { areaVerdict, dayVerdicts } from "@/lib/verdict";
 import Timeline, { daysBetween, shortDate } from "./Timeline";
 import { Check, DayField, Modal, Pop, RangeField, Select, Tip, TooltipProvider } from "./ui";
 
@@ -419,6 +420,9 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
     { id: "capture", label: "Capture", tip: "Save the map as a PNG", go: capture },
     { id: "share", label: "Share", tip: "Copy a link to this view", go: share },
   ];
+  // The verdict the panel opens with: the area's this month, or the chosen day's week and month.
+  const verdict = useMemo(() => (panelArea ? areaVerdict(panelArea) : null), [panelArea]);
+  const dayVerdict = useMemo(() => (day && dayArea ? dayVerdicts(dayArea, day) : { week: null, month: null }), [day, dayArea]);
   const q = query ? `?${query}` : "";
   const closed = state.panel === "closed";
   const wide = state.panel === "wide";
@@ -460,6 +464,13 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
       {!error && shown && shown.status !== "ok" && <CoverageMessage result={shown} />}
       {!error && day && !panelArea && !drawMode && (
         <p className="panel-body">Choose an area to see {day}: its hotspots on the map and how the day compares.</p>
+      )}
+      {!error && !day && panelArea && !isDraft && verdict && <div className="panel-body verdict-wrap"><VerdictLine verdict={verdict} /></div>}
+      {!error && day && dayArea && (dayVerdict.week || dayVerdict.month) && (
+        <div className="panel-body verdict-wrap">
+          {dayVerdict.week && <VerdictLine verdict={dayVerdict.week} />}
+          {dayVerdict.month && <VerdictLine verdict={dayVerdict.month} />}
+        </div>
       )}
       {!error && day && dayArea && (
         <div className="panel-body day-wrap">
