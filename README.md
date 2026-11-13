@@ -11,12 +11,12 @@ NASA has two families of fire sensors. MODIS (on Terra and Aqua) has watched sin
 Zij counts both records in one unit, the **fire cell-day**: one map square of 0.1 degree (about 10 km) with at least one fire detection on one day, for one satellite.
 
 - `pipeline/`: from raw FIRMS files to weekly fire cell-days per satellite and per sensor.
-- `app/`: the web app (not started yet). `app/public/data/` holds the files the pipeline exports for it.
+- `app/`: the web app: Explore (map, calendar, typical year, anomalies), Downloads and How it works, on 10 preset areas. `app/public/data/` holds the files the pipeline exports for it. See `app/README.md`.
 - `docs/event/DECISIONS.md`: every decision made during the event, with its reason.
 - `docs/event/VALIDATION.md`: how well the calibration predicts VIIRS from MODIS, per area and model.
 - `docs/event/DATA_CONTRACT.md`: the format of the exported files.
 
-Status: the record runs from November 2000 to yesterday for 10 areas in Egypt, Portugal and Argentina, in one unit, with bands, a typical year, critical periods and anomalies, exported for the app. The app comes next.
+Status: the record runs from November 2000 to yesterday for 10 areas in Egypt, Portugal and Argentina, and the app shows it. Drawn areas, the day view and the final How it works text come next.
 
 ## Before the event
 
@@ -34,7 +34,7 @@ cd pipeline
 uv sync
 $env:ZIJ_FIRMS_RAW = 'D:\Zij\firms-raw'   # only if the raw files are somewhere else
 uv run python -m zij pull                 # optional: top up 2026 from the FIRMS API (needs MAP_KEY)
-uv run python -m zij all                  # or: build, checkpoint, validate, harmonize
+uv run python -m zij all                  # or: build, checkpoint, validate, harmonize, appdata
 ```
 
 What `build` does, for Egypt, Portugal and Argentina, from November 2000 to the last full day pulled:
@@ -83,9 +83,10 @@ It writes one JSON file per area to `app/public/data/areas/`, with the raw count
 ## Data sources
 
 - **NASA FIRMS active fire detections**: MODIS Collection 6.1 (Terra, Aqua) and VIIRS 375 m (Suomi NPP, NOAA-20), yearly country files for Egypt, Portugal and Argentina, 2000 to 2025, and the FIRMS area API for 2026 (standard processing where it exists, near real time after, NOAA-21 included). https://firms.modaps.eosdis.nasa.gov
-- **Natural Earth** country outlines (1:10m Admin 0 Countries, public domain), used to clip the API's boxes to each country. https://www.naturalearthdata.com
+- **NASA GIBS** true-colour imagery (MODIS Terra, VIIRS Suomi NPP, VIIRS NOAA-20 corrected reflectance), as the app's satellite basemap. https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api
+- **Natural Earth** country outlines (1:10m Admin 0 Countries, public domain), used to clip the API's boxes to each country and, simplified, as the app's offline basemap. https://www.naturalearthdata.com
 
-We acknowledge the use of data from NASA's Fire Information for Resource Management System (FIRMS) (https://earthdata.nasa.gov/firms), part of NASA's Earth Science Data and Information System (ESDIS).
+We acknowledge the use of data and imagery from NASA's Fire Information for Resource Management System (FIRMS) (https://earthdata.nasa.gov/firms) and Global Imagery Browse Services (GIBS), part of NASA's Earth Science Data and Information System (ESDIS).
 
 Zij is not affiliated with or endorsed by NASA.
 
@@ -100,7 +101,15 @@ Zij is not affiliated with or endorsed by NASA.
 | [Shapely](https://shapely.readthedocs.io) | which API rows fall inside a country outline | BSD-3-Clause |
 | [uv](https://docs.astral.sh/uv/) | Python and package management | Apache-2.0 or MIT |
 
-Exact versions are in `pipeline/pyproject.toml` and `pipeline/uv.lock`. The app's libraries will be listed here when the app is added.
+Exact versions are in `pipeline/pyproject.toml` and `pipeline/uv.lock`. The app (`app/package.json`, `app/pnpm-lock.yaml`):
+
+| Library | Used for | Licence |
+|---|---|---|
+| [Next.js](https://nextjs.org) and [React](https://react.dev) | the app | MIT |
+| [MapLibre GL JS](https://maplibre.org) | the map | BSD-3-Clause |
+| [Apache ECharts](https://echarts.apache.org) | the typical-year chart | Apache-2.0 |
+| [Fontsource](https://fontsource.org) packages of Cormorant Garamond, Reem Kufi and Amiri | fonts, bundled | fonts: SIL Open Font License 1.1 |
+| [TypeScript](https://www.typescriptlang.org), [ESLint](https://eslint.org) | development | Apache-2.0, MIT |
 
 ## Licence
 
