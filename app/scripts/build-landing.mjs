@@ -8,6 +8,7 @@
 //   - the VIIRS-to-MODIS pixel ratio of chapter one, the three numbers, the links into the app
 // It is plain HTML: readable with scripts off. Run by predev and prebuild.
 import { cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 
 const here = (p) => new URL(p, import.meta.url);
 const read = (p) => readFileSync(here(p), "utf8");
@@ -146,7 +147,7 @@ const edits = [
   ['<link rel="stylesheet" href="materials.css">', '<link rel="stylesheet" href="/landing/reference/materials.css">\n<link rel="stylesheet" href="/landing/additions.css">', "materials.css"],
   ['<script src="landing.js"></script>', `<script>window.ZIJ_TABLE = ${JSON.stringify(table)};</script>\n<script src="/landing/reference/landing.js"></script>`, "the script"],
   ["from 25 years of NASA satellite records.", `from ${years} years of NASA satellite records.`, "the dek"],
-  ['<a class="catchword begin" id="begin" href="#ch-1">Begin reading</a>', '<a class="catchword begin" id="begin" href="#record">Begin reading</a>\n      <a class="catchword enter" href="/explore">Open the map</a>', "the hero's link"],
+  ['<a class="catchword begin" id="begin" href="#ch-1">Begin reading</a>', '<a class="catchword enter" href="/explore">Open the map</a>\n      <a class="scroll-cue" id="begin" href="#record" aria-label="Scroll down to the record"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v15M5 13l7 7 7-7"/></svg></a>', "the hero's link"],
   ["Over the Nile Delta, VIIRS sees 11 to 20 times more fire pixels than MODIS, and the gap changes from year to year.", `Over the Nile Delta in autumn, VIIRS on Suomi NPP records ${Math.round(usual[0])} to ${Math.round(usual[usual.length - 1])} times more fire pixels than MODIS on Aqua in most years, and ${Math.round(peak.ratio)} times in ${peak.year}. The gap changes from year to year.`, "the pixel ratio"],
   // The record comes first, directly under the opening: it is the reason to keep reading.
   ['<section class="chapter ch1" id="ch-1"', `${record}\n    <section class="chapter ch1" id="ch-1"`, "chapter one"],
@@ -177,6 +178,9 @@ const edits = [
 ];
 for (const [from, to, what] of edits) html = swap(html, from, to, what);
 html = html.replaceAll('"../logo/', '"/landing/logo/');
+// The two files that change with the data or the styles carry a stamp, so a cached copy is never stale.
+const stamp = createHash("sha1").update(js).update(read("../landing-src/additions.css")).digest("hex").slice(0, 8);
+html = html.replace('/landing/additions.css"', `/landing/additions.css?v=${stamp}"`).replace('/landing/reference/landing.js"', `/landing/reference/landing.js?v=${stamp}"`);
 if (/fonts\.g(oogleapis|static)|href="\.\.\/|src="\.\.\//.test(html)) throw new Error("build-landing: an outside or relative reference is left in the page");
 
 writeFileSync(here("../public/landing.html"), html);

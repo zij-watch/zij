@@ -15,7 +15,19 @@
 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .illus-tag { margin: 12px 6px 0; }
-.hero .enter { margin-top: 10px; margin-left: -2px; }
+/* The scroll cue: an arrow at the foot of the opening, centred on the screen, that bobs gently.
+   It replaces the "Begin reading" link and leads to the record. It fades with the hero. */
+.scroll-cue {
+  position: absolute; left: calc(50vw - clamp(16px, 7vw, 220px)); top: 80svh; transform: translateX(-50%);
+  display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; border: 1px solid color-mix(in srgb, var(--brass) 70%, transparent);
+  border-radius: 50%; color: var(--brass); background: color-mix(in srgb, var(--ground) 45%, transparent); text-decoration: none;
+}
+.scroll-cue svg { animation: cue 1.9s ease-in-out infinite; }
+.scroll-cue:hover { color: var(--flame, var(--brass)); border-color: var(--flame, var(--brass)); }
+.scroll-cue:focus-visible { outline: 5px double var(--brass); outline-offset: 3px; }
+@keyframes cue { 0%, 100% { transform: translateY(-3px); } 50% { transform: translateY(4px); } }
+@media (prefers-reduced-motion: reduce) { .scroll-cue svg { animation: none; } }
+.hero .enter { margin-top: calc(var(--u, 40px) * 0.45); margin-left: -2px; }
 
 /* ---------------------------------------------------------------- the record */
 /* Above the lantern (z-index 9 on the desk): the lantern passes behind this sheet and can never
