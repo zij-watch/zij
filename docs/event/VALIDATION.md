@@ -1,6 +1,6 @@
 # Validation
 
-Built 13 Nov 2026, 11:14 UTC by `uv run python -m zij validate`. This file is generated: change the code, not the file.
+Built 13 Nov 2026, 11:23 UTC by `uv run python -m zij validate`. This file is generated: change the code, not the file.
 
 Can weekly MODIS fire days predict weekly VIIRS fire days? Each model is fitted on 2012 to 2020, the years both sensors flew before Aqua's overpass drifted later, and tested two ways:
 
@@ -48,7 +48,7 @@ Mean absolute season error in percent: leave one year out, with out of time in b
 | Central Portugal (Pinhal) | 49.2 (48.9) | 26.7 (32.3) | 13.7 (25.0) | 12.0 (9.3) | 12.8 (14.1) | 12.8 (15.1) |
 | Alentejo | 74.0 (67.8) | 20.5 (38.7) | 20.0 (30.6) | 22.0 (49.3) | 22.7 (51.2) | 24.0 (46.1) |
 | Parana Delta | 80.2 (77.1) | 31.7 (20.9) | 17.2 (12.0) | 22.7 (14.6) | 24.4 (13.3) | 20.6 (15.1) |
-| Chilecito | 82.3 (81.9) | 55.4 (42.3) | 22.8 (39.4) | 21.7 (23.0) | 21.8 (22.4) | 23.2 (22.4) |
+| Chilecito | 83.4 (81.0) | 14.8 (28.2) | 28.7 (29.6) | 19.4 (3.6) | 19.9 (3.1) | 14.5 (6.0) |
 
 ## Weekly Spearman per area
 
@@ -65,7 +65,7 @@ Median over the years: leave one year out, with out of time in brackets.
 | Central Portugal (Pinhal) | 0.72 (0.68) | 0.72 (0.68) | 0.72 (0.68) | 0.67 (0.47) | 0.67 (0.46) | 0.67 (0.52) |
 | Alentejo | 0.67 (0.62) | 0.67 (0.62) | 0.67 (0.62) | 0.66 (0.62) | 0.68 (0.62) | 0.68 (0.62) |
 | Parana Delta | 0.72 (0.95) | 0.72 (0.95) | 0.72 (0.95) | 0.74 (0.95) | 0.73 (0.95) | 0.73 (0.95) |
-| Chilecito | 0.42 (0.54) | 0.42 (0.54) | 0.42 (0.54) | 0.44 (0.65) | 0.46 (0.67) | 0.46 (0.67) |
+| Chilecito | 0.46 (0.51) | 0.46 (0.51) | 0.46 (0.51) | 0.53 (0.70) | 0.52 (0.67) | 0.52 (0.68) |
 
 ## The areas
 
@@ -80,6 +80,6 @@ Median over the years: leave one year out, with out of time in brackets.
 | Central Portugal (Pinhal) | Portugal | 7, 8, 9 | 234 | own |
 | Alentejo | Portugal | 10, 11, 12 | 279 | own |
 | Parana Delta | Argentina | 7, 8, 9 | 413 | own |
-| Chilecito | Argentina | 8, 9, 10 | 145 | own |
+| Chilecito | Argentina | 7, 8, 9 | 144 | own |
 
 An area with 100 or more MODIS fire weeks gets its own fit. From 30 to 99 it gets a blend of its own fit and the country's fit scaled to the area.

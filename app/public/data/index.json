@@ -2,7 +2,8 @@
  "contract": 1,
  "method": "M4",
  "unit": "fire_days",
- "built_at_utc": "2026-11-13T11:14:35+00:00",
+ "unit_label": "hotspot-days (VIIRS-equivalent)",
+ "built_at_utc": "2026-11-13T11:23:40+00:00",
  "last_full_day": "2026-11-12",
  "areas": [
   {
@@ -24,7 +25,7 @@
     10
    ],
    "file": "areas/nile-delta.json",
-   "bytes": 231534
+   "bytes": 231641
   },
   {
    "id": "kafr-el-sheikh-rice-core",
@@ -45,7 +46,7 @@
     10
    ],
    "file": "areas/kafr-el-sheikh-rice-core.json",
-   "bytes": 223703
+   "bytes": 223764
   },
   {
    "id": "east-delta-sharqia",
@@ -66,7 +67,7 @@
     10
    ],
    "file": "areas/east-delta-sharqia.json",
-   "bytes": 224737
+   "bytes": 224805
   },
   {
    "id": "upper-egypt-sugarcane-belt",
@@ -87,7 +88,7 @@
     4
    ],
    "file": "areas/upper-egypt-sugarcane-belt.json",
-   "bytes": 224726
+   "bytes": 224823
   },
   {
    "id": "portugal-mainland",
@@ -108,7 +109,7 @@
     10
    ],
    "file": "areas/portugal-mainland.json",
-   "bytes": 232097
+   "bytes": 232154
   },
   {
    "id": "northern-portugal",
@@ -129,7 +130,7 @@
     10
    ],
    "file": "areas/northern-portugal.json",
-   "bytes": 228705
+   "bytes": 228770
   },
   {
    "id": "central-portugal-pinhal",
@@ -150,7 +151,7 @@
     9
    ],
    "file": "areas/central-portugal-pinhal.json",
-   "bytes": 224461
+   "bytes": 224513
   },
   {
    "id": "alentejo",
@@ -171,7 +172,7 @@
     12
    ],
    "file": "areas/alentejo.json",
-   "bytes": 224622
+   "bytes": 224671
   },
   {
    "id": "parana-delta",
@@ -192,28 +193,28 @@
     9
    ],
    "file": "areas/parana-delta.json",
-   "bytes": 233170
+   "bytes": 233198
   },
   {
    "id": "chilecito",
    "name": "Chilecito",
    "country": "Argentina",
    "box": [
-    -68.0,
+    -68.2,
     -29.6,
-    -67.0,
+    -67.2,
     -28.7
    ],
    "n_cells": 90,
    "fit": "own",
-   "n_fire_weeks": 145,
+   "n_fire_weeks": 144,
    "season": [
+    7,
     8,
-    9,
-    10
+    9
    ],
    "file": "areas/chilecito.json",
-   "bytes": 222989
+   "bytes": 222853
   }
  ]
 }
