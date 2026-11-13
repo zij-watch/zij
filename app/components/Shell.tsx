@@ -29,6 +29,7 @@ export function VerdictLine({ verdict }: { verdict: Verdict }) {
     <p className="verdict">
       <span className={`badge badge-${verdict.level}`}>{verdict.badge}</span>
       <span>{verdict.sentence}</span>
+      {verdict.intensity && <strong className="verdict-intensity">{verdict.intensity}</strong>}
     </p>
   );
 }

@@ -33,12 +33,12 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 
-# The pipeline steps, in order. `all` is build, checkpoint, validate, harmonize, appdata.
+# The pipeline steps, in order. `all` is build, checkpoint, validate, harmonize, appdata, findings.
 STEPS = ("all", "cells", "boxes", "fixtures", "hotspots", "validate")
 
 # Everything the steps write that is committed.
 GENERATED = ("app/public/data/", "app/lib/fit/test/fixtures.json.gz", "app/lib/hotspots/test/fixtures.json",
-             "docs/event/VALIDATION.md", "docs/event/SMALL_AREAS.md")
+             "docs/event/VALIDATION.md", "docs/event/SMALL_AREAS.md", "docs/event/FINDINGS.md")
 
 # Values that are the clock's, not the data's.
 CLOCK_KEYS = {"built_at_utc", "pulled_at_utc"}

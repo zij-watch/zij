@@ -10,6 +10,7 @@ import * as RPopover from "@radix-ui/react-popover";
 import * as RSelect from "@radix-ui/react-select";
 import * as RTooltip from "@radix-ui/react-tooltip";
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "react";
+import { UNIT, UNIT_EXACT } from "@/lib/format";
 import { DayPicker, type DateRange, type DropdownProps } from "react-day-picker";
 
 export * as Tabs from "@radix-ui/react-tabs";
@@ -74,6 +75,18 @@ export function Tip({ label, side = "top", children }: { label: string; side?: "
       <RTooltip.Trigger asChild>{children}</RTooltip.Trigger>
       <RTooltip.Portal>
         <RTooltip.Content className="ui-tip" side={side} sideOffset={6} collisionPadding={8}>{label}</RTooltip.Content>
+      </RTooltip.Portal>
+    </RTooltip.Root>
+  );
+}
+
+/** "fire activity", with its exact definition on hover or focus. */
+export function UnitTerm() {
+  return (
+    <RTooltip.Root delayDuration={100}>
+      <RTooltip.Trigger asChild><button type="button" className="term" aria-label={`${UNIT}: ${UNIT_EXACT}`}>{UNIT}</button></RTooltip.Trigger>
+      <RTooltip.Portal>
+        <RTooltip.Content className="ui-tip is-wide" side="bottom" sideOffset={6} collisionPadding={8}>{UNIT_EXACT}</RTooltip.Content>
       </RTooltip.Portal>
     </RTooltip.Root>
   );

@@ -2,6 +2,7 @@
 // The work is done by lib/hotspots (see its README). Nothing is fetched until a day is
 // chosen or the hotspots CSV is asked for, and then only the region the area is in.
 
+import { versioned } from "./version";
 import type { Area } from "./data";
 import { fetchData } from "./download";
 import type { Shape } from "./fit/cells";
@@ -11,7 +12,7 @@ import { createHotspotLoader, hotspotsCsv, selectHotspots, type HotspotIndex, ty
 
 let session: Promise<{ index: HotspotIndex; loader: HotspotLoader }> | null = null;
 function hotspotSession() {
-  session ??= fetch("/data/hotspots/index.json").then(async (response) => {
+  session ??= fetch(versioned("/data/hotspots/index.json")).then(async (response) => {
     if (!response.ok) throw new Error(`Could not load the hotspot index (${response.status})`);
     const index = (await response.json()) as HotspotIndex;
     // File sizes and names for the progress line, from the index.

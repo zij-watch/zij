@@ -1,10 +1,11 @@
 "use client";
 
-import { Select, Tabs } from "./ui";
+import { areaFacts } from "@/lib/facts";
+import { Select, Tabs, UnitTerm } from "./ui";
 import type { Area } from "@/lib/data";
 import { COVERED } from "@/lib/drawnArea";
 import { rawByMonth, type RawMonth } from "@/lib/derive";
-import { MONTHS, againstNormal, num, sourceWords, ymLabel } from "@/lib/format";
+import { MONTHS, againstNormal, num, sourceWords, ymLabel, UNIT } from "@/lib/format";
 import { VIEWS, type View } from "@/lib/url";
 import Calendar from "./Calendar";
 import SeriesChart from "./SeriesChart";
@@ -13,6 +14,11 @@ import TypicalYear from "./TypicalYear";
 const VIEW_LABELS: Record<View, string> = { calendar: "Calendar", typical: "Typical year", series: "Seasons", ranked: "Busiest", anomalies: "Anomalies" };
 
 interface Props {
+  finding?: { sentence: string; note?: string } | null; // the area's one sentence from the findings
+  recorded?: boolean; // the Seasons tab: as recorded, or harmonized
+  onRecorded?: (recorded: boolean) => void;
+  simple?: boolean; // Simple: the calendar, this month, three anomalies in words, and a way to the rest
+  onExpert?: () => void;
   named?: boolean; // the country and name at the top; off where the panel head already shows them
   area: Area;
   from: string;
@@ -64,7 +70,7 @@ function ThisMonth({ area }: { area: Area }) {
     <section className="block">
       <h3>This month against the median</h3>
       <p>
-        {MONTHS[t.month - 1]} {t.year}, first {t.days_so_far} days: <strong>{num(t.value_to_date, 1)}</strong> {area.unit_label}.
+        {MONTHS[t.month - 1]} {t.year}, first {t.days_so_far} days: <strong>{num(t.value_to_date, 1)}</strong> {UNIT}.
         The median for the same days of {area.climatology.baseline_years[0]} to {area.climatology.baseline_years[1]} is{" "}
         {num(t.median_to_date, 1)}, so this month is <strong>{againstNormal(t.value_to_date, t.median_to_date)}</strong>.
         Half of the years fall between {num(t.p25_to_date, 1)} and {num(t.p75_to_date, 1)}.
@@ -100,7 +106,7 @@ function WeekDetail({ area, ym, onClose }: { area: Area; ym: string; onClose: ()
       </div>
       {mi >= 0 && (
         <p>
-          Month total: <strong>{num(m.value[mi])}</strong> {area.unit_label}, {sourceWords(m.source[mi])}
+          Month total: <strong>{num(m.value[mi])}</strong> {UNIT}, {sourceWords(m.source[mi])}
           {m.lo[mi] !== null ? ` (likely between ${band(m.lo[mi], m.hi[mi])})` : ""}.
           {m.flag[mi] ? ` Unusually ${m.flag[mi]} for ${MONTHS[m.month[mi] - 1]}.` : ""}
           {m.complete[mi] ? "" : ` Only ${m.days_with_data[mi]} days have data.`}
@@ -167,7 +173,7 @@ function Ranked({ area, from, to }: { area: Area; from: string; to: string }) {
     <>
       <section className="block">
         <h3>Busiest months of the year</h3>
-        <p className="note">Median {area.unit_label} per calendar month, {area.climatology.baseline_years[0]} to {area.climatology.baseline_years[1]}.</p>
+        <p className="note">Median {UNIT} per calendar month, {area.climatology.baseline_years[0]} to {area.climatology.baseline_years[1]}.</p>
         <ol className="bars">
           {months.map((row) => (
             <li key={row.k}>
@@ -222,7 +228,7 @@ function Anomalies({ area, from, to, onMonth }: { area: Area; from: string; to: 
       <section className="block">
         <h3>Unusual seasons</h3>
         <p className="note">
-          Season: {seasonWords(area.fit.season)}. Normal is the median season of {b0} to {b1}: {num(normalSeason)} {area.unit_label}.
+          Season: {seasonWords(area.fit.season)}. Normal is the median season of {b0} to {b1}: {num(normalSeason)} {UNIT}.
           A season is unusual when it falls outside what 8 in 10 seasons reach (the 10th to 90th percentile).
         </p>
         <ul className="plain">
@@ -257,7 +263,7 @@ function Anomalies({ area, from, to, onMonth }: { area: Area; from: string; to: 
 
 // ------------------------------------------------------------------ seasons
 
-function SeasonsView({ area, from, to }: { area: Area; from: string; to: string }) {
+function SeasonsView({ area, from, to, recorded, onRecorded }: { area: Area; from: string; to: string; recorded: boolean; onRecorded: (recorded: boolean) => void }) {
   const s = area.seasons;
   const [b0, b1] = area.climatology.baseline_years;
   const normal = median(s.value.filter((_, i) => s.year[i] >= b0 && s.year[i] <= b1));
@@ -267,11 +273,22 @@ function SeasonsView({ area, from, to }: { area: Area; from: string; to: string 
   return (
     <section className="block">
       <h3>Season by season</h3>
-      <SeriesChart area={area} fromYear={fromYear} toYear={toYear} normal={normal} />
-      <p className="note">
-        Season: {seasonWords(area.fit.season)}. Red line: the harmonized season total. Blue bars: the likely range of a year converted from MODIS.
-        Dotted blue: raw MODIS, before conversion. Dashed: the median season of {b0} to {b1}.
-      </p>
+      <div className="switch" role="radiogroup" aria-label="Which record to show">
+        <button type="button" role="radio" aria-checked={recorded} className={recorded ? "is-active" : ""} onClick={() => onRecorded(true)}>What the satellites recorded</button>
+        <button type="button" role="radio" aria-checked={!recorded} className={!recorded ? "is-active" : ""} onClick={() => onRecorded(false)}>What actually happened</button>
+      </div>
+      <SeriesChart area={area} fromYear={fromYear} toYear={toYear} normal={normal} recorded={recorded} />
+      {recorded ? (
+        <p className="note">
+          <span className="mark-modis-bar" /> MODIS, as recorded. <span className="mark-viirs-bar" /> VIIRS, as recorded, from its first season here.
+          The jump where VIIRS begins is the instrument, not the fires: VIIRS sees much smaller fires. Season: {seasonWords(area.fit.season)}.
+        </p>
+      ) : (
+        <p className="note">
+          <span className="mark-viirs-bar" /> Every season on one scale, in VIIRS terms. The ink whisker is the likely range of a year converted from MODIS.
+          Dashed: the median season of {b0} to {b1}. Season: {seasonWords(area.fit.season)}.
+        </p>
+      )}
       <div className="table-scroll">
         <table>
           <thead><tr><th>Year</th><th>Harmonized</th><th>Band</th><th>Source</th><th>Raw MODIS</th><th>Raw VIIRS</th></tr></thead>
@@ -341,9 +358,21 @@ function RawOnly({ area }: { area: Area }) {
   );
 }
 
+/** Simple mode: the three most unusual seasons, in words. */
+function SimpleAnomalies({ area }: { area: Area }) {
+  const lines = areaFacts(area).anomalies.slice(0, 3);
+  if (lines.length === 0) return null;
+  return (
+    <section className="block">
+      <h3>Most unusual seasons</h3>
+      <ul className="plain">{lines.map((line) => <li key={line}>{line}</li>)}</ul>
+    </section>
+  );
+}
+
 // ------------------------------------------------------------------ panel
 
-export default function Panel({ area, named = true, from, to, view, month, year, note, drawn, draft, onView, onMonth, onYear }: Props) {
+export default function Panel({ area, finding = null, recorded = false, onRecorded, simple = false, onExpert, named = true, from, to, view, month, year, note, drawn, draft, onView, onMonth, onYear }: Props) {
   const weekBand = area.bands.week_mult;
   const seasonBand = area.bands.season_pct;
   const lastYear = Number(area.last_full_day.slice(0, 4));
@@ -370,7 +399,7 @@ export default function Panel({ area, named = true, from, to, view, month, year,
       {head}
       <div className="panel-head">
         <p className="note">
-          {num(area.n_cells)} cells of 0.1&deg;. Unit: {area.unit_label}. Before 2012 the values are MODIS converted to VIIRS terms
+          {num(area.n_cells)} cells of 0.1&deg;. Unit: <UnitTerm />. Before 2012 the values are MODIS converted to VIIRS terms
           {seasonBand[0] !== null ? `; a converted season is likely within ${num(seasonBand[0])}% to +${num(seasonBand[1])}% of the truth` : ""}.
           Data to {area.last_full_day}.
         </p>
@@ -387,9 +416,33 @@ export default function Panel({ area, named = true, from, to, view, month, year,
         </div>
       )}
 
-      <ThisMonth area={area} />
+      {simple && (
+        <>
+          {finding && (
+            <section className="block finding">
+              <h3>What the record shows here</h3>
+              <p>{finding.sentence}</p>
+              {finding.note && <p className="note">{finding.note}</p>}
+              <p className="note"><a href="/how-it-works#findings">How this was worked out, and what it cannot show</a></p>
+            </section>
+          )}
+          <section className="block">
+            <div className="calendar-scroll">
+              <Calendar area={area} from={from} to={to} labelSize={17} selected={null} onSelect={() => undefined} />
+            </div>
+            <p className="note">Years run down, months run across. Darker means more {UNIT}. A blue corner marks a month converted from MODIS.</p>
+          </section>
+          <ThisMonth area={area} />
+          <SimpleAnomalies area={area} />
+          <p className="evidence">
+            <button type="button" className="link" onClick={onExpert}>Show the evidence</button>
+            <span className="note"> The weeks behind each month, the raw counts per satellite, the typical year, the seasons with their bands, and how sure each number is.</span>
+          </p>
+        </>
+      )}
+      {!simple && <ThisMonth area={area} />}
 
-      <Tabs.Root value={view} onValueChange={(v) => onView(v as View)}>
+      {!simple && <Tabs.Root value={view} onValueChange={(v) => onView(v as View)}>
       <Tabs.List className="tabs" aria-label="Views">
         {VIEWS.map((v) => <Tabs.Trigger key={v} value={v} className="tab">{VIEW_LABELS[v]}</Tabs.Trigger>)}
       </Tabs.List>
@@ -420,13 +473,13 @@ export default function Panel({ area, named = true, from, to, view, month, year,
             <p className="note">
               Light line: the median week over {area.climatology.baseline_years[0]} to {area.climatology.baseline_years[1]}. Grey band: what 8 in 10 years reach.
               Red line: {chartYear}{chartYear === lastYear ? " so far" : ""}; where it was converted from MODIS, the red band is its likely range. Brass shading: the critical period, the {area.climatology.critical_weeks.length} weeks
-              that hold {Math.round(area.climatology.critical_share * 100)}% of a typical year&rsquo;s {area.unit_label}.
+              that hold {Math.round(area.climatology.critical_share * 100)}% of a typical year&rsquo;s {UNIT}.
             </p>
           </section>
         </>
       )}
 
-      {view === "series" && <SeasonsView area={area} from={from} to={to} />}
+      {view === "series" && <SeasonsView area={area} from={from} to={to} recorded={recorded} onRecorded={onRecorded ?? (() => undefined)} />}
 
       {view === "ranked" && <Ranked area={area} from={from} to={to} />}
 
@@ -438,14 +491,14 @@ export default function Panel({ area, named = true, from, to, view, month, year,
       )}
 
       </Tabs.Content>
-      </Tabs.Root>
+      </Tabs.Root>}
 
-      <footer className="panel-foot">
+      {!simple && <footer className="panel-foot">
         <p className="note">
           Converted weeks carry a band of x{num(weekBand[0], 2)} to x{num(weekBand[1], 2)} on the value + 1.
           Fit: M4, {area.fit.mode === "own" ? "this area's own" : "blended with the country's"}, from {num(area.fit.n_fire_weeks)} MODIS fire weeks in 2012 to 2020.
         </p>
-      </footer>
+      </footer>}
     </div>
   );
 }

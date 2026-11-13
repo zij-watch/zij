@@ -2,7 +2,7 @@
 // script runs. The numbers come from the same area file the panel reads, with the same rules.
 
 import type { Area } from "./data";
-import { MONTHS, againstNormal, num } from "./format";
+import { MONTHS, UNIT, againstNormal, num } from "./format";
 import { areaVerdict, type Verdict } from "./verdict";
 
 export interface AreaFacts {
@@ -38,7 +38,7 @@ export function areaFacts(area: Area): AreaFacts {
   const t = area.this_month;
   const thisMonth =
     t && t.value_to_date !== null && t.median_to_date !== undefined && t.median_to_date !== null
-      ? `${MONTHS[t.month - 1]} ${t.year}, first ${t.days_so_far} days: ${num(t.value_to_date, 1)} ${area.unit_label}, ` +
+      ? `${MONTHS[t.month - 1]} ${t.year}, first ${t.days_so_far} days: ${num(t.value_to_date, 1)} ${UNIT}, ` +
         `${againstNormal(t.value_to_date, t.median_to_date)} (median for the same days ${num(t.median_to_date, 1)}).`
       : null;
 
@@ -60,7 +60,7 @@ export function areaFacts(area: Area): AreaFacts {
     id: area.id,
     name: area.name,
     country: area.country,
-    unitLabel: area.unit_label,
+    unitLabel: UNIT,
     lastFullDay: area.last_full_day,
     busiestMonths,
     season: seasonWords,

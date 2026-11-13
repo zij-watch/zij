@@ -15,7 +15,19 @@
 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .illus-tag { margin: 12px 6px 0; }
-.hero .enter { margin-top: 10px; margin-left: -2px; }
+/* The scroll cue: an arrow at the foot of the opening, centred on the screen, that bobs gently.
+   It replaces the "Begin reading" link and leads to the record. It fades with the hero. */
+.scroll-cue {
+  position: absolute; left: calc(50vw - clamp(16px, 7vw, 220px)); top: 80svh; transform: translateX(-50%);
+  display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; border: 1px solid color-mix(in srgb, var(--brass) 70%, transparent);
+  border-radius: 50%; color: var(--brass); background: color-mix(in srgb, var(--ground) 45%, transparent); text-decoration: none;
+}
+.scroll-cue svg { animation: cue 1.9s ease-in-out infinite; }
+.scroll-cue:hover { color: var(--flame, var(--brass)); border-color: var(--flame, var(--brass)); }
+.scroll-cue:focus-visible { outline: 5px double var(--brass); outline-offset: 3px; }
+@keyframes cue { 0%, 100% { transform: translateY(-3px); } 50% { transform: translateY(4px); } }
+@media (prefers-reduced-motion: reduce) { .scroll-cue svg { animation: none; } }
+.hero .enter { margin-top: calc(var(--u, 40px) * 0.45); margin-left: -2px; }
 
 /* ---------------------------------------------------------------- the record */
 /* Above the lantern (z-index 9 on the desk): the lantern passes behind this sheet and can never
@@ -79,3 +91,13 @@
   .rec-line { min-height: 170px; }
   .numbers { grid-template-columns: 1fr; }
 }
+
+/* ---------------------------------------------------------------- what 26 years show */
+.record + .record { margin-top: -12vh; }
+.shows-list { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 20px; }
+.shows-list li { display: grid; grid-template-columns: minmax(150px, 220px) 1fr; gap: 8px 28px; align-items: start; padding-top: 16px; border-top: 1px solid var(--rule); }
+.record .shows-list .shows-fig { margin: 0; font: 600 clamp(30px, 3.6vw, 46px)/1.05 var(--font-display, "Cormorant Garamond", serif); letter-spacing: 0; color: var(--rubric); white-space: nowrap; }
+.shows-list h3 { margin: 0 0 4px; font-size: clamp(19px, 1.8vw, 24px); line-height: 1.25; }
+.shows-list p { margin: 0; font-size: 17px; line-height: 1.5; }
+.shows .rec-unit a { color: var(--brass); }
+@media (max-width: 760px) { .shows-list li { grid-template-columns: 1fr; } }

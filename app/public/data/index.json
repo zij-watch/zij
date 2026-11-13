@@ -3,7 +3,7 @@
  "method": "M4",
  "unit": "fire_days",
  "unit_label": "hotspot-days (VIIRS-equivalent)",
- "built_at_utc": "2026-11-13T11:23:40+00:00",
+ "built_at_utc": "2026-11-13T17:36:26+00:00",
  "last_full_day": "2026-11-12",
  "areas": [
   {
@@ -25,7 +25,7 @@
     10
    ],
    "file": "areas/nile-delta.json",
-   "bytes": 231641
+   "bytes": 231950
   },
   {
    "id": "kafr-el-sheikh-rice-core",
@@ -46,7 +46,7 @@
     10
    ],
    "file": "areas/kafr-el-sheikh-rice-core.json",
-   "bytes": 223764
+   "bytes": 224050
   },
   {
    "id": "east-delta-sharqia",
@@ -67,7 +67,7 @@
     10
    ],
    "file": "areas/east-delta-sharqia.json",
-   "bytes": 224805
+   "bytes": 225112
   },
   {
    "id": "upper-egypt-sugarcane-belt",
@@ -88,7 +88,7 @@
     4
    ],
    "file": "areas/upper-egypt-sugarcane-belt.json",
-   "bytes": 224823
+   "bytes": 225110
   },
   {
    "id": "portugal-mainland",
@@ -109,7 +109,7 @@
     10
    ],
    "file": "areas/portugal-mainland.json",
-   "bytes": 232154
+   "bytes": 232462
   },
   {
    "id": "northern-portugal",
@@ -130,7 +130,7 @@
     10
    ],
    "file": "areas/northern-portugal.json",
-   "bytes": 228770
+   "bytes": 229055
   },
   {
    "id": "central-portugal-pinhal",
@@ -151,7 +151,7 @@
     9
    ],
    "file": "areas/central-portugal-pinhal.json",
-   "bytes": 224513
+   "bytes": 224794
   },
   {
    "id": "alentejo",
@@ -172,7 +172,7 @@
     12
    ],
    "file": "areas/alentejo.json",
-   "bytes": 224671
+   "bytes": 224971
   },
   {
    "id": "parana-delta",
@@ -193,7 +193,7 @@
     9
    ],
    "file": "areas/parana-delta.json",
-   "bytes": 233198
+   "bytes": 233513
   },
   {
    "id": "chilecito",
@@ -214,7 +214,7 @@
     9
    ],
    "file": "areas/chilecito.json",
-   "bytes": 222853
+   "bytes": 223136
   }
  ]
 }

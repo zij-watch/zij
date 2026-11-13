@@ -1,6 +1,11 @@
 import type { Area, Flag, Source } from "./data";
 
 export const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+/** The unit as people read it. Its exact definition is one hover or one tab away (UnitTerm in components/ui.tsx). */
+export const UNIT = "fire activity";
+export const UNIT_EXACT =
+  "Fire activity is counted in hotspot-days, VIIRS-equivalent: a 0.1° cell of the map that burns on a day counts once for each satellite, " +
+  "the count is averaged over the satellites flying, and the MODIS years are converted to what VIIRS would have counted.";
 export const MONTHS_SHORT = MONTHS.map((m) => m.slice(0, 3));
 
 export function num(x: number | null | undefined, digits = 0): string {

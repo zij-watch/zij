@@ -6,6 +6,7 @@
 // Load a country's file only when the user's area is in that country
 // (countriesFor): Argentina's is 4 MB.
 
+import { versioned } from "../version";
 import type { CountryPart, Weeks } from "./m4";
 
 export type Box = [west: number, south: number, east: number, north: number];
@@ -94,7 +95,7 @@ export function decodeCells(buffer: ArrayBuffer): Cells {
 
 /** Fetches and reads one country's cell file, e.g. loadCells("/data/" + index.countries.Egypt.file). */
 export async function loadCells(url: string): Promise<Cells> {
-  const response = await fetch(url);
+  const response = await fetch(versioned(url));
   if (!response.ok) throw new Error(`${url}: ${response.status}`);
   return decodeCells(await gunzip(await response.arrayBuffer()));
 }

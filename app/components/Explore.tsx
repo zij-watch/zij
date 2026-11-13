@@ -12,7 +12,7 @@ import Link from "next/link";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { captureMap, saveBlob } from "@/lib/capture";
-import { loadArea, loadIndex, loadNotes, type Area, type Index } from "@/lib/data";
+import { loadArea, loadFindings, loadIndex, loadNotes, type Area, type AreaFinding, type Index } from "@/lib/data";
 import { loadDay, loadHotspotDays, shapeOf, type DayResult } from "@/lib/dayData";
 import { loadingWords, useLoading } from "@/lib/download";
 import { COVERED, loadCellsIndex, resolveDrawn, type DrawnResult } from "@/lib/drawnArea";
@@ -20,8 +20,9 @@ import type { AreaFacts } from "@/lib/facts";
 import type { Shape } from "@/lib/fit/cells";
 import { monthSpan } from "@/lib/format";
 import type { DayHotspot } from "@/lib/hotspots/day";
-import { BASEMAPS } from "@/lib/map/style";
-import { useAppState } from "@/lib/url";
+import { BASEMAPS, satelliteThumb } from "@/lib/map/style";
+import { TOUR, tourState } from "@/lib/tour";
+import { shapeParams, useAppState } from "@/lib/url";
 import DayPanel from "./DayPanel";
 import type { DrawMode } from "./MapView";
 import Panel from "./Panel";
@@ -166,6 +167,7 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
   const [state, update, query] = useAppState();
   const [index, setIndex] = useState<Index | null>(initialIndex);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [findings, setFindings] = useState<AreaFinding[]>([]);
   const [area, setArea] = useState<Area | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [drawMode, setDrawMode] = useState<DrawMode>(null);
@@ -179,6 +181,8 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
   const [drawMenu, setDrawMenu] = useState(false);
   const [goTo, setGoTo] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [pickOpen, setPickOpen] = useState(false);
+  const [helpMenu, setHelpMenu] = useState(false);
   const cursorEl = useRef<HTMLSpanElement>(null);
   const layersEl = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
@@ -197,15 +201,43 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
   useEffect(() => {
     if (!initialIndex) loadIndex().then(setIndex).catch((e: Error) => setError(e.message));
     loadNotes().then(setNotes);
+    loadFindings().then((f) => setFindings(f.areas));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The tour. A link may carry only the step (?tour=1): the step's own state is then put in place.
+  const tourStep = state.tour ? TOUR[state.tour - 1] : null;
+  const tourApplied = useRef<number | null>(null);
+  useEffect(() => {
+    if (!state.tour || tourApplied.current === state.tour) return;
+    tourApplied.current = state.tour;
+    setDrawMode(null);
+    update(tourState(state.tour));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.tour]);
+  // Bring what the caption talks about into view in the panel: the month's weeks, or the chart.
+  const tourAreaReady = Boolean(area || drawn);
+  useEffect(() => {
+    if (!state.tour || !tourAreaReady) return;
+    const timer = setTimeout(() => {
+      const target = document.querySelector(".sheet .tabs");
+      if (state.tour! <= 3) target?.scrollIntoView({ block: "start", behavior: "smooth" });
+      else document.querySelector(".sheet-body")?.scrollTo({ top: 0, behavior: "smooth" });
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [state.tour, tourAreaReady]);
+  const goTour = (step: number | null) => {
+    tourApplied.current = step;
+    setDrawMode(null);
+    update(step ? tourState(step) : { tour: null });
+  };
 
   // Presets.
   const shapeKey = state.shape ? JSON.stringify(state.shape) : "";
   const areaEntry = !shapeKey && state.area ? index?.areas.find((a) => a.id === state.area) ?? null : null;
   const areaId = areaEntry?.id ?? null;
-  // Results are the point once an area is chosen; before that, the list of areas is.
-  const [open, setOpen] = useState<Sections>({ time: false, area: !state.area && !shapeKey, layers: false, results: true });
+  // Results is the one section open at first: the answer once an area is chosen, the three choices before.
+  const [open, setOpen] = useState<Sections>({ time: false, area: false, layers: false, results: true });
   const toggle = (key: keyof Sections) => (event: React.SyntheticEvent<HTMLDetailsElement>) => {
     const isOpen = event.currentTarget.open;
     setOpen((now) => (now[key] === isOpen ? now : { ...now, [key]: isOpen }));
@@ -359,8 +391,9 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
     const timeline = state.timeline ? 86 : 0;
     if (w <= 760) return { top: 84 + (state.timeline ? 110 : 0), left: 28, right: 28, bottom: 54 + (state.panel === "closed" ? 0 : Math.round(h * 0.46)) + 24 };
     const sheet = state.panel === "closed" ? 0 : state.panel === "wide" ? w / 2 : w <= 1180 ? 404 : 464;
-    return { top: 96, left: 72, right: Math.round(sheet) + 48, bottom: 104 + timeline };
-  }, [screen, state.panel, state.timeline]);
+    // During the tour the caption card sits at the top left: keep the area clear of it too.
+    return { top: 96, left: state.tour && w >= 1300 ? 500 : 72, right: Math.round(sheet) + 48, bottom: 104 + timeline };
+  }, [screen, state.panel, state.timeline, state.tour]);
 
   // The readout.
   const areaName = panelArea?.name ?? areaEntry?.name ?? (shapeKey || drawMode ? "Drawn area" : "No area chosen");
@@ -421,8 +454,14 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
     { id: "share", label: "Share", tip: "Copy a link to this view", go: share },
   ];
   // The verdict the panel opens with: the area's this month, or the chosen day's week and month.
-  const verdict = useMemo(() => (panelArea ? areaVerdict(panelArea) : null), [panelArea]);
-  const dayVerdict = useMemo(() => (day && dayArea ? dayVerdicts(dayArea, day) : { week: null, month: null }), [day, dayArea]);
+  const finding = areaId ? findings.find((f) => f.id === areaId) ?? null : null;
+  // A named fire in the findings gives the intensity line its words: its detections and its cells.
+  const fire = useMemo(() => {
+    const n = finding?.numbers;
+    return n?.fire_days && n.viirs_detections && n.grid_cells ? { fire_days: n.fire_days, viirs_detections: n.viirs_detections, grid_cells: n.grid_cells } : null;
+  }, [finding]);
+  const verdict = useMemo(() => (panelArea ? areaVerdict(panelArea, fire) : null), [panelArea, fire]);
+  const dayVerdict = useMemo(() => (day && dayArea ? dayVerdicts(dayArea, day, fire) : { week: null, month: null }), [day, dayArea, fire]);
   const q = query ? `?${query}` : "";
   const closed = state.panel === "closed";
   const wide = state.panel === "wide";
@@ -432,21 +471,33 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
     <>
       {error && <p className="panel-body">Could not load the data: {error}</p>}
       {!error && !hasPanel && (
-        <div className="panel-body">
-          <p className="eyebrow">Zij</p>
-          <h2>26 years of fire, on one scale</h2>
-          {INTRO.map((text) => <p key={text}>{text}</p>)}
-          <p>Choose an area on the map or below, or draw your own in {COVERED}.</p>
-          <div onClick={(event) => {
-            // The links work without scripts; with them, the page changes area without reloading.
-            const link = (event.target as HTMLElement).closest("a");
-            const id = link ? new URL(link.href).searchParams.get("area") : null;
-            if (id) {
-              event.preventDefault();
-              update({ area: id, shape: null, month: null });
-            }
-          }}>
-            <AreaLinks areas={index?.areas ?? []} />
+        <div className="panel-body first-use">
+          <p className="eyebrow">Start here</p>
+          <h2>Where do you want to look?</h2>
+          <p>{INTRO[0]}</p>
+          <div className="choices">
+            <button type="button" className="choice" onClick={() => update({ area: "nile-delta", shape: null, month: null })}>
+              <strong>Start with the Nile Delta</strong>
+              <span>The autumn rice-straw burning, 26 years of it. The quickest way to see what Zij does.</span>
+            </button>
+            <details className="choice" open={pickOpen} onToggle={(e) => setPickOpen(e.currentTarget.open)}>
+              <summary><strong>Pick a place</strong><span>10 areas in Egypt, Portugal and Argentina.</span></summary>
+              <div onClick={(event) => {
+                // The links work without scripts; with them, the page changes area without reloading.
+                const link = (event.target as HTMLElement).closest("a");
+                const id = link ? new URL(link.href).searchParams.get("area") : null;
+                if (id) {
+                  event.preventDefault();
+                  update({ area: id, shape: null, month: null });
+                }
+              }}>
+                <AreaLinks areas={index?.areas ?? []} />
+              </div>
+            </details>
+            <button type="button" className="choice" onClick={() => startDraw("box")}>
+              <strong>Draw your own</strong>
+              <span>A box anywhere in {COVERED}. The numbers follow as you draw.</span>
+            </button>
           </div>
         </div>
       )}
@@ -466,6 +517,12 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
         <p className="panel-body">Choose an area to see {day}: its hotspots on the map and how the day compares.</p>
       )}
       {!error && !day && panelArea && !isDraft && verdict && <div className="panel-body verdict-wrap"><VerdictLine verdict={verdict} /></div>}
+      {!error && panelArea && !isDraft && (
+        <p className="panel-body brief-link">
+          <Link className="button-link" href={`/brief?${areaId ? `area=${areaId}` : Object.entries(shapeParams(state.shape)).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join("&")}`}>Brief</Link>
+          <span className="note">One printable page for this area: the verdict, the calendar, the critical period, and how sure the numbers are.</span>
+        </p>
+      )}
       {!error && day && dayArea && (dayVerdict.week || dayVerdict.month) && (
         <div className="panel-body verdict-wrap">
           {dayVerdict.week && <VerdictLine verdict={dayVerdict.week} />}
@@ -479,7 +536,7 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
         </div>
       )}
       {!error && panelArea && (
-        <Panel area={panelArea} named={false} from={from} to={to} view={state.view} month={state.month} year={state.year}
+        <Panel area={panelArea} simple={state.mode === "simple"} onExpert={() => update({ mode: "expert" })} recorded={state.recorded} onRecorded={(recorded) => update({ recorded })} finding={finding} named={false} from={from} to={to} view={state.view} month={state.month} year={state.year}
           note={notes[panelArea.id]} drawn={Boolean(shown)} draft={isDraft}
           onView={(view) => update({ view })} onMonth={(month) => update({ month })} onYear={(year) => update({ year })} />
       )}
@@ -488,7 +545,7 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
 
   return (
     <TooltipProvider delayDuration={350}>
-    <div className={`explore panel-${state.panel}${state.timeline && tlRange ? " has-timeline" : ""}${state.basemap === "satellite" ? " is-satellite" : ""}`}>
+    <div className={`explore panel-${state.panel}${state.timeline && tlRange ? " has-timeline" : ""}${state.basemap === "satellite" ? " is-satellite" : ""}${state.tour ? " has-tour" : ""}`}>
       <header className="strip paper">
         <a className="brand" href="/"><Seal /><h1 className="sr-only">Zij: fire on one scale</h1></a>
         <p className="readout">
@@ -519,11 +576,33 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
       <Modal open={goTo} onOpenChange={setGoTo} title="Go to coordinates">
         <GoTo onGo={goToPoint} onBox={() => { setGoTo(false); setShowCoords(true); setOpen((now) => ({ ...now, area: true })); update({ panel: closed ? "open" : state.panel }); }} />
       </Modal>
+      <Tip label={state.basemap === "satellite" ? "Switch to the Zij atlas" : "Switch to NASA satellite imagery"} side="right">
+        <button type="button" className={`basemap-tile is-${state.basemap === "satellite" ? "atlas" : "satellite"}`}
+          style={state.basemap === "satellite" ? undefined : { backgroundImage: `url("${satelliteThumb(mapDate)}")` }}
+          aria-label={state.basemap === "satellite" ? "Basemap: NASA satellite. Switch to the Zij atlas" : "Basemap: Zij atlas. Switch to NASA satellite imagery"}
+          onClick={() => update({ basemap: state.basemap === "satellite" ? "zij" : "satellite" })}>
+          <span>{state.basemap === "satellite" ? "Atlas" : "Satellite"}</span>
+        </button>
+      </Tip>
       {drawMode && (
         <p className="map-hint paper" role="status">
           {drawMode === "box" ? "Click one corner, move, and click the opposite corner." : "Click each corner; click the first point again to close the shape."}
           {" "}The panel follows as you draw. <button type="button" className="link" onClick={() => setDrawMode(null)}>Stop drawing</button>
         </p>
+      )}
+      {tourStep && state.tour && (
+        <section className="tour paper" aria-label="Tour" aria-live="polite">
+          <p className="tour-count">Tour, step {state.tour} of {TOUR.length}</p>
+          <h2>{tourStep.title}</h2>
+          <p>{tourStep.text}</p>
+          <div className="tour-acts">
+            <button type="button" disabled={state.tour === 1} onClick={() => goTour(state.tour! - 1)}>Back</button>
+            {state.tour < TOUR.length
+              ? <button type="button" className="is-active" onClick={() => goTour(state.tour! + 1)}>Next</button>
+              : tourStep.link && <Link className="button-link is-active" href={tourStep.link.href}>{tourStep.link.label}</Link>}
+            <button type="button" className="link" onClick={() => goTour(null)}>{state.tour < TOUR.length ? "Skip the tour" : "End the tour"}</button>
+          </div>
+        </section>
       )}
       {progress && <p className="map-progress paper" role="status">{progress}</p>}
       {toast && <p className="toast paper" role="status">{toast}</p>}
@@ -531,6 +610,10 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
       <aside className={`sheet paper${wide ? " is-wide" : ""}`} hidden={closed} aria-label="Panel">
         <header className="sheet-head">
           <p>{(panelArea?.country ?? areaEntry?.country) && <span>{shown ? "Your area, " : ""}{panelArea?.country ?? areaEntry?.country}</span>}<strong>{areaName}</strong></p>
+          <div className="switch mode-switch" role="radiogroup" aria-label="How much to show">
+            <button type="button" role="radio" aria-checked={state.mode === "simple"} className={state.mode === "simple" ? "is-active" : ""} onClick={() => update({ mode: "simple" })}>Simple</button>
+            <button type="button" role="radio" aria-checked={state.mode === "expert"} className={state.mode === "expert" ? "is-active" : ""} onClick={() => update({ mode: "expert" })}>Expert</button>
+          </div>
           <Tip label={wide ? "Narrow the panel" : "Widen to half the screen"} side="bottom">
             <button type="button" className="icon-button" onClick={() => update({ panel: wide ? "open" : "wide" })} aria-label={wide ? "Narrow the panel" : "Widen the panel to half the screen"}>
               <Icon name={wide ? "shrink" : "expand"} />
@@ -612,7 +695,7 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
           </details>
 
           <details open={open.results} onToggle={toggle("results")} className="results" aria-live="polite">
-            <summary><span>Results</span><em>{!hasPanel ? "Choose an area" : day ? shortDate(day) : VIEW_WORDS[state.view]}</em></summary>
+            <summary><span>Results</span><em>{!hasPanel ? "Choose an area" : day ? shortDate(day) : state.mode === "simple" ? "The short answer" : VIEW_WORDS[state.view]}</em></summary>
             {results}
           </details>
         </div>
@@ -641,7 +724,13 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
             </button>
           </Tip>
         ))}
-        <Tip label="How it works: the method and the numbers"><Link href={`/how-it-works${q}`} aria-label="Help: how it works"><Icon name="help" /><span>Help</span></Link></Tip>
+        <Pop open={helpMenu} onOpenChange={setHelpMenu} side="top" align="center" label="Help"
+          trigger={<button type="button" className={helpMenu ? "is-active" : ""} aria-label="Help: the tour, and how it works"><Icon name="help" /><span>Help</span></button>}>
+          <div className="menu">
+            <button type="button" onClick={() => { setHelpMenu(false); goTour(1); }}>Take the 60-second tour</button>
+            <Link className="menu-link" href={`/how-it-works${q}`}>How it works: the method and the numbers</Link>
+          </div>
+        </Pop>
       </nav>
 
       <p className="map-credit">Fire data: NASA FIRMS. Imagery: NASA GIBS. Map: Natural Earth. Not affiliated with or endorsed by NASA.</p>

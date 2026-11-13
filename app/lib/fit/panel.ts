@@ -61,7 +61,7 @@ export type AreaDocument = {
     critical_weeks: number[];
   };
   this_month: {
-    year: number; month: number; days_so_far: number; value_to_date: N; baseline_n: number;
+    year: number; month: number; days_so_far: number; value_to_date: N; baseline_n: number; to_date_years: number[]; to_date_values: number[];
     p10_to_date?: N; p25_to_date?: N; median_to_date?: N; p75_to_date?: N; p90_to_date?: N; pct_vs_median?: N;
   };
   satellites: Record<string, { code: string; family: "MODIS" | "VIIRS"; days: N[]; fire_days: N[]; hotspots: N[] }>;
@@ -228,10 +228,13 @@ export function areaDocument(area: DrawnArea, index: CellsIndex, meta: { id: str
   // ---- this month so far, against the same days of the baseline years.
   const lastYear = last.getUTCFullYear(), lastDom = last.getUTCDate();
   const now = toDate.get(lastYear);
-  const past = [...toDate.entries()].filter(([year, t]) => inBaseline(year) && t.days === lastDom).map(([, t]) => t.value);
+  const pastYears = [...toDate.entries()].filter(([year, t]) => inBaseline(year) && t.days === lastDom).sort((a, b) => a[0] - b[0]);
+  const past = pastYears.map(([, t]) => t.value);
   const thisMonth: AreaDocument["this_month"] = {
     year: lastYear, month: last.getUTCMonth() + 1, days_so_far: now ? now.days : 0,
     value_to_date: now ? roundTo(now.value, 2) : null, baseline_n: past.length,
+    // Each baseline year's value for the same days, so a verdict can state an exact rank.
+    to_date_years: pastYears.map(([year]) => year), to_date_values: past.map((v) => roundTo(v, 2) as number),
   };
   if (past.length) {
     const median = quantile(past, 0.5);

@@ -100,7 +100,7 @@ If you have our top-up pulls, put them in `data\firms_api\` at the repository ro
 | Step | Command | Time | Writes |
 |---|---|---|---|
 | Packages | `uv sync --frozen` | 2 s from uv's cache; a minute or two the first time, with the Python download | `pipeline/.venv` |
-| 1 | `uv run python -m zij all` | 42 s | `data/zij.duckdb` (0.5 GB), `data/processed/`, `docs/event/VALIDATION.md`, `app/public/data/areas/`, `index.json`, `method.json`, `notes.json`, `basemap/` |
+| 1 | `uv run python -m zij all` | 42 s | `data/zij.duckdb` (0.5 GB), `data/processed/`, `docs/event/VALIDATION.md`, `app/public/data/areas/`, `index.json`, `method.json`, `notes.json`, `basemap/`, `findings.json`, `docs/event/FINDINGS.md` |
 | 2 | `uv run python -m zij cells` | 11 s | `app/public/data/cells/` |
 | 3 | `uv run python -m zij boxes` | 1.6 min | `docs/event/SMALL_AREAS.md`, `data/processed/calibration/random_boxes.json` |
 | 4 | `uv run python -m zij fixtures` | 15 s | `app/lib/fit/test/fixtures.json.gz` |
@@ -108,7 +108,7 @@ If you have our top-up pulls, put them in `data\firms_api\` at the repository ro
 | 6 | `uv run python -m zij validate` | 6 s | `docs/event/VALIDATION.md` again |
 | | **All** | **3 minutes** | |
 
-`all` is five commands in a row, which can be run one by one: `build`, `checkpoint`, `validate`, `harmonize`, `appdata`. The order matters: `cells`, `boxes`, `fixtures` and `hotspots` read the database that `build` writes, and `fixtures` also reads what `boxes` wrote. `validate` at the end only repeats the step inside `all`; it is there so that `docs/event/VALIDATION.md` is the last thing written.
+`all` is six commands in a row, which can be run one by one: `build`, `checkpoint`, `validate`, `harmonize`, `appdata`, `findings`. The order matters: `cells`, `boxes`, `fixtures` and `hotspots` read the database that `build` writes, and `fixtures` also reads what `boxes` wrote. `validate` at the end only repeats the step inside `all`; it is there so that `docs/event/VALIDATION.md` is the last thing written.
 
 Timings are from one run on a laptop with a 20-thread Intel CPU and an SSD, raw files on the same disk.
 
@@ -142,6 +142,7 @@ Options: `--work <folder>` to choose the clean folder (default: a new temporary 
 | Validation tables, the fits | `docs/event/VALIDATION.md` | `validate` |
 | The 10 preset areas: weeks, months, seasons, bands, anomalies | `app/public/data/areas/*.json`, `index.json` | `harmonize` |
 | "How it works" numbers, the notes, the basemap outlines | `app/public/data/method.json`, `notes.json`, `basemap/countries.json` | `appdata` |
+| The findings: the 2004 ban, the Delta since 2018, one sentence per area | `docs/event/FINDINGS.md`, `app/public/data/findings.json` | `findings` |
 | Drawn areas | `app/public/data/cells/` | `cells` |
 | Small areas and the blend band | `docs/event/SMALL_AREAS.md` | `boxes` |
 | Reference values for the app's tests | `app/lib/fit/test/fixtures.json.gz`, `app/lib/hotspots/test/fixtures.json` | `fixtures`, `hotspots` |

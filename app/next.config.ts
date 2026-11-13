@@ -6,9 +6,13 @@ const CACHE = "public, max-age=3600, stale-while-revalidate=86400";
 
 // Explore lived at "/" until the landing page took it. Every old link keeps working: a request for
 // "/" that carries any of Explore's parameters goes to /explore with its whole query string.
-const EXPLORE_PARAMS = ["area", "box", "poly", "day", "days", "from", "to", "view", "month", "year", "basemap", "hide", "panel", "timeline"];
+const EXPLORE_PARAMS = ["area", "box", "poly", "day", "days", "from", "to", "view", "month", "year", "basemap", "hide", "panel", "timeline", "mode", "tour", "seasons"];
+
+// The build's id, sent as a version with every /data/ request (lib/version.ts).
+const BUILD_ID = (process.env.VERCEL_GIT_COMMIT_SHA ?? `t${Date.now().toString(36)}`).slice(0, 12);
 
 const nextConfig: NextConfig = {
+  env: { NEXT_PUBLIC_BUILD_ID: BUILD_ID },
   // "/" is the landing page: a plain HTML file made by scripts/build-landing.mjs.
   async rewrites() {
     return { beforeFiles: [{ source: "/", destination: "/landing.html" }], afterFiles: [], fallback: [] };
