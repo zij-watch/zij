@@ -6,7 +6,7 @@ import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { useEffect, useRef } from "react";
 import type { Area } from "@/lib/data";
-import { MONTHS_SHORT, num } from "@/lib/format";
+import { MONTHS_SHORT, num, UNIT } from "@/lib/format";
 import { COLOURS, FONT_TEXT} from "@/lib/tokens";
 
 echarts.use([LineChart, GridComponent, TooltipComponent, MarkAreaComponent, CanvasRenderer]);
@@ -47,7 +47,7 @@ export default function TypicalYear({ area, year }: { area: Area; year: number }
     const text = { color: c["ink-muted"], fontFamily: FONT_TEXT, fontSize: 14 };
     chart.setOption({
       animation: false,
-      grid: { left: 54, right: 14, top: 16, bottom: 34 },
+      grid: { left: 62, right: 14, top: 16, bottom: 34 },
       tooltip: {
         trigger: "axis",
         backgroundColor: c["ground-raised"],
@@ -68,7 +68,10 @@ export default function TypicalYear({ area, year }: { area: Area; year: number }
         axisTick: { show: false },
         axisLabel: { ...text, interval: 0, formatter: (value: string) => { const k = MONTH_FIRST_WEEK.indexOf(Number(value)); return k >= 0 ? MONTHS_SHORT[k] : ""; } },
       },
-      yAxis: { type: "value", axisLabel: text, splitLine: { lineStyle: { color: c.rule, opacity: 0.4 } } },
+      yAxis: {
+        type: "value", axisLabel: text, splitLine: { lineStyle: { color: c.rule, opacity: 0.4 } },
+        name: `${UNIT} per week`, nameLocation: "middle", nameGap: 44, nameTextStyle: { ...text, fontSize: 13 },
+      },
       series: [
         { type: "line", data: p10, stack: "band", symbol: "none", lineStyle: { opacity: 0 }, silent: true },
         { type: "line", data: spread, stack: "band", symbol: "none", lineStyle: { opacity: 0 }, areaStyle: { color: c.ink, opacity: 0.16 }, silent: true },
@@ -92,10 +95,11 @@ export default function TypicalYear({ area, year }: { area: Area; year: number }
         { type: "line", data: thisYear, symbol: "none", connectNulls: false, lineStyle: { color: c.rubric, width: 2 } },
       ],
     });
-    const resize = () => chart.resize();
-    window.addEventListener("resize", resize);
+    // It follows its paper: the window, and Results widening or narrowing.
+    const observer = new ResizeObserver(() => chart.resize());
+    observer.observe(element.current);
     return () => {
-      window.removeEventListener("resize", resize);
+      observer.disconnect();
       chart.dispose();
     };
   }, [area, year]);

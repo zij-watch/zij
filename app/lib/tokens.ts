@@ -1,5 +1,10 @@
 // Zij design tokens. One theme, Folio: ink on paper.
 // This is the one place colours live: the stylesheet, the map layers and the charts all read from here.
+// The colours below are the app's copy of the Folio colours; everything else the paper materials need
+// (the wood, the flame, shadows, motion, the type scale) is read from the design system's own file,
+// lib/design/tokens.json, so it is never copied by hand.
+
+import design from "./design/tokens.json";
 
 export const COLOURS: Record<string, string> = {
   ground: "#eee2c6",
@@ -13,10 +18,6 @@ export const COLOURS: Record<string, string> = {
   "on-rubric": "#fbf4e4",
   lapis: "#22468f",
   shadow: "#3a2410",
-  // On frosted glass over satellite imagery the surface can sit over black sea, so the two
-  // lighter inks are deepened to keep 4.5:1 (checked in scripts/contrast.mjs).
-  "glass-ink-muted": "#453d32",
-  "glass-brass": "#58400f",
   "heat-0": "#f6edd8",
   "heat-1": "#f2c978",
   "heat-2": "#e0873a",
@@ -25,6 +26,11 @@ export const COLOURS: Record<string, string> = {
   "heat-5": "#3a0e0a",
 };
 
+// The Folio colours the app did not copy: the wood of tokens, the light of the lamp.
+for (const token of design.color.tokens as { name: string; value: { folio: string } }[]) {
+  if (!(token.name in COLOURS)) COLOURS[token.name] = token.value.folio;
+}
+
 export const FONT_DISPLAY = '"Cormorant Garamond", "Reem Kufi", Amiri, Georgia, serif';
 export const FONT_TEXT = 'Amiri, Georgia, serif';
 
@@ -32,10 +38,35 @@ export function heatRamp(): string[] {
   return [1, 2, 3, 4, 5].map((i) => COLOURS[`heat-${i}`]);
 }
 
+interface TypeStyle { name: string; fontSize: string; lineHeight: string; fontWeight: number; fontStyle?: string; letterSpacing?: string; fontFeature?: string }
+
+/** The design system's tokens other than colour, as CSS custom properties. */
+function materialTokens(): string {
+  const out: string[] = [];
+  const list = (group: { tokens: { name: string; value: string }[] }) => group.tokens.forEach((t) => out.push(`--${t.name}:${t.value};`));
+  list(design.spacing);
+  list(design.stroke);
+  list(design.opacity);
+  list(design.motion);
+  for (const t of design.shadow.tokens as { name: string; value: string; strength: number }[]) {
+    out.push(`--${t.name}:${t.value} color-mix(in srgb, var(--shadow) ${Math.round(t.strength * 100)}%, transparent);`);
+  }
+  for (const group of design.type.groups as { family: string; styles: TypeStyle[] }[]) {
+    const family = group.family === "display" ? "var(--font-display)" : "var(--font-text)";
+    for (const s of group.styles) {
+      if (s.name.startsWith("film")) continue;
+      out.push(`--type-${s.name}:${s.fontStyle ?? ""} ${s.fontWeight} ${s.fontSize}/${s.lineHeight} ${family};`);
+      if (s.letterSpacing) out.push(`--tracking-${s.name}:${s.letterSpacing};`);
+      if (s.fontFeature) out.push(`--features-${s.name}:${s.fontFeature};`);
+    }
+  }
+  return out.join("");
+}
+
 /** The tokens as CSS custom properties. */
 export function tokensCss(): string {
   const block = Object.entries(COLOURS)
     .map(([name, value]) => `--${name}:${value};`)
     .join("");
-  return `:root{${block}color-scheme:light;--font-display:${FONT_DISPLAY};--font-text:${FONT_TEXT};}`;
+  return `:root{${block}${materialTokens()}color-scheme:light;--font-display:${FONT_DISPLAY};--font-text:${FONT_TEXT};}`;
 }

@@ -8,6 +8,8 @@ import "@fontsource/amiri/400-italic.css";
 import "@fontsource/amiri/700.css";
 import "./globals.css";
 import "./ui.css";
+import "./materials.css";
+import "./explore.css";
 import { tokensCss } from "@/lib/tokens";
 
 export const metadata: Metadata = {
