@@ -1,0 +1,29 @@
+# Data: raw FIRMS files and everything built from them stay out of git
+data/
+firms-raw/
+*.duckdb
+*.duckdb.wal
+*.parquet
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Node / Next.js / Vercel
+node_modules/
+.next/
+out/
+.vercel/
+
+# OS and editors
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
