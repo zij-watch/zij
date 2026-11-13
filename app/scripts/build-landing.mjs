@@ -42,6 +42,10 @@ const band = area.bands.season_pct;
 const loyo = (model) => method.models.all_areas.find((r) => r.model === model && r.scheme === "LOYO").season_err_abs_pct;
 const delta = method.areas.find((a) => a.id === "nile-delta").validation.M4.LOYO.season_err_abs_pct;
 const ratios = method.raw_gap.rows.map((r) => r["NPP/Aqua"]).filter((v) => typeof v === "number");
+// Most years sit in a narrow range and one stands far out: say both, not one wide range.
+const byRatio = method.raw_gap.rows.filter((r) => typeof r["NPP/Aqua"] === "number").map((r) => ({ year: r.year, ratio: r["NPP/Aqua"] })).sort((a, b) => a.ratio - b.ratio);
+const peak = byRatio[byRatio.length - 1];
+const usual = byRatio.slice(0, -1).map((r) => r.ratio);
 const years = rows.length;
 const [train0, train1] = method.models.train_years;
 
@@ -142,9 +146,10 @@ const edits = [
   ['<link rel="stylesheet" href="materials.css">', '<link rel="stylesheet" href="/landing/reference/materials.css">\n<link rel="stylesheet" href="/landing/additions.css">', "materials.css"],
   ['<script src="landing.js"></script>', `<script>window.ZIJ_TABLE = ${JSON.stringify(table)};</script>\n<script src="/landing/reference/landing.js"></script>`, "the script"],
   ["from 25 years of NASA satellite records.", `from ${years} years of NASA satellite records.`, "the dek"],
-  ['<a class="catchword begin" id="begin" href="#ch-1">Begin reading</a>', '<a class="catchword begin" id="begin" href="#ch-1">Begin reading</a>\n      <a class="catchword enter" href="/explore">Open the map</a>', "the hero's link"],
-  ["Over the Nile Delta, VIIRS sees 11 to 20 times more fire pixels than MODIS, and the gap changes from year to year.", `Over the Nile Delta in autumn, VIIRS on Suomi NPP records ${Math.round(Math.min(...ratios))} to ${Math.round(Math.max(...ratios))} times more fire pixels than MODIS on Aqua, and the gap changes from year to year.`, "the pixel ratio"],
-  ['<section class="chapter ch2" id="ch-2"', `${record}\n    <section class="chapter ch2" id="ch-2"`, "chapter two"],
+  ['<a class="catchword begin" id="begin" href="#ch-1">Begin reading</a>', '<a class="catchword begin" id="begin" href="#record">Begin reading</a>\n      <a class="catchword enter" href="/explore">Open the map</a>', "the hero's link"],
+  ["Over the Nile Delta, VIIRS sees 11 to 20 times more fire pixels than MODIS, and the gap changes from year to year.", `Over the Nile Delta in autumn, VIIRS on Suomi NPP records ${Math.round(usual[0])} to ${Math.round(usual[usual.length - 1])} times more fire pixels than MODIS on Aqua in most years, and ${Math.round(peak.ratio)} times in ${peak.year}. The gap changes from year to year.`, "the pixel ratio"],
+  // The record comes first, directly under the opening: it is the reason to keep reading.
+  ['<section class="chapter ch1" id="ch-1"', `${record}\n    <section class="chapter ch1" id="ch-1"`, "chapter one"],
   ["Thread ties the two records where both flew, 2012 to 2020; the fit is then tested on years held back.", `Thread ties the two records where both flew, ${train0} to ${train1}; the fit is then tested on years held back.`, "the training years"],
   ['<p class="t-eyebrow" style="margin:0">fire days per month</p>', `<p class="t-eyebrow" style="margin:0">${area.unit_label} per month</p>`, "the table's unit"],
   ["<h3>Any area, 2000 to 2025</h3>", `<h3>The Nile Delta, ${firstYear} to ${lastYear}</h3>`, "the table's title"],
@@ -152,6 +157,10 @@ const edits = [
   ['aria-label="Illustrative calendar: years 2000 to 2025 down, months across, coloured from fewer to more fire days. Autumn is the burning season. One quiet autumn is boxed in red."', `aria-label="Calendar of the Nile Delta: years ${firstYear} to ${lastYear} down, months across, coloured from fewer to more fire. Autumn is the burning season. The autumn of ${odd.y} is boxed in red."`, "the table's label"],
   ["A quiet autumn, boxed and noted in the margin the way a scribe would. Placeholder.", `Autumn ${odd.y}: ${oddPct}% ${odd.v < median ? "below" : "above"} the median season. Boxed and noted in the margin the way a scribe would.`, "the margin note"],
   ["more fire days</span>", "more fire</span>", "the legend"],
+  // Every drawing that is not data says so beside itself, not only in a note elsewhere.
+  ['<p class="note map-note">', '<p class="illus-tag"><span class="plate-mark jadwal-box">illustration · not data</span></p><p class="note map-note">', "the map's tag"],
+  ['<span class="t-label modis">MODIS · 1 km pixels</span><span class="t-eyebrow">illustration</span>', '<span class="t-label modis">MODIS · 1 km pixels</span><span class="plate-mark jadwal-box">illustration · not data</span>', "the MODIS grid's tag"],
+  ['<span class="t-label viirs">VIIRS · 375 m pixels</span><span class="t-eyebrow">illustration</span>', '<span class="t-label viirs">VIIRS · 375 m pixels</span><span class="plate-mark jadwal-box">illustration · not data</span>', "the VIIRS grid's tag"],
   ['<span class="ramp"><span class="sw-nd"></span> no satellite yet</span>', '<span class="ramp"><span class="sw-nd"></span> no data</span>', "the legend's last key"],
   ['<a class="stamp" href="#top">Open the tables</a>', '<a class="stamp" href="/explore">Open the map</a>\n        <a class="catchword" href="/explore?area=nile-delta&amp;tour=1">Take the 60-second tour</a>', "the closing button"],
   ['<a class="catchword" href="#ch-2">How it works</a>', '<a class="catchword" href="/how-it-works">How it works</a>\n        <a class="catchword" href="/downloads">Download the numbers</a>', "the closing link"],
@@ -164,7 +173,7 @@ const edits = [
       <p class="sub t-reading whom">For anyone who has to say whether this season is unusual: environment and air-quality teams, agricultural advisers, fire agencies, journalists, students. Zij answers for 10 areas in Egypt, Portugal and Argentina, and for any area you draw inside them.</p>
       <div class="acts">`, "the closing"],
   ["<p>Fire records: NASA FIRMS (MODIS Collection 6.1, VIIRS 375 m). Imagery: NASA GIBS. Set in Cormorant Garamond, Amiri and Reem Kufi.</p>", '<p>Fire records: NASA FIRMS (MODIS Collection 6.1, VIIRS 375 m). Imagery: NASA GIBS. Map: made with Natural Earth. Set in Cormorant Garamond, Amiri and Reem Kufi. <a href="/how-it-works#sources">All sources</a>.</p>\n      <p>Zij is not affiliated with or endorsed by NASA.</p>', "the credits"],
-  ["<p>This page is a design reference. Its maps, tables and figures are illustrations, not data.</p>", "<p>The season chart, the calendar and every number on this page come from the record. The two pixel grids and the map of the Delta are drawings, and say so.</p>", "the colophon's last line"],
+  ["<p>This page is a design reference. Its maps, tables and figures are illustrations, not data.</p>", "<p>The season chart, the calendar and every number on this page come from the record. The two pixel grids and the map of the Delta are drawings, each marked “illustration”. The sky and the desk are the page’s setting.</p>", "the colophon's last line"],
 ];
 for (const [from, to, what] of edits) html = swap(html, from, to, what);
 html = html.replaceAll('"../logo/', '"/landing/logo/');

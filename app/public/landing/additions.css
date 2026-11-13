@@ -14,10 +14,13 @@
 @font-face { font-family: "Reem Kufi"; font-weight: 400 700; font-style: normal; font-display: swap; src: url("/atlas/fonts/reem-kufi-latin-500-normal.woff2") format("woff2"); unicode-range: U+0000-00FF; }
 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.illus-tag { margin: 12px 6px 0; }
 .hero .enter { margin-top: 10px; margin-left: -2px; }
 
 /* ---------------------------------------------------------------- the record */
-.record { position: relative; z-index: 3; max-width: 1040px; margin: 0 auto 24vh; scroll-margin-top: 80px; }
+/* Above the lantern (z-index 9 on the desk): the lantern passes behind this sheet and can never
+   cover the chart or a number, on any screen. */
+.record { position: relative; z-index: 10; max-width: 1040px; margin: 0 auto 24vh; scroll-margin-top: 80px; }
 .record .sheet { padding: clamp(16px, 3vw, 32px); }
 .record h2 { margin: 4px 0 16px; font-size: clamp(26px, 3.2vw, 40px); line-height: 1.1; }
 .rec-switch { display: inline-flex; margin-bottom: 16px; border: 1px solid var(--brass); border-radius: 4px; overflow: hidden; }
