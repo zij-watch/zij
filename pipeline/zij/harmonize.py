@@ -306,6 +306,9 @@ def this_month(days: pd.DataFrame, last_day: date) -> dict:
     past = past[past.n == last_day.day].value
     out = {"year": last_day.year, "month": last_day.month, "days_so_far": int(len(now)),
            "value_to_date": float(now.value.sum()) if len(now) else None, "baseline_n": int(len(past))}
+    # Each baseline year's value for the same days, so a verdict can state an exact rank.
+    out["to_date_years"] = [int(y) for y in past.index]
+    out["to_date_values"] = [float(v) for v in past.values]
     if len(past):
         q = np.percentile(past, [PCT_LOW, 25, 50, 75, PCT_HIGH])
         out.update({"p10_to_date": q[0], "p25_to_date": q[1], "median_to_date": q[2], "p75_to_date": q[3], "p90_to_date": q[4]})

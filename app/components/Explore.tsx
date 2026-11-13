@@ -218,7 +218,7 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
   useEffect(() => {
     if (!state.tour || !tourAreaReady) return;
     const timer = setTimeout(() => {
-      const target = document.querySelector(state.tour === 1 ? ".sheet .detail-head" : ".sheet .tabs");
+      const target = document.querySelector(".sheet .tabs");
       if (state.tour! <= 3) target?.scrollIntoView({ block: "start", behavior: "smooth" });
       else document.querySelector(".sheet-body")?.scrollTo({ top: 0, behavior: "smooth" });
     }, 700);
@@ -389,8 +389,9 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
     const timeline = state.timeline ? 86 : 0;
     if (w <= 760) return { top: 84 + (state.timeline ? 110 : 0), left: 28, right: 28, bottom: 54 + (state.panel === "closed" ? 0 : Math.round(h * 0.46)) + 24 };
     const sheet = state.panel === "closed" ? 0 : state.panel === "wide" ? w / 2 : w <= 1180 ? 404 : 464;
-    return { top: 96, left: 72, right: Math.round(sheet) + 48, bottom: 104 + timeline };
-  }, [screen, state.panel, state.timeline]);
+    // During the tour the caption card sits at the top left: keep the area clear of it too.
+    return { top: 96, left: state.tour && w >= 1300 ? 500 : 72, right: Math.round(sheet) + 48, bottom: 104 + timeline };
+  }, [screen, state.panel, state.timeline, state.tour]);
 
   // The readout.
   const areaName = panelArea?.name ?? areaEntry?.name ?? (shapeKey || drawMode ? "Drawn area" : "No area chosen");
@@ -527,7 +528,7 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
         </div>
       )}
       {!error && panelArea && (
-        <Panel area={panelArea} simple={state.mode === "simple"} onExpert={() => update({ mode: "expert" })} named={false} from={from} to={to} view={state.view} month={state.month} year={state.year}
+        <Panel area={panelArea} simple={state.mode === "simple"} onExpert={() => update({ mode: "expert" })} recorded={state.recorded} onRecorded={(recorded) => update({ recorded })} named={false} from={from} to={to} view={state.view} month={state.month} year={state.year}
           note={notes[panelArea.id]} drawn={Boolean(shown)} draft={isDraft}
           onView={(view) => update({ view })} onMonth={(month) => update({ month })} onYear={(year) => update({ year })} />
       )}

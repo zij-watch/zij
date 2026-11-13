@@ -1,6 +1,6 @@
 # Small areas
 
-Built 13 Nov 2026, 12:01 UTC by `uv run python -m zij boxes`. This file is generated: change the code, not the file.
+Built 13 Nov 2026, 17:38 UTC by `uv run python -m zij boxes`. This file is generated: change the code, not the file.
 
 A drawn area can be much smaller than our named areas. The small-area rule: 100 or more MODIS fire weeks in 2012 to 2020, the area gets its own fit; 30 to 99, a blend of its own fit and the country's fit scaled to the area; under 30, no harmonized values. This page checks the rule on random boxes and gives the season band for blended areas.
 

@@ -14,6 +14,8 @@ import TypicalYear from "./TypicalYear";
 const VIEW_LABELS: Record<View, string> = { calendar: "Calendar", typical: "Typical year", series: "Seasons", ranked: "Busiest", anomalies: "Anomalies" };
 
 interface Props {
+  recorded?: boolean; // the Seasons tab: as recorded, or harmonized
+  onRecorded?: (recorded: boolean) => void;
   simple?: boolean; // Simple: the calendar, this month, three anomalies in words, and a way to the rest
   onExpert?: () => void;
   named?: boolean; // the country and name at the top; off where the panel head already shows them
@@ -260,7 +262,7 @@ function Anomalies({ area, from, to, onMonth }: { area: Area; from: string; to: 
 
 // ------------------------------------------------------------------ seasons
 
-function SeasonsView({ area, from, to }: { area: Area; from: string; to: string }) {
+function SeasonsView({ area, from, to, recorded, onRecorded }: { area: Area; from: string; to: string; recorded: boolean; onRecorded: (recorded: boolean) => void }) {
   const s = area.seasons;
   const [b0, b1] = area.climatology.baseline_years;
   const normal = median(s.value.filter((_, i) => s.year[i] >= b0 && s.year[i] <= b1));
@@ -270,11 +272,22 @@ function SeasonsView({ area, from, to }: { area: Area; from: string; to: string 
   return (
     <section className="block">
       <h3>Season by season</h3>
-      <SeriesChart area={area} fromYear={fromYear} toYear={toYear} normal={normal} />
-      <p className="note">
-        Season: {seasonWords(area.fit.season)}. Red line: the harmonized season total. Blue bars: the likely range of a year converted from MODIS.
-        Dotted blue: raw MODIS, before conversion. Dashed: the median season of {b0} to {b1}.
-      </p>
+      <div className="switch" role="radiogroup" aria-label="Which record to show">
+        <button type="button" role="radio" aria-checked={recorded} className={recorded ? "is-active" : ""} onClick={() => onRecorded(true)}>What the satellites recorded</button>
+        <button type="button" role="radio" aria-checked={!recorded} className={!recorded ? "is-active" : ""} onClick={() => onRecorded(false)}>What actually happened</button>
+      </div>
+      <SeriesChart area={area} fromYear={fromYear} toYear={toYear} normal={normal} recorded={recorded} />
+      {recorded ? (
+        <p className="note">
+          <span className="mark-modis-bar" /> MODIS, as recorded. <span className="mark-viirs-bar" /> VIIRS, as recorded, from its first season here.
+          The jump where VIIRS begins is the instrument, not the fires: VIIRS sees much smaller fires. Season: {seasonWords(area.fit.season)}.
+        </p>
+      ) : (
+        <p className="note">
+          <span className="mark-viirs-bar" /> Every season on one scale, in VIIRS terms. The ink whisker is the likely range of a year converted from MODIS.
+          Dashed: the median season of {b0} to {b1}. Season: {seasonWords(area.fit.season)}.
+        </p>
+      )}
       <div className="table-scroll">
         <table>
           <thead><tr><th>Year</th><th>Harmonized</th><th>Band</th><th>Source</th><th>Raw MODIS</th><th>Raw VIIRS</th></tr></thead>
@@ -358,7 +371,7 @@ function SimpleAnomalies({ area }: { area: Area }) {
 
 // ------------------------------------------------------------------ panel
 
-export default function Panel({ area, simple = false, onExpert, named = true, from, to, view, month, year, note, drawn, draft, onView, onMonth, onYear }: Props) {
+export default function Panel({ area, recorded = false, onRecorded, simple = false, onExpert, named = true, from, to, view, month, year, note, drawn, draft, onView, onMonth, onYear }: Props) {
   const weekBand = area.bands.week_mult;
   const seasonBand = area.bands.season_pct;
   const lastYear = Number(area.last_full_day.slice(0, 4));
@@ -457,7 +470,7 @@ export default function Panel({ area, simple = false, onExpert, named = true, fr
         </>
       )}
 
-      {view === "series" && <SeasonsView area={area} from={from} to={to} />}
+      {view === "series" && <SeasonsView area={area} from={from} to={to} recorded={recorded} onRecorded={onRecorded ?? (() => undefined)} />}
 
       {view === "ranked" && <Ranked area={area} from={from} to={to} />}
 

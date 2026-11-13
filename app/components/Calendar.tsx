@@ -47,6 +47,15 @@ export default function Calendar({ area, from, to, labelSize = 13, selected, onS
   const height = legendY + 78;
   const label = { fontFamily: FONT_TEXT, fontSize: labelSize, fill: c["ink-muted"] };
 
+  // The legend's keys are placed one after another by the length of their words, so none runs into the next.
+  const legendLabel = { ...label, fontSize: Math.min(labelSize, 14) };
+  const legendWords = ramp.map((_, k) => (k === 0 ? `under ${num(breaks[0])}` : k === 4 ? `${num(breaks[3])}+` : `${num(breaks[k - 1])}–${num(breaks[k])}`));
+  const legendX: number[] = [];
+  legendWords.reduce((x, words) => {
+    legendX.push(x);
+    return x + 32 + words.length * legendLabel.fontSize * 0.52 + 12;
+  }, 62);
+
   return (
     <svg id={id} xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${width} ${height}`} width="100%" role="img"
       aria-label={`Calendar of ${area.unit_label} per month for ${area.name}, ${from} to ${to}`}>
@@ -111,11 +120,9 @@ export default function Calendar({ area, from, to, labelSize = 13, selected, onS
         <rect x={0} y={0} width={26} height={14} fill={c["heat-0"]} stroke={c.rule} strokeWidth={0.5} />
         <text x={32} y={12} {...label}>0</text>
         {ramp.map((colour, k) => (
-          <g key={colour} transform={`translate(${62 + k * 84} 0)`}>
+          <g key={colour} transform={`translate(${legendX[k]} 0)`}>
             <rect width={26} height={14} fill={colour} />
-            <text x={32} y={12} {...label}>
-              {k === 0 ? `under ${num(breaks[0])}` : k === 4 ? `${num(breaks[3])} +` : `${num(breaks[k - 1])} to ${num(breaks[k])}`}
-            </text>
+            <text x={32} y={12} {...legendLabel}>{legendWords[k]}</text>
           </g>
         ))}
         <g transform="translate(0 26)">

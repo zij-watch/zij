@@ -84,7 +84,7 @@ app/public/data/cells/                per-cell files for drawn areas: docs/event
 
 ### `this_month`
 
-`year`, `month`, `days_so_far`, `value_to_date`, and over the same days of the baseline years: `median_to_date`, `p10_to_date`, `p25_to_date`, `p75_to_date`, `p90_to_date`, `baseline_n`, `pct_vs_median`.
+`year`, `month`, `days_so_far`, `value_to_date`, and over the same days of the baseline years: `median_to_date`, `p10_to_date`, `p25_to_date`, `p75_to_date`, `p90_to_date`, `baseline_n`, `pct_vs_median`. Also `to_date_years` and `to_date_values`: each baseline year that has those same days, and its value for them, so a verdict can state an exact rank and percentile.
 
 ### `fit`
 

@@ -25,6 +25,7 @@ export interface AppState {
   hide: string[]; // layers switched off: "viirs", "modis", "outlines"
   panel: "open" | "wide" | "closed"; // the floating panel
   timeline: boolean; // the day scrubber along the bottom
+  recorded: boolean; // the Seasons tab shows what the satellites recorded, not the harmonized record
   tour: number | null; // the step of the tour, 1 to 6
   mode: "simple" | "expert"; // how much the panel shows; simple unless the link says expert
 }
@@ -74,6 +75,7 @@ export function parseState(params: URLSearchParams): AppState {
     hide: (params.get("hide") ?? "").split(",").filter((v) => (LAYERS as readonly string[]).includes(v)),
     panel: params.get("panel") === "wide" ? "wide" : params.get("panel") === "closed" ? "closed" : "open",
     timeline: params.get("timeline") === "1",
+    recorded: params.get("seasons") === "recorded",
     tour: /^[1-6]$/.test(params.get("tour") ?? "") ? Number(params.get("tour")) : null,
     // Simple unless the link says otherwise. A link that asks for a view, a month's weeks or a year
     // on the typical year is asking for something only Expert shows, so it opens in Expert.
@@ -99,6 +101,12 @@ export function useAppState(): [AppState, (patch: Partial<AppState>, quiet?: boo
           if (value === null) next.delete(key);
           else next.set(key, value);
         }
+      }
+      if (rest.recorded !== undefined) {
+        // In the address this is ?seasons=recorded.
+        if (rest.recorded) next.set("seasons", "recorded");
+        else next.delete("seasons");
+        delete rest.recorded;
       }
       for (const [key, value] of Object.entries(rest)) {
         const isDefault = value === null || value === false || (key === "view" && value === "calendar") || (key === "basemap" && value === "zij")

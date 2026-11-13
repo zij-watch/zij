@@ -14,18 +14,18 @@ export interface TourStep {
 // Everything a step does not set is put back to its default, so steps never inherit from each other.
 const CLEAN: Partial<AppState> = {
   area: null, shape: null, day: null, days: null, from: null, to: null, view: "calendar", month: null, year: null,
-  basemap: "zij", hide: [], panel: "open", timeline: false, mode: "simple",
+  basemap: "zij", hide: [], panel: "open", timeline: false, mode: "simple", recorded: false,
 };
 
 export const TOUR: TourStep[] = [
   {
     title: "The jump",
-    text: "October 2012 in the Nile Delta, week by week, as each instrument counted it. Read the raw counts: VIIRS sees many times more fire than MODIS in the very same weeks. Nothing changed on the ground. The instrument did.",
-    state: { area: "nile-delta", mode: "expert", month: "2012-10" },
+    text: "The Nile Delta's burning seasons as the satellites recorded them: MODIS in blue until 2011, VIIRS in red from 2012. The record leaps in one year. Nothing changed on the ground. The instrument did: VIIRS sees much smaller fires.",
+    state: { area: "nile-delta", mode: "expert", view: "series", recorded: true },
   },
   {
     title: "The correction",
-    text: "Zij learns, from the years both flew, what VIIRS would have counted when MODIS counted a given amount. Here are the Delta's seasons on one scale. The blue bars are the likely range of each year converted from MODIS.",
+    text: "The same seasons on one scale. Zij learns, from the years both flew, what VIIRS would have counted when MODIS counted a given amount. The ink whiskers are the likely range of each year converted from MODIS.",
     state: { area: "nile-delta", mode: "expert", view: "series" },
   },
   {

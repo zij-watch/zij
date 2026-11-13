@@ -114,6 +114,10 @@ export interface Area {
     p25_to_date?: number;
     p75_to_date?: number;
     baseline_n: number;
+    to_date_years?: number[]; // each baseline year that has the same days
+    to_date_values?: number[]; // and its value for those days
+    p10_to_date?: number;
+    p90_to_date?: number;
     pct_vs_median?: number;
   };
   satellites: Record<string, SatelliteCounts>;

@@ -352,3 +352,10 @@ details.choice ul.plain li { min-height: var(--hit); display: flex; align-items:
   .brief-calendar svg { height: 92mm; width: auto; max-width: 100%; margin: 0 auto; }
   .badge, .brief-calendar { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* The Seasons switch and its keys. */
+.block > .switch { margin-bottom: var(--s-3); }
+.block > .switch button { min-height: var(--hit); font-size: 15px; line-height: 18px; padding: var(--s-1) var(--s-2); }
+.mark-modis-bar, .mark-viirs-bar { display: inline-block; width: 12px; height: 12px; border-radius: var(--r-1); vertical-align: -1px; margin-right: 2px; }
+.mark-modis-bar { background: var(--lapis); }
+.mark-viirs-bar { background: var(--rubric); }
