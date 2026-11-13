@@ -16,12 +16,18 @@ AREAS: dict[str, tuple[str, tuple[float, float, float, float]]] = {
     "Northern Portugal": ("Portugal", (-8.9, 40.8, -6.2, 42.2)),
     "Central Portugal (Pinhal)": ("Portugal", (-8.6, 39.4, -7.0, 40.6)),
     "Alentejo": ("Portugal", (-8.9, 37.3, -6.9, 39.0)),
+    "Parana Delta": ("Argentina", (-60.8, -34.5, -58.2, -32.0)),
+    "Chilecito": ("Argentina", (-68.0, -29.6, -67.0, -28.7)),
 }
+
+# The 8 areas of our pre-event research. The averages we compare with are over these.
+RESEARCH_AREAS = tuple(list(AREAS)[:8])
 
 # The country a small area leans on (small-area rule, SPEC 5.5c).
 COUNTRY_BOX = {
     "Egypt": (24.6, 21.9, 37.0, 31.8),
     "Portugal": (-9.6, 36.9, -6.1, 42.2),  # mainland
+    "Argentina": (-73.6, -55.1, -53.6, -21.7),
 }
 
 TRAIN_YEARS = tuple(range(2012, 2021))  # before Aqua's overpass drifted later
@@ -36,5 +42,6 @@ SEASON_LENGTH = 3          # consecutive calendar months, by mean weekly VIIRS i
 RATIO_PSEUDO = 20.0        # cell-days pulling a month's single-satellite ratio to the overall one
 MIN_FIRE_WEEKS = 100       # own fit from this many MODIS fire weeks in the training years
 MIN_FIRE_WEEKS_ANY = 30    # below this, no harmonized values
+BLEND_BAND_PCT = (-47.0, 60.0)  # season band for blended areas, pooled over small random boxes
 
 MODELS = ("raw", "M0", "M1", "M2", "M3", "M4")

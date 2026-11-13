@@ -153,9 +153,11 @@ def summarize(v: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     per_area = (v.groupby(["area", "scheme", "model"], sort=False)
                  .agg(season_err_abs_pct=("abs_err", "mean"), season_bias_pct=("season_err_pct", "mean"),
                       spearman=("spearman", "median"), years=("abs_err", "count")).reset_index())
+    v = v[v.area.isin(p.RESEARCH_AREAS)]
+    per_research = per_area[per_area.area.isin(p.RESEARCH_AREAS)]
     overall = (v.groupby(["scheme", "model"], sort=False)
                 .agg(season_err_abs_pct=("abs_err", "mean"), area_years=("abs_err", "count")).reset_index())
-    sp = per_area.groupby(["scheme", "model"], sort=False).spearman.mean().reset_index()
+    sp = per_research.groupby(["scheme", "model"], sort=False).spearman.mean().reset_index()
     return per_area, overall.merge(sp, on=["scheme", "model"])
 
 
@@ -209,9 +211,9 @@ Can weekly MODIS fire days predict weekly VIIRS fire days? Each model is fitted 
 | M3 | V = c[month] + a M^b + d M^b z, z = fire size (log of MODIS FRP per detection) |
 | M4 | V = c[month] r^g + a M^b + d M^b z, r = the year's MODIS season total over the typical one; MODIS first put on the Terra + Aqua footing |
 
-## All 8 areas
+## The 8 research areas
 
-Mean absolute season error over every area and year, in percent.
+Mean absolute season error over every year of the 8 areas of our pre-event research (Egypt and Portugal), in percent. The two Argentine areas were added at the event and are in the tables below, not in this average.
 
 {_table(rows, ["Model", "Leave one year out", "Out of time", "Pre-event research", "Spearman, leave one year out", "Spearman, out of time"])}
 
