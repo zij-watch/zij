@@ -2199,7 +2199,7 @@
   }
 
   // ---- thread between pins on different sheets, and down the line of pins at the end ----
-  const THREADS = [['spool', 'modis1'], ['spool', 'viirs1'], ['modis1', 'map-m'], ['viirs1', 'map-v'], ['map-m', 'map-k'], ['map-v', 'map-k'], ['map-k', 'table-in'], ['table-out', 'l0'], ['l0', 'l1'], ['l1', 'l2'], ['l2', 'l3'], ['l3', 'l4'], ['l4', 'l5']];
+  const THREADS = [['spool', 'rec-in'], ['rec-out', 'shows-in'], ['shows-out', 'modis1'], ['shows-out', 'viirs1'], ['modis1', 'map-m'], ['viirs1', 'map-v'], ['map-m', 'map-k'], ['map-v', 'map-k'], ['map-k', 'table-in'], ['table-out', 'l0'], ['l0', 'l1'], ['l1', 'l2'], ['l2', 'l3'], ['l3', 'l4'], ['l4', 'l5']];
   let threads = [];
   const chapterOf = (n) => chapters.indexOf(n.closest('.chapter')) + 1;
   function layThreads() {
@@ -2242,18 +2242,30 @@
   function threadsOverRecord() {
     const src = $('desk-threads'), dr = desk.getBoundingClientRect();
     desk.querySelectorAll(':scope > .record').forEach((sec) => {
-      let svg = sec.querySelector(':scope > .record-threads');
+      let svg = sec.querySelector(':scope > .record-threads'), box = sec.querySelector(':scope > .record-pins');
       if (!svg) {
         svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('class', 'desk-threads record-threads'); svg.setAttribute('aria-hidden', 'true');
         sec.appendChild(svg);
+        box = document.createElement('div'); box.className = 'desk-pins record-pins'; box.setAttribute('aria-hidden', 'true');
+        sec.appendChild(box);
       }
-      const r = sec.getBoundingClientRect(), w = sec.offsetWidth, h = sec.offsetHeight;
+      const r = sec.getBoundingClientRect(), w = sec.offsetWidth, h = sec.offsetHeight, x0 = r.left - dr.left, y0 = r.top - dr.top;
       svg.setAttribute('width', w); svg.setAttribute('height', h);
-      svg.setAttribute('viewBox', `${n1(r.left - dr.left)} ${n1(r.top - dr.top)} ${n1(w)} ${n1(h)}`);
+      svg.setAttribute('viewBox', `${n1(x0)} ${n1(y0)} ${n1(w)} ${n1(h)}`);
       svg.innerHTML = src.innerHTML;
       const copies = svg.querySelectorAll('.t');
       threads.forEach((t, i) => { const path = copies[i]; if (path) t.els.push(path.previousElementSibling, path); });
+      (box._watch || []).forEach((o) => o.disconnect());
+      box.innerHTML = ''; box._watch = [];
+      $('desk-pins').querySelectorAll('.pin').forEach((pin) => {
+        const x = parseFloat(pin.style.left) - x0, y = parseFloat(pin.style.top) - y0;
+        if (x < -8 || y < -8 || x > w + 8 || y > h + 8) return;
+        const copy = pin.cloneNode(); copy.style.left = n1(x) + 'px'; copy.style.top = n1(y) + 'px';
+        box.appendChild(copy);
+        const o = new MutationObserver(() => { copy.style.opacity = pin.style.opacity; });
+        o.observe(pin, { attributes: true, attributeFilter: ['style'] }); box._watch.push(o);
+      });
     });
   }
   function drawThread(t) {
@@ -2320,7 +2332,14 @@
   }, { rootMargin: '0px 0px -18% 0px', threshold: 0.6 });
   lineStops.forEach((s) => stopIO.observe(s));
   const recordIO = new IntersectionObserver((entries) => {
-    for (const e of entries) if (e.isIntersecting) { recordIO.unobserve(e.target); later(() => inkIn(e.target), still ? 0 : 350); }
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      const sheet = e.target, sec = sheet.closest('.record');
+      recordIO.unobserve(sheet);
+      later(() => inkIn(sheet), still ? 0 : 350);
+      const mine = threads.filter((t) => { const end = desk.querySelector('[data-anchor="' + t.end + '"]'); return end && sec.contains(end); });
+      mine.forEach((t, k) => later(() => drawThread(t), still ? 0 : 350 + (sheet._inkT || 2) * 1000 + 300 + k * 320));
+    }
   }, { threshold: 0.2 });
   document.querySelectorAll('.desk > .record [data-ink]').forEach((s) => recordIO.observe(s));
 

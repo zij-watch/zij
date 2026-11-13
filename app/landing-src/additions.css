@@ -105,3 +105,14 @@
 /* The thread from the spool, drawn again over the record and its findings (build-landing.mjs):
    cut to the section's box, over the sheet and its ink, never in the way of a click. */
 .record > .record-threads { overflow: hidden; z-index: 4; }
+
+/* The pins the thread runs to on the record and its findings: in the top and bottom margins, clear
+   of every line of text (the threads themselves are in build-landing.mjs). */
+.record .anchor.pin-in { top: 9px; left: 64%; }
+.record .anchor.pin-out { bottom: 9px; left: 70%; }
+.record.shows .anchor.pin-in { left: 70%; }
+.record.shows .anchor.pin-out { left: 64%; }
+.record > .record-pins { z-index: 5; }
+
+/* The opening line is longer than the reference's: it may wrap where the screen is narrow. */
+@media (max-width: 900px) { #hero .line { white-space: normal; text-wrap: balance; } }

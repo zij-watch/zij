@@ -55,6 +55,7 @@ const [train0, train1] = method.models.train_years;
 const record = `
     <section class="record" id="record" aria-labelledby="h-record">
       <div class="sheet" data-theme="folio" data-paper="sheet" data-ink>
+        <i class="anchor pin-in" data-anchor="rec-in" aria-hidden="true"></i><i class="anchor pin-out" data-anchor="rec-out" aria-hidden="true"></i>
         <p class="t-eyebrow">The Nile Delta, fire seasons ${rows[0].year} to ${rows[years - 1].year} · from the record</p>
         <h2 id="h-record">The satellites changed in ${firstViirs.year}. The fires did not.</h2>
         <input type="radio" name="rec" id="rec-raw" class="sr-only" checked>
@@ -119,6 +120,7 @@ const shows = [
 const showsSection = `
     <section class="record shows" id="shows" aria-labelledby="h-shows">
       <div class="sheet" data-theme="folio" data-paper="sheet" data-ink>
+        <i class="anchor pin-in" data-anchor="shows-in" aria-hidden="true"></i><i class="anchor pin-out" data-anchor="shows-out" aria-hidden="true"></i>
         <p class="t-eyebrow">From the record · ${rows[0].year} to ${rows[years - 1].year}</p>
         <h2 id="h-shows">What ${years} years show</h2>
         <ol class="shows-list">
@@ -174,35 +176,61 @@ js = swap(js, js.slice(js.indexOf("  // Chapter three: the table, a seeded illus
 `, "the table of chapter three");
 js = swap(js, "'../assets/marks/dial-night.svg'", "'/landing/assets/marks/dial-night.svg'", "the dial");
 
+// The thread runs pin to pin, as it does lower down: from the spool to a pin at the top of the record,
+// from a pin at the record's foot to one at the top of the findings, and from the findings' foot to
+// the two tokens of chapter one. It never crosses a sheet's text: the pins sit in the margins
+// (additions.css, .record .anchor).
+js = swap(js, "const THREADS = [['spool', 'modis1'], ['spool', 'viirs1'], ", "const THREADS = [['spool', 'rec-in'], ['rec-out', 'shows-in'], ['shows-out', 'modis1'], ['shows-out', 'viirs1'], ", "the threads to chapter one");
+
 // The record and its findings sit before chapter one, outside every chapter, so nothing spread their
-// ink: each now gets its drop when it comes into view, as the chapters' sheets do.
+// ink or drew their thread: each sheet now gets its drop when it comes into view, as the chapters'
+// sheets do, and once the ink is dry the thread is run to its pins.
 js = swap(js, "  lineStops.forEach((s) => stopIO.observe(s));", `  lineStops.forEach((s) => stopIO.observe(s));
   const recordIO = new IntersectionObserver((entries) => {
-    for (const e of entries) if (e.isIntersecting) { recordIO.unobserve(e.target); later(() => inkIn(e.target), still ? 0 : 350); }
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      const sheet = e.target, sec = sheet.closest('.record');
+      recordIO.unobserve(sheet);
+      later(() => inkIn(sheet), still ? 0 : 350);
+      const mine = threads.filter((t) => { const end = desk.querySelector('[data-anchor="' + t.end + '"]'); return end && sec.contains(end); });
+      mine.forEach((t, k) => later(() => drawThread(t), still ? 0 : 350 + (sheet._inkT || 2) * 1000 + 300 + k * 320));
+    }
   }, { threshold: 0.2 });
   document.querySelectorAll('.desk > .record [data-ink]').forEach((s) => recordIO.observe(s));`, "the record's ink");
 
-// The record lies above the lantern (additions.css), so the thread from the spool to chapter one ran
-// under it. It is drawn again inside each record section, cut to that section's box: on top of the
-// sheet, still under nothing it shouldn't be. The copies are added to each thread's elements, so they
-// are drawn in the same stroke as the thread itself.
+// The record lies above the lantern (additions.css), so the thread layer and its pins are under it.
+// Inside each record section they are drawn again, cut to that section's box: the last stretch of
+// thread to a pin in the sheet's margin, and the pin itself. The thread copies join each thread's
+// elements, so they are drawn in the same stroke; each pin copy follows its pin's opacity.
 js = swap(js, "    layThreads();", `    layThreads();
     threadsOverRecord();`, "the thread over the record");
 js = swap(js, "  function drawThread(t) {", `  function threadsOverRecord() {
     const src = $('desk-threads'), dr = desk.getBoundingClientRect();
     desk.querySelectorAll(':scope > .record').forEach((sec) => {
-      let svg = sec.querySelector(':scope > .record-threads');
+      let svg = sec.querySelector(':scope > .record-threads'), box = sec.querySelector(':scope > .record-pins');
       if (!svg) {
         svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('class', 'desk-threads record-threads'); svg.setAttribute('aria-hidden', 'true');
         sec.appendChild(svg);
+        box = document.createElement('div'); box.className = 'desk-pins record-pins'; box.setAttribute('aria-hidden', 'true');
+        sec.appendChild(box);
       }
-      const r = sec.getBoundingClientRect(), w = sec.offsetWidth, h = sec.offsetHeight;
+      const r = sec.getBoundingClientRect(), w = sec.offsetWidth, h = sec.offsetHeight, x0 = r.left - dr.left, y0 = r.top - dr.top;
       svg.setAttribute('width', w); svg.setAttribute('height', h);
-      svg.setAttribute('viewBox', \`\${n1(r.left - dr.left)} \${n1(r.top - dr.top)} \${n1(w)} \${n1(h)}\`);
+      svg.setAttribute('viewBox', \`\${n1(x0)} \${n1(y0)} \${n1(w)} \${n1(h)}\`);
       svg.innerHTML = src.innerHTML;
       const copies = svg.querySelectorAll('.t');
       threads.forEach((t, i) => { const path = copies[i]; if (path) t.els.push(path.previousElementSibling, path); });
+      (box._watch || []).forEach((o) => o.disconnect());
+      box.innerHTML = ''; box._watch = [];
+      $('desk-pins').querySelectorAll('.pin').forEach((pin) => {
+        const x = parseFloat(pin.style.left) - x0, y = parseFloat(pin.style.top) - y0;
+        if (x < -8 || y < -8 || x > w + 8 || y > h + 8) return;
+        const copy = pin.cloneNode(); copy.style.left = n1(x) + 'px'; copy.style.top = n1(y) + 'px';
+        box.appendChild(copy);
+        const o = new MutationObserver(() => { copy.style.opacity = pin.style.opacity; });
+        o.observe(pin, { attributes: true, attributeFilter: ['style'] }); box._watch.push(o);
+      });
     });
   }
   function drawThread(t) {`, "drawThread");
@@ -219,6 +247,7 @@ const edits = [
   ['<link rel="stylesheet" href="../tokens.css">', '<link rel="stylesheet" href="/landing/tokens.css">', "tokens.css"],
   ['<link rel="stylesheet" href="materials.css">', '<link rel="stylesheet" href="/landing/reference/materials.css">\n<link rel="stylesheet" href="/landing/additions.css">', "materials.css"],
   ['<script src="landing.js"></script>', `<script>window.ZIJ_TABLE = ${JSON.stringify(table)};</script>\n<script src="/landing/reference/landing.js"></script>`, "the script"],
+  ['<p class="line">Satellites do the watching.<br>We make the tables.</p>', '<p class="line">1,000 years ago, a zij charted the sky.<br>Ours charts a safer Earth.</p>', "the hero's line"],
   ["from 25 years of NASA satellite records.", `from ${years} years of NASA satellite records.`, "the dek"],
   ['<a class="catchword begin" id="begin" href="#ch-1">Begin reading</a>', '<a class="catchword enter" href="/explore">Open the map</a>\n      <a class="scroll-cue" id="begin" href="#record" aria-label="Scroll down to the record"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v15M5 13l7 7 7-7"/></svg></a>', "the hero's link"],
   ["Over the Nile Delta, VIIRS sees 11 to 20 times more fire pixels than MODIS, and the gap changes from year to year.", `Over the Nile Delta in autumn, VIIRS on Suomi NPP records ${Math.round(usual[0])} to ${Math.round(usual[usual.length - 1])} times more fire pixels than MODIS on Aqua in most years, and ${Math.round(peak.ratio)} times in ${peak.year}. The gap changes from year to year.`, "the pixel ratio"],
