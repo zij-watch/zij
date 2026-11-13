@@ -246,6 +246,24 @@ def flown(con: duckdb.DuckDBPyConnection) -> None:
     con.execute("CREATE OR REPLACE TABLE known_gaps (satellite VARCHAR, first_day DATE, last_day DATE)")
     rows = [(sat, a, b) for sat, gaps in c.KNOWN_GAPS.items() for a, b in gaps]
     con.executemany("INSERT INTO known_gaps VALUES (?, ?, ?)", rows)
+    # NOAA-21 has no verified gap list yet, so the same silence rule is applied to it
+    # here: a week with no NOAA-21 detection of any type in any loaded country, while
+    # NOAA-20 has detections, is no data for NOAA-21.
+    con.execute(
+        """
+        CREATE OR REPLACE TABLE silent_weeks AS
+        WITH seen AS (
+            SELECT DISTINCT satellite, CAST(date_trunc('week', acq_date) AS DATE) AS week_start
+            FROM detections WHERE satellite IN ('N20', 'N21')
+        )
+        SELECT 'N21' AS satellite, week_start
+        FROM seen
+        WHERE satellite = 'N20'
+          AND week_start >= (SELECT min(week_start) FROM seen WHERE satellite = 'N21')
+          AND week_start NOT IN (SELECT week_start FROM seen WHERE satellite = 'N21')
+        """
+    )
+    con.execute("INSERT INTO known_gaps SELECT satellite, week_start, week_start + 6 FROM silent_weeks")
     con.execute("CREATE OR REPLACE TABLE mission_end (satellite VARCHAR, last_day DATE)")
     con.executemany("INSERT INTO mission_end VALUES (?, ?)", list(c.MISSION_END.items()))
     con.execute(
@@ -400,6 +418,8 @@ def summary(con: duckdb.DuckDBPyConnection) -> None:
     print("\n2026 API rows left out")
     print(con.sql("PIVOT (SELECT country, reason, n FROM api_left_out) ON country USING sum(n) GROUP BY reason").df().to_string(index=False))
     print("\nLast full day:", con.sql("SELECT last_full_day FROM build_info").fetchone()[0])
+    print("\nNOAA-21 weeks silent everywhere while NOAA-20 saw fires (counted as no data):",
+          [str(r[0]) for r in con.sql("SELECT week_start FROM silent_weeks ORDER BY 1").fetchall()] or "none")
     print("\nStatic-source cells (0.01 degree)")
     print(con.sql("SELECT country, count(*) AS cells FROM static_cells GROUP BY ALL ORDER BY ALL").df().to_string(index=False))
     print("\nFirst day flown per satellite")
