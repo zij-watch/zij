@@ -43,7 +43,7 @@ SEASON_LENGTH = 3          # consecutive calendar months, by mean weekly VIIRS i
 RATIO_PSEUDO = 20.0        # cell-days pulling a month's single-satellite ratio to the overall one
 MIN_FIRE_WEEKS = 100       # own fit from this many MODIS fire weeks in the training years
 MIN_FIRE_WEEKS_ANY = 30    # below this, no harmonized values
-BLEND_BAND_PCT = (-47.0, 60.0)  # season band for blended areas, pooled over small random boxes
+BLEND_BAND_PCT = (-54.0, 63.0)  # season band for blended areas: measured at the event on random boxes (docs/event/SMALL_AREAS.md)
 
 MODELS = ("raw", "M0", "M1", "M2", "M3", "M4")
 
