@@ -30,7 +30,7 @@ interface Props {
   interactive?: boolean; // drag, scroll and click; on by default
   follow?: boolean; // move to the chosen area or shape when it changes; on by default
   view?: { center: [number, number]; zoom: number; bearing?: number; pitch?: number }; // where the map opens
-  onMap?: (map: MapLibreMap) => void; // called once, when the map has loaded
+  onMap?: (map: MapLibreMap) => void; // called once, when the map can be moved
 }
 
 type Ring = number[][];
@@ -62,6 +62,7 @@ export default function MapView({ theme, basemap, date, areas, selected, onSelec
   useEffect(() => {
     let cancelled = false;
     let map: MapLibreMap | null = null;
+    let announced = false;
     import("maplibre-gl").then((maplibre) => {
       if (cancelled || !container.current) return;
       // The worker is served from public/ (see scripts/copy-worker.mjs).
@@ -84,6 +85,11 @@ export default function MapView({ theme, basemap, date, areas, selected, onSelec
         const now = latest.current;
         syncDataLayers(map!, now.theme, now.areas, now.selected, now.shape, now.hotspots);
         void prepareBasemap(map!, now.theme, now.basemap, now.date);
+        // Hand the map over as soon as it can be moved; it need not wait for every tile.
+        if (!announced) {
+          announced = true;
+          now.onMap?.(map!);
+        }
       });
       // A hotspot says in words what it is: sensor, satellite, time, strength.
       for (const layer of HOTSPOT_LAYERS) {
@@ -106,11 +112,7 @@ export default function MapView({ theme, basemap, date, areas, selected, onSelec
         map.on("mouseenter", layer, () => !latest.current.drawMode && (map!.getCanvas().style.cursor = "pointer"));
         map.on("mouseleave", layer, () => !latest.current.drawMode && (map!.getCanvas().style.cursor = ""));
       }
-      map.once("load", () => {
-        if (cancelled) return;
-        setReady(true);
-        latest.current.onMap?.(map!);
-      });
+      map.once("load", () => !cancelled && setReady(true));
       map.on("click", AREA_FILL_LAYER, (event) => {
         if (latest.current.drawMode) return; // a click belongs to the drawing
         const id = event.features?.[0]?.properties?.id;

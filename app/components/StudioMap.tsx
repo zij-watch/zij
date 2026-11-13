@@ -11,7 +11,7 @@ import { loadIndex, type AreaIndexEntry, type Index } from "@/lib/data";
 import { loadHotspotDays } from "@/lib/dayData";
 import { boundsOf, type Shape } from "@/lib/fit/cells";
 import type { DayHotspot } from "@/lib/hotspots/day";
-import { easeLamp } from "@/lib/map/atlas/camera";
+import { easeLamp, fitBox } from "@/lib/map/atlas/camera";
 import type { Theme } from "@/lib/tokens";
 import { parseState } from "@/lib/url";
 
@@ -105,18 +105,7 @@ export default function StudioMap() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, shapeKey, showHotspots, dates]);
 
-  // Where the map opens: the centre and zoom if given, else the area or box, else the world.
-  const opening = shape ? boundsOf(shape) : null;
-  const onMap = useCallback(
-    (loaded: MapLibreMap) => {
-      if (opening && !(hasCentre || Number.isFinite(zoom)) && !(flyTo && !state.area && !state.shape)) {
-        loaded.fitBounds([[opening[0], opening[1]], [opening[2], opening[3]]], { padding: pad, duration: 0, bearing, pitch });
-      }
-      setMap(loaded);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [shapeKey],
-  );
+  const onMap = useCallback((loaded: MapLibreMap) => setMap(loaded), []);
 
   // The run: wait for the map and the data, hold for `delay`, fly if asked, then play if asked.
   const started = useRef(false);
@@ -166,9 +155,16 @@ export default function StudioMap() {
 
   if (failed) return <main className="studio" data-theme={theme}><p className="studio-note">{failed}</p></main>;
   const hotspots = (showHotspots && date && days?.get(date)) || NONE;
-  const view = hasCentre || Number.isFinite(zoom)
-    ? { center: (hasCentre ? centre : [10, 15]) as [number, number], zoom: Number.isFinite(zoom) ? zoom : 1.6, bearing, pitch }
-    : { center: [10, 15] as [number, number], zoom: 1.6, bearing, pitch };
+  // Where the map opens: the centre and zoom if given, else fitted to the area or box, else the world.
+  // With `fly` and no area of its own, it opens on the world and flies in.
+  const opening = shape && !(flyTo && !state.area && !state.shape) ? boundsOf(shape) : null;
+  const fitted = opening && typeof window !== "undefined" ? fitBox(opening, window.innerWidth, window.innerHeight, pad) : null;
+  const view = {
+    center: (hasCentre ? centre : fitted?.center ?? [10, 15]) as [number, number],
+    zoom: Number.isFinite(zoom) ? zoom : Math.min(fitted?.zoom ?? 1.6, 9),
+    bearing,
+    pitch,
+  };
 
   return (
     <main className="studio" data-theme={theme}>
