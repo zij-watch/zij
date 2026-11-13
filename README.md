@@ -16,7 +16,7 @@ Zij counts both records in one unit, the **fire cell-day**: one map square of 0.
 - `docs/event/VALIDATION.md`: how well the calibration predicts VIIRS from MODIS, per area and model.
 - `docs/event/DATA_CONTRACT.md`: the format of the exported files.
 
-Status: the record runs from November 2000 to yesterday for 10 areas in Egypt, Portugal and Argentina, and the app shows it. Drawn areas, the day view and the final How it works text come next.
+Status: the record runs from November 2000 to yesterday for 10 preset areas, and for any box or polygon drawn in Egypt, mainland Portugal or Argentina, fitted in the browser. The day view and the final How it works text come next.
 
 ## Before the event
 
@@ -107,7 +107,8 @@ Exact versions are in `pipeline/pyproject.toml` and `pipeline/uv.lock`. The app 
 |---|---|---|
 | [Next.js](https://nextjs.org) and [React](https://react.dev) | the app | MIT |
 | [MapLibre GL JS](https://maplibre.org) | the map | BSD-3-Clause |
-| [Apache ECharts](https://echarts.apache.org) | the typical-year chart | Apache-2.0 |
+| [Apache ECharts](https://echarts.apache.org) | the charts | Apache-2.0 |
+| [Terra Draw](https://terradraw.io) and its MapLibre adapter | drawing a box or polygon on the map | MIT |
 | [Fontsource](https://fontsource.org) packages of Cormorant Garamond, Reem Kufi and Amiri | fonts, bundled | fonts: SIL Open Font License 1.1 |
 | [TypeScript](https://www.typescriptlang.org), [ESLint](https://eslint.org) | development | Apache-2.0, MIT |
 

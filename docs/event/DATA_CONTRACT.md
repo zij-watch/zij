@@ -5,6 +5,10 @@ Contract version 1. The pipeline writes these files with `uv run python -m zij h
 ```
 app/public/data/index.json            the list of areas, read first
 app/public/data/areas/<id>.json       one file per area, 200 to 300 KB
+app/public/data/notes.json            optional note per area id, shown at the top of its panel
+app/public/data/method.json           the numbers on the How it works page
+app/public/data/basemap/countries.json  simplified Natural Earth outlines
+app/public/data/cells/                per-cell files for drawn areas: docs/event/CELLS_FORMAT.md
 ```
 
 ## Conventions
@@ -115,3 +119,7 @@ One entry per satellite that ever flew (`Terra`, `Aqua`, `Suomi NPP`, `NOAA-20`,
 - `days`: days flown that week, known gaps left out; `null` when it was not flying;
 - `fire_days`: its fire cell-days that week, a plain count, not scaled to 7 days;
 - `hotspots`: its kept detections.
+
+## Drawn areas
+
+A drawn area's document is made in the browser (`app/lib/fit/`) with the same keys as `areas/<id>.json`. A polygon adds `polygon` (GeoJSON), and its `box` is the box around it. With `fit.mode` `none`, `weeks.value` is `null` on MODIS-only weeks and `weeks.source` is `none`.
