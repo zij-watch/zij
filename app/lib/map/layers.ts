@@ -4,7 +4,7 @@ import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import type { AreaIndexEntry } from "../data";
 import type { Shape } from "../fit/cells";
 import type { DayHotspot } from "../hotspots/day";
-import { COLOURS, type Theme } from "../tokens";
+import { COLOURS } from "../tokens";
 
 const SOURCE = "zij-areas";
 const DRAWN = "zij-drawn";
@@ -51,9 +51,9 @@ function hotspotsGeoJson(hotspots: DayHotspot[]): AreaData {
 }
 
 /** Add the area boxes, or refresh them if they are already there. Safe to call after any setStyle. */
-export function syncDataLayers(map: MapLibreMap, theme: Theme, areas: AreaIndexEntry[], selected: string | null, shape: Shape | null = null,
+export function syncDataLayers(map: MapLibreMap, areas: AreaIndexEntry[], selected: string | null, shape: Shape | null = null,
   hotspots: DayHotspot[] = []): void {
-  const c = COLOURS[theme];
+  const c = COLOURS;
   const data = areasGeoJson(areas, selected);
   const source = map.getSource(SOURCE) as GeoJSONSource | undefined;
   const drawn = map.getSource(DRAWN) as GeoJSONSource | undefined;
@@ -86,9 +86,23 @@ export function syncDataLayers(map: MapLibreMap, theme: Theme, areas: AreaIndexE
   map.addLayer({ id: "zij-drawn-fill", type: "fill", source: DRAWN, paint: { "fill-color": c.ink, "fill-opacity": 0.12 } });
   map.addLayer({ id: "zij-drawn-line", type: "line", source: DRAWN, paint: { "line-color": c.ink, "line-width": 2.5, "line-dasharray": [3, 2] } });
   // The chosen day's hotspots. The two sensors differ in shape as well as colour:
-  // VIIRS is a small filled dot, MODIS a larger open ring. Rubric and lapis, with a dark edge
-  // so they read on the satellite basemap too.
+  // VIIRS is a small filled dot, MODIS a larger open ring. Rubric and lapis, each with a thin
+  // light halo so they read on the atlas and on satellite imagery.
   map.addSource(HOTSPOTS, { type: "geojson", data: hotspotsGeoJson(hotspots) });
+  // Under the MODIS ring, the same ring a little wider in paper: a thin light halo.
+  map.addLayer({
+    id: "zij-hotspots-modis-halo",
+    type: "circle",
+    source: HOTSPOTS,
+    filter: ["==", ["get", "sensor"], "MODIS"],
+    paint: {
+      "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 2.5, 6, 4, 9, 9],
+      "circle-opacity": 0,
+      "circle-stroke-color": c["ground-raised"],
+      "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 3, 2.5, 6, 3.5, 9, 5],
+      "circle-stroke-opacity": 0.9,
+    },
+  });
   map.addLayer({
     id: "zij-hotspots-viirs",
     type: "circle",
@@ -99,8 +113,8 @@ export function syncDataLayers(map: MapLibreMap, theme: Theme, areas: AreaIndexE
       "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 1, 6, 1.8, 8, 3.2, 9, 4.5],
       "circle-opacity": ["interpolate", ["linear"], ["zoom"], 3, 0.45, 7, 0.7, 9, 1],
       "circle-color": c.rubric,
-      "circle-stroke-color": c.ground,
-      "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 6, 0, 9, 0.75],
+      "circle-stroke-color": c["ground-raised"],
+      "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 3, 0.5, 9, 1],
     },
   });
   map.addLayer({

@@ -16,6 +16,23 @@ export async function readIndex(): Promise<Index | null> {
   }
 }
 
+export async function readArea(id: string): Promise<Area | null> {
+  try {
+    return JSON.parse(await readFile(join(DATA, "areas", `${id}.json`), "utf-8")) as Area;
+  } catch {
+    return null;
+  }
+}
+
+/** The method numbers (validation errors per model), as exported by the pipeline. */
+export async function readMethod(): Promise<Record<string, unknown> | null> {
+  try {
+    return JSON.parse(await readFile(join(DATA, "method.json"), "utf-8")) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
 /** The headline facts of a preset area, or null for an unknown id or a missing file. */
 export async function readFacts(index: Index | null, id: string | null): Promise<AreaFacts | null> {
   if (!index || !id || !index.areas.some((a) => a.id === id)) return null;

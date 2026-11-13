@@ -1,10 +1,10 @@
 "use client";
 
+import { Select, Tabs } from "./ui";
 import type { Area } from "@/lib/data";
 import { COVERED } from "@/lib/drawnArea";
 import { rawByMonth, type RawMonth } from "@/lib/derive";
 import { MONTHS, againstNormal, num, sourceWords, ymLabel } from "@/lib/format";
-import type { Theme } from "@/lib/tokens";
 import { VIEWS, type View } from "@/lib/url";
 import Calendar from "./Calendar";
 import SeriesChart from "./SeriesChart";
@@ -13,8 +13,8 @@ import TypicalYear from "./TypicalYear";
 const VIEW_LABELS: Record<View, string> = { calendar: "Calendar", typical: "Typical year", series: "Seasons", ranked: "Busiest", anomalies: "Anomalies" };
 
 interface Props {
+  named?: boolean; // the country and name at the top; off where the panel head already shows them
   area: Area;
-  theme: Theme;
   from: string;
   to: string;
   view: View;
@@ -257,7 +257,7 @@ function Anomalies({ area, from, to, onMonth }: { area: Area; from: string; to: 
 
 // ------------------------------------------------------------------ seasons
 
-function SeasonsView({ area, theme, from, to }: { area: Area; theme: Theme; from: string; to: string }) {
+function SeasonsView({ area, from, to }: { area: Area; from: string; to: string }) {
   const s = area.seasons;
   const [b0, b1] = area.climatology.baseline_years;
   const normal = median(s.value.filter((_, i) => s.year[i] >= b0 && s.year[i] <= b1));
@@ -267,7 +267,7 @@ function SeasonsView({ area, theme, from, to }: { area: Area; theme: Theme; from
   return (
     <section className="block">
       <h3>Season by season</h3>
-      <SeriesChart area={area} theme={theme} fromYear={fromYear} toYear={toYear} normal={normal} />
+      <SeriesChart area={area} fromYear={fromYear} toYear={toYear} normal={normal} />
       <p className="note">
         Season: {seasonWords(area.fit.season)}. Red line: the harmonized season total. Blue bars: the likely range of a year converted from MODIS.
         Dotted blue: raw MODIS, before conversion. Dashed: the median season of {b0} to {b1}.
@@ -343,7 +343,7 @@ function RawOnly({ area }: { area: Area }) {
 
 // ------------------------------------------------------------------ panel
 
-export default function Panel({ area, theme, from, to, view, month, year, note, drawn, draft, onView, onMonth, onYear }: Props) {
+export default function Panel({ area, named = true, from, to, view, month, year, note, drawn, draft, onView, onMonth, onYear }: Props) {
   const weekBand = area.bands.week_mult;
   const seasonBand = area.bands.season_pct;
   const lastYear = Number(area.last_full_day.slice(0, 4));
@@ -351,8 +351,8 @@ export default function Panel({ area, theme, from, to, view, month, year, note, 
   const chartYear = year && year >= firstYear && year <= lastYear ? year : lastYear;
   const head = (
     <header className="panel-head">
-      <p className="eyebrow">{drawn ? `Your area, ${area.country}` : area.country}</p>
-      <h2>{area.name}</h2>
+      {named && <p className="eyebrow">{drawn ? `Your area, ${area.country}` : area.country}</p>}
+      {named && <h2>{area.name}</h2>}
       {note && <p className="area-note">{note}</p>}
     </header>
   );
@@ -387,24 +387,23 @@ export default function Panel({ area, theme, from, to, view, month, year, note, 
         </div>
       )}
 
-      <nav className="tabs" aria-label="Views">
-        {VIEWS.map((v) => (
-          <button key={v} type="button" className={v === view ? "is-active" : ""} aria-pressed={v === view} onClick={() => onView(v)}>
-            {VIEW_LABELS[v]}
-          </button>
-        ))}
-      </nav>
+      <ThisMonth area={area} />
+
+      <Tabs.Root value={view} onValueChange={(v) => onView(v as View)}>
+      <Tabs.List className="tabs" aria-label="Views">
+        {VIEWS.map((v) => <Tabs.Trigger key={v} value={v} className="tab">{VIEW_LABELS[v]}</Tabs.Trigger>)}
+      </Tabs.List>
+      <Tabs.Content value={view} className="tab-panel">
 
       {view === "calendar" && (
         <>
           <section className="block">
             <div className="calendar-scroll">
-              <Calendar area={area} from={from} to={to} theme={theme} selected={month} onSelect={(ym) => onMonth(ym === month ? null : ym)} />
+              <Calendar area={area} from={from} to={to} labelSize={17} selected={month} onSelect={(ym) => onMonth(ym === month ? null : ym)} />
             </div>
             <p className="note">Click a month for its weeks and the raw counts per satellite.</p>
           </section>
           {month && <WeekDetail area={area} ym={month} onClose={() => onMonth(null)} />}
-          <ThisMonth area={area} />
         </>
       )}
 
@@ -412,24 +411,22 @@ export default function Panel({ area, theme, from, to, view, month, year, note, 
         <>
           <section className="block">
             <h3>Typical year</h3>
-            <label className="year-pick">
+            <div className="year-pick">
               Year on top
-              <select value={chartYear} onChange={(e) => onYear(Number(e.target.value) === lastYear ? null : Number(e.target.value))}>
-                {Array.from({ length: lastYear - firstYear + 1 }, (_, k) => lastYear - k).map((y) => <option key={y} value={y}>{y}</option>)}
-              </select>
-            </label>
-            <TypicalYear area={area} theme={theme} year={chartYear} />
+              <Select small label="Year on top" value={String(chartYear)} onChange={(v) => onYear(Number(v) === lastYear ? null : Number(v))}
+                options={Array.from({ length: lastYear - firstYear + 1 }, (_, k) => ({ value: String(lastYear - k), label: String(lastYear - k) }))} />
+            </div>
+            <TypicalYear area={area} year={chartYear} />
             <p className="note">
               Light line: the median week over {area.climatology.baseline_years[0]} to {area.climatology.baseline_years[1]}. Grey band: what 8 in 10 years reach.
               Red line: {chartYear}{chartYear === lastYear ? " so far" : ""}; where it was converted from MODIS, the red band is its likely range. Brass shading: the critical period, the {area.climatology.critical_weeks.length} weeks
               that hold {Math.round(area.climatology.critical_share * 100)}% of a typical year&rsquo;s {area.unit_label}.
             </p>
           </section>
-          <ThisMonth area={area} />
         </>
       )}
 
-      {view === "series" && <SeasonsView area={area} theme={theme} from={from} to={to} />}
+      {view === "series" && <SeasonsView area={area} from={from} to={to} />}
 
       {view === "ranked" && <Ranked area={area} from={from} to={to} />}
 
@@ -439,6 +436,9 @@ export default function Panel({ area, theme, from, to, view, month, year, note, 
           {month && <WeekDetail area={area} ym={month} onClose={() => onMonth(null)} />}
         </>
       )}
+
+      </Tabs.Content>
+      </Tabs.Root>
 
       <footer className="panel-foot">
         <p className="note">

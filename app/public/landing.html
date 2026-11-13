@@ -1,0 +1,1158 @@
+<!doctype html>
+<html lang="en" data-theme="night">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zij: 26 years of fire on one scale</title>
+<meta name="description" content="Satellite fire detections from MODIS and VIIRS, 2000 to today, harmonized into one record per area.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/landing/tokens.css">
+<link rel="stylesheet" href="/landing/reference/materials.css">
+<link rel="stylesheet" href="/landing/additions.css">
+<style>
+  /* The page is one scene: the sky through a window, then the desk under it, lit by one lantern.
+     landing.js draws the sky, the wood, the paper and the ink, and moves the camera and the lantern.
+     Performance rules (README, "Keep it light"): only transform and opacity animate, on plain
+     elements; nothing runs while nothing changes; layers are moved, not repainted. */
+
+  /* ===== Page frame ===================================================== */
+  html { scroll-behavior: auto; }
+  body { overflow-x: clip; background: var(--ground); }
+
+  /* The scrollbar: a slim brass rod in a dark groove, brighter under the hand. */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--ground); }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--brass) 55%, transparent);
+    border: 3px solid var(--ground); border-radius: var(--radius-full);
+    min-height: 48px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--brass); border-width: 2px; }
+  ::-webkit-scrollbar-thumb:active { background: var(--flame); border-width: 2px; }
+  ::-webkit-scrollbar-button, ::-webkit-scrollbar-corner { display: none; background: var(--ground); }
+  /* Firefox has no pseudo-elements, so it gets the standard properties instead. */
+  @supports not selector(::-webkit-scrollbar) {
+    html { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--brass) 60%, transparent) var(--ground); }
+  }
+  .skip { position: absolute; left: -9999px; top: 8px; z-index: 50; }
+  .skip:focus { left: 16px; background: var(--ground); padding: 8px 12px; outline: 5px double var(--brass); }
+  .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  /* sizes the script measures; these are fallbacks until it runs */
+  :root { --V: 100svh; --E: 20svh; --W: 100vw; --M: 30vw; --R: 1100px; --lw: 112px; }
+
+  /* ===== Running head =================================================== */
+  .head {
+    position: fixed; inset: 0 0 auto 0; z-index: 30;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 10px clamp(16px, 4vw, 48px);
+    background: var(--ground);
+    border-bottom: var(--stroke-hair) solid var(--rule);
+    opacity: 0; translate: 0 -100%;
+    transition: opacity var(--dur-sheet) var(--ease-paper), translate var(--dur-sheet) var(--ease-paper);
+  }
+  .head.is-on { opacity: 1; translate: 0 0; }
+  /* the Seal's small drawing (24 to 40px of ink), alone: it already says Zij and زيج */
+  .head .mark { display: flex; align-items: center; min-height: 44px; min-width: 44px; }
+  .head .mark img { display: block; height: 30px; width: auto; }
+  .head .where { display: flex; align-items: center; gap: 18px; }
+  .head .chap { white-space: nowrap; }
+  .head .chap .abjad { font-size: 19px; margin-right: 8px; letter-spacing: 0; }
+  .head .progress { position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: var(--brass); transform-origin: 0 50%; transform: scaleX(0); will-change: transform; }
+  .contents { position: absolute; right: clamp(16px, 4vw, 48px); top: calc(100% + 10px); width: min(320px, calc(100vw - 32px)); padding: 22px 24px 18px; display: none; }
+  .contents.is-open { display: block; animation: slip-in var(--dur-sheet) var(--ease-paper); }
+  @keyframes slip-in { from { opacity: 0; transform: translateY(-10px) rotate(-0.6deg); } }
+  .contents ol { list-style: none; margin: 8px 0 0; padding: 0; }
+  .contents li { border-top: var(--stroke-hair) solid var(--rule); }
+  .contents a { display: grid; grid-template-columns: 30px 1fr auto; align-items: baseline; gap: 8px; min-height: 44px; padding: 8px 0; color: var(--ink); text-decoration: none; font: var(--type-ui); }
+  .contents a:hover span:nth-child(2) { text-decoration: underline; text-decoration-color: var(--brass); text-underline-offset: 5px; }
+  .contents a .abjad { color: var(--brass); font-size: 20px; }
+
+  /* ===== The stage: the sky, the window, the desk below it ================ */
+  .stage { position: relative; height: 320vh; z-index: 3; }
+  .view { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; background: var(--ground); perspective: var(--persp, 900px); perspective-origin: 50% 50%; }
+  /* at the end of the opening the camera looks straight down and the 3D desk is pixel for pixel the
+     real one behind it, so the stage steps aside and the page scrolls on over the same wood */
+  .stage.is-done .view { visibility: hidden; }
+  .stage.is-past .view { content-visibility: hidden; }
+  /* an animation in content the browser skips falls back to the main thread: stop them there */
+  .stage.is-past .view *, .closing:not(.is-near) .tw, .closing:not(.is-near) .meteor { animation: none !important; }
+
+  /* -- the sky: starlight only; the only warm light is fire on the ground -- */
+  .sky {
+    position: absolute; left: -4%; right: -4%; top: -4%; height: 108%;
+    transform-origin: 50% 45%; will-change: transform;
+    background:
+      radial-gradient(70% 34% at 50% 100%, color-mix(in srgb, var(--sky) 78%, var(--lapis) 10%) 0, transparent 70%),
+      radial-gradient(24% 10% at 16% 93%, color-mix(in srgb, var(--flame) 8%, transparent), transparent 70%),
+      linear-gradient(180deg, color-mix(in srgb, var(--sky) 66%, var(--shadow)) 0%, var(--sky) 48%, color-mix(in srgb, var(--sky) 88%, var(--lapis) 6%) 82%, color-mix(in srgb, var(--sky) 84%, var(--ink) 6%) 100%);
+  }
+  .sky > canvas, .closing > canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; max-width: none; }
+  /* the ground under the painted land, the colour its foot fades to */
+  .sky .below { position: absolute; left: 0; right: 0; top: 164.8%; height: 300%; background: color-mix(in srgb, var(--ground) 75%, var(--sky)); }
+  .twinkles, .meteors { position: absolute; inset: 0; pointer-events: none; }
+  /* bright stars scintillate one by one, each a small layer of its own */
+  .tw { position: absolute; width: var(--s); height: var(--s); margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2); border-radius: 50%; background: radial-gradient(circle, var(--c) 0 26%, color-mix(in srgb, var(--c) 28%, transparent) 46%, transparent 72%); animation: tw var(--d) ease-in-out var(--o) infinite alternate; }
+  @keyframes tw { 0% { opacity: 1; transform: scale(1); } 60% { opacity: .6; transform: scale(.85); } 100% { opacity: .16; transform: scale(.6); } }
+  /* shooting stars: a short streak, now and then */
+  .meteor { position: absolute; left: var(--x); top: var(--y); width: var(--w); height: 1.6px; margin-left: calc(var(--w) * -1); transform-origin: 100% 50%; border-radius: 2px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ink) 45%, transparent) 72%, var(--ink)); opacity: 0; animation: meteor var(--d) linear var(--o) infinite; }
+  @keyframes meteor { 0% { opacity: 0; transform: rotate(var(--a)) translateX(0) scaleX(.1); } 1% { opacity: 1; } 4% { opacity: 0; transform: rotate(var(--a)) translateX(var(--len)) scaleX(1); } 100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--len)) scaleX(1); } }
+
+  /* -- the orbits: an armillary sphere drawn over the sky, the Earth at its heart -- */
+  .orbits { position: absolute; top: 3vh; right: -5vw; width: min(64vw, 820px); aspect-ratio: 1; }
+  .orbits > svg, .orbits > .rete, .orbits > .rete > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; max-width: none; }
+  .orbits .ring { fill: none; stroke: var(--brass); }
+  .orbits .tick { stroke: var(--brass); }
+  .orbits .back { opacity: 0.28; }
+  .orbits .front { opacity: 0.78; }
+  .orbits .rete { animation: rete 300s linear infinite; }
+  @keyframes rete { to { transform: rotate(360deg); } }
+  .orbit { position: absolute; inset: 0; transform: rotate(var(--tilt)) scaleY(var(--squash)); }
+  .orbit .spin { position: absolute; inset: 0; animation: rete var(--period) linear var(--phase) infinite; }
+  .orbit.rev .spin { animation-direction: reverse; }
+  .orbit .sat { position: absolute; left: calc(50% + var(--r)); top: 50%; width: 9px; height: 9px; margin: -4.5px; border-radius: 50%; background: var(--ink); box-shadow: 0 0 8px 2px color-mix(in srgb, var(--flame) 55%, transparent); }
+  .orbits text.eng { font: 600 12px/1 var(--font-display); letter-spacing: 0.2em; font-feature-settings: "smcp" 1, "c2sc" 1, "onum" 1; fill: var(--brass); opacity: 0.9; }
+  .globe .sea { fill: color-mix(in srgb, var(--sky) 80%, var(--lapis) 16%); stroke: var(--brass); stroke-width: 1.3; }
+  .globe .night { fill: url(#globe-hatch); }
+  .globe .grat { fill: none; stroke: var(--brass); stroke-width: 0.6; opacity: 0.55; }
+  .globe .land { fill: color-mix(in srgb, var(--brass) 22%, transparent); stroke: var(--brass); stroke-width: 0.7; opacity: 0.8; }
+  .globe .axis { stroke: var(--brass); stroke-width: 1; opacity: 0.8; }
+  .globe .cairo { fill: var(--rubric); }
+  .globe .cairo-glow { fill: url(#glint-glow); }
+
+  /* -- the land: the desert under the sky, painted by landing.js from the horizon down to the slope
+        under the window, which the camera sees only through the window as it rises and looks down.
+        Fires, the camp and a man walking to it with a torch are the only warm light -- */
+  .land { position: absolute; left: 0; right: 0; top: 46.3%; height: 120.37%; }
+  .land > canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; max-width: none; }
+  /* Fire is flame and the light it throws, drawn to the scale of the scene, never a glowing disc.
+     Each flame is a flipbook: landing.js paints eight drawings of it side by side into one canvas
+     (.blaze > canvas) and the strip steps through them by transform, so the fire flickers by changing
+     shape. Its tongues lick (a slower, uneven stretch of the whole flame), and what it lights (the air
+     round it, the tent, the people, the sand) is a layer of its own that brightens and dims with it:
+     .air, .lit and the lick share one duration and one rhythm. */
+  .fx { position: absolute; left: 0; top: 0; width: 0; height: 0; transform: scale(var(--s, 1)); transform-origin: 0 0; }
+  .blaze { position: absolute; overflow: hidden; transform-origin: 50% 100%; animation: lick var(--beat, 1.13s) ease-in-out var(--off, 0s) infinite; }
+  .blaze > canvas { position: absolute; left: 0; top: 0; width: 800%; height: 100%; max-width: none; animation: leaf var(--leaf, 0.56s) steps(8) var(--off, 0s) infinite; }
+  @keyframes leaf { to { transform: translateX(-100%); } }
+  @keyframes lick { 0%, 100% { transform: scale(1, 0.97); } 17% { transform: scale(0.93, 1.1); } 29% { transform: scale(1.05, 0.88); } 46% { transform: scale(0.96, 1.05); } 61% { transform: scale(1.03, 0.9); } 78% { transform: scale(0.94, 1.13); } 89% { transform: scale(1.02, 0.94); } }
+  /* brighter as the flame stands taller, on the lick's beats */
+  @keyframes firelight { 0%, 100% { opacity: 0.86; } 17% { opacity: 1; } 29% { opacity: 0.66; } 46% { opacity: 0.93; } 61% { opacity: 0.72; } 78% { opacity: 1; } 89% { opacity: 0.76; } }
+  .air { position: absolute; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--flame) 30%, transparent), color-mix(in srgb, var(--flame) 9%, transparent) 42%, color-mix(in srgb, var(--rubric) 3%, transparent) 70%, transparent); animation: firelight var(--beat, 1.13s) ease-in-out var(--off, 0s) infinite; }
+  .land > canvas.lit, .land > canvas.far { position: absolute; inset: auto; left: 0; top: 0; width: auto; height: auto; pointer-events: none; }
+  /* the fires far off (fields burning at the foot of the escarpment, a fire behind a dune) on two
+     layers holding the same fires in different moments: cross-fading, the fire fronts crawl */
+  .land > canvas.far.a { animation: crawl-a 3.1s ease-in-out infinite; }
+  .land > canvas.far.b { animation: crawl-b 2.3s ease-in-out -0.9s infinite; }
+  @keyframes crawl-a { 0%, 100% { opacity: 1; } 21% { opacity: 0.45; } 38% { opacity: 0.9; } 57% { opacity: 0.3; } 79% { opacity: 0.8; } }
+  @keyframes crawl-b { 0%, 100% { opacity: 0.2; } 26% { opacity: 0.85; } 44% { opacity: 0.4; } 69% { opacity: 1; } 86% { opacity: 0.5; } }
+  .land > canvas.lit { animation: firelight 1.13s ease-in-out infinite; }
+  /* the camp's fire: --s is the scale of the drawing, 10px to the metre at s = 1 */
+  .camp { position: absolute; width: 0; height: 0; }
+  .camp .blaze { left: -3.5px; top: -9.6px; width: 7px; height: 10px; }
+  .camp .air { left: -26px; top: -26px; width: 52px; height: 38px; }
+  /* sparks: an ember now and then, rising on the heat and carried off with the smoke */
+  .spark { position: absolute; left: -0.5px; top: -7px; width: 1px; height: 1px; border-radius: 50%; background: color-mix(in srgb, var(--flame) 70%, var(--rubric)); opacity: 0; transform-origin: 50% 50%; animation: spark var(--d) cubic-bezier(.2, .6, .4, 1) var(--o) infinite; }
+  @keyframes spark { 0% { opacity: 0; transform: translate(0, 0); } 1.5% { opacity: .9; } 8% { opacity: .6; transform: translate(2px, -12px); } 15% { opacity: 0; transform: translate(7px, -24px); } 100% { opacity: 0; transform: translate(7px, -24px); } }
+  /* smoke: thin, warm just over the fire, then grey, leaning with the wind */
+  .smoke { position: absolute; left: -5px; top: -16px; width: 10px; height: 12px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--ink-muted) 24%, transparent), transparent); opacity: 0; animation: smoke var(--d, 9s) linear var(--o, 0s) infinite; }
+  @keyframes smoke { 0% { opacity: 0; transform: translate(0, 0) scale(0.5, 0.7); } 14% { opacity: 0.55; } 100% { opacity: 0; transform: translate(30px, -96px) scale(3.4, 2.6); } }
+  /* the smoke of a burning field, far off: the same puffs, drawn larger */
+  .plume { position: absolute; width: 0; height: 0; }
+  /* a man walking to the camp with a torch. His box is the stretch of track he walks; he crosses it
+     corner to corner, so the move is a plain transform. --k: px per unit of his drawing (set by the script) */
+  .walker { position: absolute; width: 0; height: 0; --k: .45; transform: translate(50%, 50%); animation: walk 150s linear -50s infinite; }
+  @keyframes walk { 0% { transform: translate(100%, 0); opacity: 0; } 4%, 96% { opacity: 1; } 100% { transform: translate(0, 100%); opacity: 0; } }
+  .walker .man { position: absolute; left: 0; top: 0; width: calc(var(--k) * 24px); height: calc(var(--k) * 38px); transform: translate(-50%, -100%); }
+  .walker svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; max-width: none; }
+  .walker .fig { fill: color-mix(in srgb, var(--shadow) 55%, var(--ground)); }
+  .walker .rim { fill: none; stroke: var(--flame); stroke-width: 0.9; opacity: 0.6; stroke-linecap: round; }
+  /* his torch: a small flame streaming back as he walks (he walks to the left), and its light round
+     him and on the sand at his feet, on its own quicker beat */
+  .walker { --beat: 0.83s; --off: -0.3s; --leaf: 0.48s; }
+  .walker .torch { position: absolute; left: 15.4%; top: 4.6%; width: 0; height: 0; }
+  .walker .torch .blaze { left: calc(var(--k) * -2px); top: calc(var(--k) * -7px); width: calc(var(--k) * 4px); height: calc(var(--k) * 7px); rotate: 10deg; }
+  .walker .torch .air { left: calc(var(--k) * -14px); top: calc(var(--k) * -16px); width: calc(var(--k) * 28px); height: calc(var(--k) * 26px); }
+  .walker .light { position: absolute; left: 50%; top: 100%; width: calc(var(--k) * 80px); height: calc(var(--k) * 14px); margin: calc(var(--k) * -7px) 0 0 calc(var(--k) * -46px); border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--flame) 22%, transparent), color-mix(in srgb, var(--flame) 6%, transparent) 60%, transparent); animation: firelight var(--beat) ease-in-out var(--off) infinite; }
+
+  /* -- the title page: the Seal, the line, one sentence and the way in, on one left edge, set in from
+        the frame by the same share at every size (a film's title-safe margin). The box is the clear
+        sky above the land, and the words are centred in it, so at any size they stay off the dunes
+        and left of the armillary. --u is the Seal's clear space (0.41 of its ink height) and sets
+        every gap -- */
+  .hero {
+    position: absolute; top: 7svh; height: 56svh; left: clamp(16px, 7vw, 220px); max-width: calc(100% - 32px);
+    display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+    --seal: clamp(96px, min(9vw, 15svh), 188px); --u: calc(var(--seal) * 0.41);
+    will-change: transform, opacity;
+  }
+  .hero h1 { margin: 0; line-height: 0; }
+  .hero h1 img { display: block; height: var(--seal); width: auto; }
+  /* two sentences, two lines, one colour: the break is the emphasis */
+  .hero .line { margin: var(--u) 0 0; font: var(--type-display-l); font-size: clamp(30px, min(3.5vw, 6svh), 72px); line-height: 1.08; letter-spacing: -0.005em; white-space: nowrap; margin-left: -0.04em; }
+  .hero .dek { margin: calc(var(--u) * 0.3) 0 0; max-width: 26em; font-size: clamp(18px, 0.55vw + 12.5px, 25px); line-height: 1.45; color: var(--ink-muted); text-wrap: balance; }
+  .hero .begin { margin-top: calc(var(--u) * 0.45); margin-left: -2px; }
+
+  /* -- the camera rig: the wall and the desk in 3D, and the lantern standing on it. The camera is a
+        scroll-driven animation of the rig (the browser moves it with the scroll, off the main thread).
+        What it turns is canvases, painted once: Chrome redraws an SVG or a gradient at every new
+        size on screen, every frame of a camera move, but a canvas it only moves -- */
+  .rig { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform-style: preserve-3d; transform-origin: 0 0; will-change: transform; }
+  .rig > * { position: absolute; left: 0; top: 0; }
+  .rig > canvas { display: block; max-width: none; }
+  .wall { transform-origin: 50% 100%; transform: rotateX(-90deg); opacity: 0; }
+  .plane { background: var(--wood-flat); }
+
+  /* ===== The desk ======================================================== */
+  /* One long table of planks, drawn by the script (planks run away from you, towards the wall).
+     It starts under the window, behind the last frame of the opening. Layers, bottom to top:
+     wood, things lying on it, the lamp's pool and the dark, papers and words, thread and pins,
+     the faint dark on paper far from the lamp, the lantern. */
+  :root { --wood-flat: color-mix(in srgb, var(--wood) 80%, var(--brass) 20%); --tile: 1400px 1800px; }
+  .desk { position: relative; z-index: 1; margin-top: calc(-1 * (var(--V) + var(--E))); padding: calc(var(--V) + var(--E) + 6vh) clamp(16px, 5vw, 72px) 34vh; background: var(--wood-tex, none) 0 0 / var(--tile) repeat, var(--wood-flat); overflow: clip; }
+  .desk > .props { position: absolute; left: 0; top: 0; width: 100%; height: calc(var(--E) + var(--V)); z-index: 1; pointer-events: none; }
+  /* the far end of the desk falls into the dark, slowly at first (an even fade shows its edges) */
+  .desk::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 64vh; z-index: 8; pointer-events: none; background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--ground) 14%, transparent) 30%, color-mix(in srgb, var(--ground) 50%, transparent) 60%, color-mix(in srgb, var(--ground) 86%, transparent) 84%, var(--ground)); }
+
+  /* the lamp's light: a pool and the dark around it (under the papers), and a faint dark on the
+     papers (over them). landing.js paints each into a canvas the lamp carries with transform. */
+  .lamp-under, .lamp-over { position: absolute; left: 0; top: 0; width: 0; height: 0; pointer-events: none; will-change: transform; }
+  .lamp-under { z-index: 2; }
+  .lamp-over { z-index: 6; }
+  :root { --under-edge: color-mix(in srgb, var(--shadow) calc(var(--vignette) * 100%), transparent); }
+  /* the lamp goes out and the room goes dark (words on the desk stay readable above it) */
+  .desk > .dark-all { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: var(--under-edge); opacity: 0; transition: opacity var(--dur-scene) var(--ease-lamp); }
+  .lamp-out .desk > .dark-all { opacity: 1; }
+
+  /* -- the lantern: brass and glass, a wick burning inside. It stands on the desk, always in view on
+        bare wood, and is carried along as the page is read; its frame throws spokes of shadow around
+        its foot. On the desk it burns above the dark at the desk's far end (::after), being the light -- */
+  .lantern { position: absolute; left: 0; top: 0; z-index: 7; width: var(--lw); height: calc(var(--lw) * 1.5); pointer-events: none; transform-origin: 50% 84.8%; will-change: transform; --sway: 0deg; }
+  .desk > .lantern { z-index: 9; }
+  .lantern > svg, .lantern > canvas, .lantern .flame-wrap, .lantern .flame-wrap > svg, .lantern .flame-wrap > canvas, .lantern .halo > canvas { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; max-width: none; }
+  .lantern.is-canvas .halo { background: none; }
+  /* the opening's lantern stands up in 3D: its glow fades out before the foot, or the desk cuts it in a line (its canvas halo is faded the same way) */
+  /* and it stands up on the bottom of its drawing, not its foot: the front of the base is drawn below
+     the foot, and turning about the foot would swing it down through the desk */
+  .lantern.copy { transform-origin: 50% 96%; }
+  .lantern.copy:not(.is-canvas) .halo { -webkit-mask-image: linear-gradient(#000 40%, transparent 58%); mask-image: linear-gradient(#000 40%, transparent 58%); }
+  .lantern .halo { position: absolute; left: 50%; top: 64%; width: calc(var(--lw) * 2.6); height: calc(var(--lw) * 2.6); margin: calc(var(--lw) * -1.3); border-radius: 50%; background: radial-gradient(circle closest-side, color-mix(in srgb, var(--flame) 34%, transparent), color-mix(in srgb, var(--flame) 9%, transparent) 46%, transparent); animation: breathe 3.4s ease-in-out infinite; }
+  .lantern .sway { position: absolute; inset: 0; transform-origin: 50% 75%; transform: rotate(var(--sway)); transition: transform 420ms var(--ease-ink); }
+  .lantern .flame-wrap { transform-origin: 50% 75%; animation: flicker 3.1s ease-in-out infinite; }
+  @keyframes flicker { 0%, 100% { transform: scale(1, 1); opacity: 1; } 23% { transform: scale(0.96, 1.05); opacity: 0.94; } 41% { transform: scale(1.02, 0.97); opacity: 1; } 67% { transform: scale(0.97, 1.04); opacity: 0.92; } 83% { transform: scale(1.01, 0.98); opacity: 0.97; } }
+  @keyframes breathe { 0%, 100% { opacity: 1; transform: scale(1); } 30% { opacity: 0.93; transform: scale(0.98); } 55% { opacity: 1; transform: scale(1.02); } 80% { opacity: 0.95; transform: scale(0.99); } }
+  .lamp-out .lantern:not(.is-afloat) .flame-wrap, .lamp-out .lantern:not(.is-afloat) .halo { animation: none; opacity: 0; transform: scale(.2, .1); transition: opacity var(--dur-scene) var(--ease-lamp), transform var(--dur-scene) var(--ease-lamp); }
+  .lantern .wisp { position: absolute; left: 50%; top: 52%; width: 26px; height: 26px; margin: -13px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--ink-muted) 40%, transparent), transparent 70%); opacity: 0; }
+  .lamp-out .lantern:not(.is-afloat) .wisp { animation: wisp 3.2s var(--ease-ink) 300ms 1 both; }
+  /* at the closing it is thrown off the desk and floats in the sky, still burning: landing.js lifts
+     it into a layer of its own over the closing, and its foot (its shadows on the desk) stays behind */
+  .space { position: fixed; inset: 0; z-index: 20; pointer-events: none; overflow: hidden; }
+  .lantern.is-afloat .foot { display: none; }
+  @keyframes wisp { 0% { opacity: 0; transform: translate(0, 0) scale(.5); } 20% { opacity: .8; } 100% { opacity: 0; transform: translate(14px, -120px) scale(3); } }
+  /* the foot: things on the desk round the lantern's base (its contact shadow and the spokes) */
+  .foot { position: absolute; left: 50%; top: 84.8%; width: 0; height: 0; }
+  .foot > i { position: absolute; border-radius: 50%; }
+  .foot .spokes { left: calc(var(--lw) * -2.3); top: calc(var(--lw) * -2.3); width: calc(var(--lw) * 4.6); height: calc(var(--lw) * 4.6); background: repeating-conic-gradient(from 12deg, transparent 0deg 22deg, color-mix(in srgb, var(--shadow) 20%, transparent) 27deg 33deg, transparent 38deg 60deg); -webkit-mask-image: radial-gradient(circle closest-side, transparent 18%, #000 26%, #000 38%, transparent 82%); mask-image: radial-gradient(circle closest-side, transparent 18%, #000 26%, #000 38%, transparent 82%); }
+  /* the glass reflected in the polished top, a little nearer the viewer than the foot */
+  .foot .sheen { left: calc(var(--lw) * -0.55); top: calc(var(--lw) * 0.02); width: calc(var(--lw) * 1.1); height: calc(var(--lw) * 0.62); background: radial-gradient(closest-side, color-mix(in srgb, var(--flame) 26%, transparent), color-mix(in srgb, var(--flame) 7%, transparent) 55%, transparent); }
+  .lamp-out .foot .sheen { opacity: 0; transition: opacity var(--dur-scene) var(--ease-lamp); }
+  .foot .contact { left: calc(var(--lw) * -0.42); top: calc(var(--lw) * -0.1); width: calc(var(--lw) * 0.95); height: calc(var(--lw) * 0.26); background: radial-gradient(closest-side, color-mix(in srgb, var(--shadow) 80%, transparent), transparent); transform: translate(calc(var(--lift, 0) * 16px), calc(var(--lift, 0) * 24px)) scale(calc(1 + var(--lift, 0) * .5)); opacity: calc(1 - var(--lift, 0) * .5); }
+  .lt .br-m { fill: color-mix(in srgb, var(--brass) 60%, var(--shadow)); }
+  .lt .br-d { fill: color-mix(in srgb, var(--brass) 36%, var(--shadow)); }
+  .lt .br-l { fill: color-mix(in srgb, var(--brass) 80%, var(--flame)); }
+  .lt .glass { fill: url(#lt-glass); }
+  .lt .bar-back { fill: none; stroke: color-mix(in srgb, var(--brass) 50%, var(--flame)); stroke-width: 1.5; opacity: .5; stroke-linecap: round; }
+  .lt .bar { fill: none; stroke: color-mix(in srgb, var(--brass) 32%, var(--shadow)); stroke-width: 3.6; stroke-linecap: round; stroke-linejoin: round; }
+  .lt .bar-hl { fill: none; stroke: var(--flame); stroke-width: 1; opacity: .7; stroke-linecap: round; }
+  .lt .cap-l { fill: color-mix(in srgb, var(--brass) 24%, var(--shadow)); }
+  .lt .cap-m { fill: color-mix(in srgb, var(--brass) 44%, var(--shadow)); }
+  .lt .cap-r { fill: color-mix(in srgb, var(--brass) 32%, var(--shadow)); }
+  .lt .hole { fill: var(--flame); }
+  .lt .ring { fill: none; stroke: color-mix(in srgb, var(--brass) 52%, var(--shadow)); stroke-width: 2.6; }
+  .lt .glint { fill: none; stroke: var(--ink); stroke-width: 1.5; opacity: .17; stroke-linecap: round; }
+  .lt .ol { fill: none; stroke: var(--shadow); stroke-width: 1.1; stroke-linejoin: round; opacity: .85; }
+  .lt .fl { fill: var(--flame); }
+  .lt .fl-core { fill: color-mix(in srgb, var(--flame) 30%, var(--ink)); }
+  .lt .fl-blue { fill: color-mix(in srgb, var(--lapis) 60%, transparent); }
+  .lt .cup { fill: color-mix(in srgb, var(--brass) 50%, var(--shadow)); }
+
+  /* -- props: what else lies on an astronomer's desk -- */
+  .prop { position: absolute; left: calc(var(--x) * 1%); top: calc(var(--E) + var(--y) * var(--V)); width: var(--w); transform: translate(-50%, -50%) rotate(var(--r, 0deg)); }
+  .prop > svg { display: block; width: 100%; height: auto; overflow: visible; max-width: none; }
+  .pr .sh { fill: var(--shadow); opacity: .55; }
+  .pr .ol { fill: none; stroke: var(--shadow); stroke-width: 1.2; stroke-linejoin: round; opacity: .8; }
+  .pr .br-m { fill: color-mix(in srgb, var(--brass) 64%, var(--shadow)); }
+  .pr .br-d { fill: color-mix(in srgb, var(--brass) 40%, var(--shadow)); }
+  .pr .br-l { fill: color-mix(in srgb, var(--brass) 82%, var(--flame)); }
+  .pr .disc { fill: url(#g-disc); }
+  .pr .plate { fill: color-mix(in srgb, var(--brass) 52%, var(--shadow)); }
+  .pr .eng { fill: none; stroke: color-mix(in srgb, var(--brass) 30%, var(--shadow)); stroke-width: .8; }
+  .pr .eng-l { fill: none; stroke: color-mix(in srgb, var(--brass) 75%, var(--flame)); stroke-width: .7; opacity: .7; }
+  .pr .rete-r { fill: none; stroke: color-mix(in srgb, var(--brass) 82%, var(--flame)); stroke-width: 4.5; }
+  .pr .rete-s { fill: none; stroke: color-mix(in srgb, var(--brass) 82%, var(--flame)); stroke-width: 2; }
+  .pr .hl { fill: none; stroke: var(--flame); stroke-width: 2; opacity: .55; stroke-linecap: round; }
+  .pr .ring { fill: none; stroke: color-mix(in srgb, var(--brass) 60%, var(--shadow)); stroke-width: 3.4; }
+  .pr .leather-r { fill: url(#g-leather-r); }
+  .pr .leather-b { fill: url(#g-leather-b); }
+  .pr .pages { fill: color-mix(in srgb, var(--ink) 70%, var(--wood)); }
+  .pr .pages-l { fill: none; stroke: color-mix(in srgb, var(--ink) 40%, var(--wood)); stroke-width: .6; }
+  .pr .tool { fill: none; stroke: color-mix(in srgb, var(--brass) 70%, var(--shadow)); stroke-width: 1; opacity: .9; }
+  .pr .tool-f { fill: color-mix(in srgb, var(--brass) 55%, var(--shadow)); opacity: .9; }
+  .pr .glaze { fill: url(#g-glaze); }
+  .pr .glaze-top { fill: color-mix(in srgb, var(--brass) 52%, var(--shadow)); }
+  .pr .inkpool { fill: var(--shadow); }
+  .pr .wet { fill: none; stroke: color-mix(in srgb, var(--ink) 60%, transparent); stroke-width: 1.2; opacity: .5; stroke-linecap: round; }
+  .pr .reed { fill: url(#g-reed); }
+  .pr .reed-n { fill: color-mix(in srgb, var(--brass) 40%, var(--wood)); }
+  .pr .nib-ink { fill: var(--shadow); }
+  .pr .stain { fill: var(--shadow); opacity: .62; }
+  .pr .wood-l { fill: color-mix(in srgb, var(--wood) 60%, var(--brass)); }
+  .pr .wood-d { fill: color-mix(in srgb, var(--wood) 70%, var(--shadow)); }
+  .pr .thread-w { fill: color-mix(in srgb, var(--brass) 75%, var(--shadow)); }
+  .pr .thread-l { fill: none; stroke: color-mix(in srgb, var(--brass) 85%, var(--flame)); stroke-width: 1; opacity: .8; }
+  .pr .vellum { fill: color-mix(in srgb, var(--ink) 50%, var(--wood)); }
+  .pr .vellum-d { fill: color-mix(in srgb, var(--ink) 34%, var(--wood)); }
+  .pr .pin-h { fill: url(#g-pin); }
+  .pr .needle { stroke: color-mix(in srgb, var(--ink) 55%, var(--brass)); stroke-width: 1.2; stroke-linecap: round; }
+  .pr .needle-sh { stroke: var(--shadow); stroke-width: 1.6; opacity: .5; stroke-linecap: round; }
+  .pr .tick { fill: none; stroke: color-mix(in srgb, var(--brass) 80%, var(--flame)); stroke-width: 1; }
+  /* where each thing lies on the top of the desk: x in % of the width, y in screens below the edge
+     of the last opening frame (negative is nearer the wall, seen only as the camera tilts down) */
+  .p-scroll { --x: 30; --y: -0.1; --w: clamp(150px, 16vw, 230px); --r: 4deg; }
+  .p-books { --x: 81; --y: -0.07; --w: clamp(170px, 18vw, 260px); --r: -9deg; }
+  .p-astro { --x: 67; --y: 0.34; --w: clamp(170px, 18vw, 260px); }
+  .p-ink { --x: 39; --y: 0.57; --w: clamp(170px, 18vw, 260px); --r: -8deg; }
+  .p-spool { --x: 57; --y: 0.78; --w: clamp(72px, 7vw, 108px); --r: 14deg; }
+  .p-dish { --x: 20; --y: 0.68; --w: clamp(76px, 7.5vw, 112px); }
+  .p-pin1 { --x: 47; --y: 0.88; --w: 46px; --r: 32deg; }
+  .p-pin2 { --x: 87; --y: 0.66; --w: 46px; --r: -64deg; }
+  @media (max-width: 760px) {
+    .p-scroll { --x: 24; --y: -0.08; --w: 120px; }
+    .p-books { --x: 84; --y: -0.03; --w: 130px; }
+    .p-astro { --x: 72; --y: 0.32; --w: 170px; }
+    .p-ink { --x: 42; --y: 0.6; --w: 150px; }
+    .p-spool { --x: 68; --y: 0.82; --w: 62px; }
+    .p-dish { --x: 16; --y: 0.8; --w: 64px; }
+    .p-pin1 { --x: 38; --y: 0.92; } .p-pin2 { --x: 90; --y: 0.62; }
+  }
+
+  /* ===== Chapters ======================================================== */
+  .chapter { position: relative; z-index: 3; max-width: 1240px; margin: 0 auto 24vh; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; align-items: start; scroll-margin-top: 80px; }
+  .chapter-head { position: relative; padding-top: 6px; }
+  .chapter-head .abjad { font-size: 120px; line-height: 1.1; padding-bottom: 0.42em; color: var(--brass); }
+  .chapter-head h2 { margin: 10px 0 0; font: var(--type-display-l); font-size: clamp(40px, 4.4vw, 56px); line-height: 1.04; }
+  .chapter-text { padding-top: 26px; max-width: 34em; }
+  .chapter-text p + p { color: var(--ink-muted); }
+  .words { position: relative; }
+  .spot { position: absolute; width: 0; height: 0; }
+  /* where the lantern is set down for each chapter: beside its papers, never on their words */
+  .ch1 > .spot { left: 41%; top: 2vh; }
+  .ch2 > .spot { left: 31%; top: -5vh; }
+  .ch3 > .spot { left: 23%; top: -6vh; }
+  .ch4 > .spot { left: 53.5%; top: 34vh; }
+  @media (max-width: 760px) { .chapter > .spot { left: 84%; top: 14px; } .map-sheet > .pin.bl, .map-sheet > .pin.br { bottom: 7px; } .map-sheet > .pin.bl { left: 7px; } .map-sheet > .pin.br { right: 7px; } }
+  figure { margin: 0; }
+
+  /* -- paper: the script draws each sheet (deckled edge, fibre, age, folds) into a canvas behind it -- */
+  .desk .sheet { background: transparent; box-shadow: none; rotate: var(--rot, 0deg); }
+  .desk .sheet::before { content: none; }
+  .desk .sheet > canvas.paper { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; max-width: none; }
+  .desk .sheet:not(.has-paper) { background: var(--ground); }
+  /* the sheet's shadow on the wood is a layer of its own, moved to fall away from the lamp */
+  .desk .sheet > .cast { position: absolute; inset: 4px; z-index: -2; pointer-events: none; box-shadow: 0 8px 30px 2px color-mix(in srgb, var(--shadow) 80%, transparent), 0 1px 3px color-mix(in srgb, var(--shadow) 70%, transparent); will-change: transform; }
+  .ink { position: relative; }
+  .drops { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
+  .drop { position: absolute; left: 0; top: 0; background: var(--bloom) center / 100% 100% no-repeat; transform: scale(0); opacity: 0; }
+  .plate-mark { display: inline-block; padding: 3px 10px 2px; font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); font-feature-settings: var(--features-eyebrow); color: var(--brass); }
+  /* brass pins holding a sheet to the desk */
+  .pin { position: absolute; width: 13px; height: 13px; margin: -6.5px; border-radius: 50%; z-index: 4; background: radial-gradient(circle at 34% 30%, var(--flame) 0, color-mix(in srgb, var(--brass) 80%, var(--flame)) 26%, color-mix(in srgb, var(--brass) 55%, var(--shadow)) 72%, color-mix(in srgb, var(--brass) 30%, var(--shadow)) 100%); box-shadow: 2px 3px 2px -1px color-mix(in srgb, var(--shadow) 75%, transparent), 4px 6px 6px -2px color-mix(in srgb, var(--shadow) 40%, transparent); }
+  .pin.tl { left: 22px; top: 20px; } .pin.tr { right: 22px; top: 20px; margin-right: -6.5px; left: auto; } .pin.tc { left: 50%; top: 16px; }
+  .pin.bl { left: 22px; bottom: 20px; top: auto; margin-bottom: -6.5px; } .pin.br { right: 22px; bottom: 20px; left: auto; top: auto; margin-right: -6.5px; margin-bottom: -6.5px; }
+  .anchor { position: absolute; width: 0; height: 0; }
+
+  /* the ink: one drop lands on each sheet, spreads and soaks in; what it reaches is written. The
+     drawing itself never changes (repainting a map every frame is slow): a copy of the blank paper
+     lies over it, and the one growing blot cuts a hole in that copy, while its wet edge (.drop) runs
+     ahead. The script sizes the blot so that it alone covers the whole sheet. It runs once, then the
+     copy is removed. Before its chapter is reached, a sheet is blank paper. */
+  @property --i { syntax: "<number>"; inherits: false; initial-value: 0; }
+  .desk .sheet > canvas.cover { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; max-width: none; display: none; }
+  .ink-ready [data-ink]:not(.is-dry) > canvas.cover {
+    display: block; will-change: transform;
+    -webkit-mask-image: linear-gradient(black, black), var(--blot);
+    mask-image: linear-gradient(black, black), var(--blot);
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+    -webkit-mask-composite: source-out; mask-composite: subtract;
+    -webkit-mask-size: 100% 100%, calc(var(--i) * var(--S)) calc(var(--i) * var(--S));
+    mask-size: 100% 100%, calc(var(--i) * var(--S)) calc(var(--i) * var(--S));
+    -webkit-mask-position: 0 0, calc(var(--x) - var(--i) * var(--S) / 2) calc(var(--y) - var(--i) * var(--S) / 2);
+    mask-position: 0 0, calc(var(--x) - var(--i) * var(--S) / 2) calc(var(--y) - var(--i) * var(--S) / 2);
+  }
+  .ink-ready [data-ink].is-in > canvas.cover { animation: ink var(--t) var(--ease-ink) both; }
+  @keyframes ink { from { --i: 0; } to { --i: 1; } }
+  .ink-ready [data-ink].is-in .drop { animation: drop-grow var(--t) var(--ease-ink) both, drop-wet var(--t) linear both; }
+  /* a fixed number, not a variable, so the browser can run it off the main thread; the script sizes
+     the drop so that 2.3 times its size is the size the blot grows to */
+  @keyframes drop-grow { from { transform: scale(0); } to { transform: scale(2.3); } }
+  @keyframes drop-wet { 0% { opacity: 0; } 5% { opacity: .85; } 40% { opacity: .55; } 100% { opacity: 0; } }
+  [data-ink].is-dry .drops { display: none; }
+
+  .token.place { opacity: 0; transform: translateY(-18px) scale(1.07); transition: opacity 260ms linear, transform var(--dur-sheet) var(--ease-paper); transition-delay: calc(var(--i, 0) * 150ms); }
+  .is-in .token.place, .is-in.token.place { opacity: 1; transform: none; }
+  .tk { position: absolute; z-index: 3; }
+  .tk > .token { translate: -50% -50%; }
+
+  /* thread and pins on the desk, between papers in different chapters */
+  .desk-threads { position: absolute; left: 0; top: 0; z-index: 4; pointer-events: none; overflow: visible; max-width: none; }
+  .desk-threads .t { fill: none; stroke: var(--brass); stroke-width: var(--stroke-thread); stroke-linecap: round; stroke-dasharray: var(--len) var(--len); stroke-dashoffset: var(--len); }
+  .desk-threads .t-sh { fill: none; stroke: var(--shadow); stroke-width: 1.6; stroke-linecap: round; opacity: .45; stroke-dasharray: var(--len) var(--len); stroke-dashoffset: var(--len); }
+  .desk-threads .is-drawn { stroke-dashoffset: 0; transition: stroke-dashoffset var(--dur-camera) var(--ease-ink); }
+  .desk-pins { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 5; pointer-events: none; }
+  .desk-pins .pin { margin: -6px; width: 12px; height: 12px; transition: opacity 300ms linear; }
+
+  /* Chapter one: two cards, the same fields under two grids */
+  .ch1 .words { grid-column: 1 / span 5; grid-row: 1; padding-top: 4vh; }
+  .ch1 .card { grid-row: 1; padding: clamp(20px, 2.4vw, 30px) clamp(18px, 2.2vw, 28px) 22px; }
+  .ch1 .c-modis { grid-column: 6 / span 4; --rot: -2.6deg; margin-top: 0; z-index: 1; }
+  .ch1 .c-viirs { grid-column: 9 / span 4; --rot: 1.9deg; margin: 70px 0 0 18px; z-index: 2; }
+  .ch1 .c-note { grid-column: 7 / span 4; grid-row: 2; --rot: -1.2deg; margin: -24px 0 0 10%; padding: 18px 26px 16px; z-index: 3; max-width: 30ch; }
+  .ch1 .c-note .note { max-width: none; }
+  .card .head-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; border-bottom: var(--stroke-hair) solid var(--rule); padding-bottom: 8px; margin-bottom: 14px; }
+  .card svg.grid-fig { width: 100%; height: auto; aspect-ratio: 1; border: var(--stroke-hair) solid var(--rule); outline: var(--stroke-hair) solid var(--brass); outline-offset: var(--space-1); }
+  .card .count { margin: 12px 0 0; font: var(--type-ui); }
+  .card .count b { font-weight: 700; }
+  .modis { color: var(--lapis); }
+  .viirs { color: var(--rubric); }
+  .card .plot { fill: none; stroke: var(--ink-muted); stroke-width: 0.6; opacity: 0.5; }
+  .card .furrow { stroke: var(--rule); stroke-width: 0.7; }
+  .card .canal { fill: none; stroke: var(--ink-muted); stroke-width: 0.8; opacity: 0.8; }
+  .card .fire { fill: color-mix(in srgb, var(--rubric) 30%, transparent); stroke: var(--rubric); stroke-width: 1; }
+  .card .gridl { stroke: var(--brass); stroke-width: 0.8; opacity: 0.75; }
+  .card .hit { fill: color-mix(in srgb, var(--rubric) 14%, transparent); stroke: var(--rubric); stroke-width: 1.6; }
+  .ch1 .c-modis .tk { right: 8px; bottom: -6px; }
+  .ch1 .c-viirs .tk { right: 14px; bottom: -4px; }
+  .ch1 .tk .token { --size: clamp(64px, 6.2vw, 84px); }
+  /* a reading stone on the fine grid: Ibn al-Haytham's lens, from the same Cairo */
+  .lens { position: absolute; z-index: 3; width: 36%; aspect-ratio: 1; border-radius: 50%; pointer-events: none; }
+  .lens .mag { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; }
+  .lens .mag svg { position: absolute; max-width: none; }
+  .lens::before { content: ""; position: absolute; inset: 0; border-radius: 50%; z-index: 1; background: radial-gradient(circle at 36% 30%, color-mix(in srgb, var(--ground-raised) 75%, transparent) 0, transparent 22%), radial-gradient(circle, transparent 58%, color-mix(in srgb, var(--shadow) 18%, transparent) 86%, color-mix(in srgb, var(--shadow) 40%, transparent) 100%); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 25%, transparent), 10px 14px 18px -6px color-mix(in srgb, var(--shadow) 45%, transparent); }
+
+  /* Chapter two: the folded map, the words on a slip pinned beside it */
+  .ch2 .c-words { grid-column: 1 / span 4; grid-row: 1; margin-top: 10vh; padding: 30px 30px 26px; --rot: -1.4deg; z-index: 2; }
+  .ch2 .c-words .chapter-head .abjad { font-size: 96px; }
+  .ch2 .c-words .chapter-head h2 { font-size: clamp(34px, 3.4vw, 46px); }
+  .ch2 .c-words .chapter-text { padding-top: 18px; }
+  .ch2 .c-words .chapter-text p { font: var(--type-ui); font-size: 18px; line-height: 28px; }
+  .ch2 .map-sheet { grid-column: 5 / span 8; grid-row: 1; padding: clamp(14px, 2vw, 26px); --rot: 0.6deg; margin-left: -34px; }
+  .map { position: relative; container-type: inline-size; aspect-ratio: 1000 / 640; }
+  .map .art, .map .art > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .map .sea-line { stroke: var(--rule); stroke-width: 1; }
+  .map .coast { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+  .map .coast2 { fill: none; stroke: var(--ink-muted); stroke-width: 0.8; opacity: 0.7; }
+  .map .river { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; }
+  .map .river2 { fill: none; stroke: var(--ink-muted); stroke-width: 0.7; opacity: 0.8; }
+  .map .lake { fill: url(#water-hatch); stroke: var(--ink-muted); stroke-width: 0.9; }
+  .map .fan { fill: url(#field-hatch); opacity: 0.85; }
+  .map .stipple path { fill: none; stroke: var(--ink-muted); stroke-width: 1.6; stroke-linecap: round; opacity: 0.45; }
+  .map .lbl { font: italic 400 16px/1 var(--font-text); fill: var(--ink-muted); }
+  .map .lbl-sea { font: 600 18px/1 var(--font-display); letter-spacing: 0.4em; font-feature-settings: "smcp" 1, "c2sc" 1; fill: var(--ink-muted); }
+  .map .lbl-big { font: 600 34px/1 var(--font-display); letter-spacing: 0.32em; font-feature-settings: "smcp" 1, "c2sc" 1; fill: var(--ink); opacity: 0.55; }
+  .map .city { fill: var(--ground); stroke: var(--ink); stroke-width: 1.4; }
+  .map .rose { fill: none; stroke: var(--brass); stroke-width: 1.2; }
+  .map .rose-n { fill: var(--brass); font: 600 15px/1 var(--font-display); }
+  .cartouche { position: absolute; left: 3.2%; bottom: 5%; padding: 14px 18px 12px; background: color-mix(in srgb, var(--ground-raised) 85%, transparent); }
+  .cartouche .t-display-m { font-size: clamp(20px, 3.2cqw, 32px); line-height: 1.1; }
+  .cartouche .t-marginal { font-size: clamp(13px, 1.7cqw, 16px); }
+  .map .tk .token { --size: clamp(30px, 7.4cqw, 86px); font-size: clamp(7px, 0.98cqw, 11px); line-height: 1.2; padding: 6px; }
+  .map .tk .token .num { display: none; font: 700 15px/1 var(--font-text); }
+  .map .tk .token.sensor { --size: clamp(34px, 8.6cqw, 100px); }
+  .map .tk .token.knot { --size: clamp(32px, 7.4cqw, 86px); background: radial-gradient(circle at 34% 28%, color-mix(in srgb, var(--flame) 30%, transparent) 0, transparent 55%), color-mix(in srgb, var(--brass) 70%, var(--wood)); color: var(--on-wood); --ring: var(--on-wood); }
+  .map .tk .token .t-label, .map .tk .token b { font-size: inherit; line-height: inherit; }
+  .map-sheet .folds { position: absolute; inset: 0; z-index: 2; pointer-events: none; background:
+      linear-gradient(90deg, transparent calc(50% - 16px), color-mix(in srgb, var(--shadow) 7%, transparent) calc(50% - 2px), color-mix(in srgb, var(--shadow) 16%, transparent) 50%, color-mix(in srgb, var(--ground-raised) 45%, transparent) calc(50% + 1px), transparent calc(50% + 14px)),
+      linear-gradient(180deg, transparent calc(50% - 16px), color-mix(in srgb, var(--shadow) 7%, transparent) calc(50% - 2px), color-mix(in srgb, var(--shadow) 16%, transparent) 50%, color-mix(in srgb, var(--ground-raised) 45%, transparent) calc(50% + 1px), transparent calc(50% + 14px)); }
+  .map-key { display: none; margin: 14px 4px 4px; padding: 0; list-style: none; columns: 2; font: var(--type-ui); font-size: 16px; }
+  .map-key b { color: var(--brass); margin-right: 6px; }
+  .map-note { margin: 16px 6px 6px; max-width: 46ch; }
+  .ch2 .dividers { position: absolute; z-index: 3; left: 6%; top: 4%; width: 16%; transform: rotate(-28deg); pointer-events: none; }
+  .ch2 .dividers svg { width: 100%; height: auto; overflow: visible; }
+  @container (max-width: 620px) {
+    .map .tk .token .t-label, .map .tk .token b, .map .tk .token .t-figure { display: none; }
+    .map .tk .token .num { display: block; }
+    .cartouche { padding: 10px 13px 9px; }
+    .cartouche .jadwal { --jadwal-inset: 2px !important; }
+    .cartouche .t-display-m { font-size: 15px; }
+    .cartouche .t-marginal { font-size: 11px; line-height: 1.3; }
+  }
+
+  /* Chapter three: the table, the hero of the desk */
+  .ch3 .words { grid-column: 1 / span 3; grid-row: 1; padding-top: 2vh; }
+  .ch3 .table-sheet { grid-column: 4 / span 9; grid-row: 1; padding: clamp(28px, 4.4vw, 60px) clamp(16px, 4vw, 56px) clamp(28px, 4vw, 48px); --rot: -0.5deg; }
+  .table-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px 24px; margin-bottom: 22px; }
+  .table-top h3 { margin: 4px 0 0; font: var(--type-display-l); font-size: clamp(30px, 4vw, 52px); }
+  .table-wrap { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 200px); gap: 26px; }
+  .cal { position: relative; align-self: start; }
+  .cal-row { display: grid; grid-template-columns: 52px minmax(0, 1fr); }
+  .cal .cells { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .cal .mh { font: var(--type-label); letter-spacing: var(--tracking-label); color: var(--rubric); text-align: center; padding: 0 0 8px; border-bottom: var(--stroke-hair) solid var(--brass); }
+  .cal .yr { font: var(--type-figure); font-feature-settings: var(--features-figure); color: var(--ink-muted); height: 24px; line-height: 24px; padding-right: 8px; text-align: right; border-right: var(--stroke-hair) solid var(--brass); }
+  .cal .cell { height: 24px; }
+  .cal .h0 { background: transparent; }
+  .cal .h1 { background: var(--heat-1); } .cal .h2 { background: var(--heat-2); } .cal .h3 { background: var(--heat-3); } .cal .h4 { background: var(--heat-4); } .cal .h5 { background: var(--heat-5); }
+  .cal .nd { background: url("../assets/patterns/hatch-folio.svg"); }
+  .cal .yr.decade { color: var(--ink); }
+  .anomaly { position: absolute; outline: 1.5px solid var(--rubric); outline-offset: 1px; pointer-events: none; opacity: 0; transition: opacity var(--dur-ink) var(--ease-ink) 2600ms; }
+  .is-in .anomaly { opacity: 1; }
+  .margin-note { align-self: start; position: relative; opacity: 0; transition: opacity var(--dur-ink) var(--ease-ink) 3000ms; }
+  .is-in .margin-note { opacity: 1; }
+  .margin-note .note { max-width: 22ch; }
+  .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; margin-top: 22px; padding-top: 14px; border-top: var(--stroke-hair) solid var(--rule); font: var(--type-ui); font-size: 16px; }
+  .legend .ramp { display: inline-flex; align-items: center; gap: 8px; }
+  .legend .ramp span.sw { display: inline-block; width: 26px; height: 16px; }
+  .legend .sw-zero { display: inline-block; width: 26px; height: 16px; box-shadow: inset 0 0 0 1px var(--rule); }
+  .legend .sw-nd { display: inline-block; width: 26px; height: 16px; background: url("../assets/patterns/hatch-folio.svg"); box-shadow: inset 0 0 0 1px var(--rule); }
+  .ch3 .table-sheet .a-in { right: 18%; top: 14px; }
+  .ch3 .table-sheet .a-out { right: 12%; bottom: 14px; }
+  .ch3 .rule-stick { grid-column: 3 / span 6; grid-row: 2; margin: -10px 0 0 4%; transform: rotate(-3.5deg); pointer-events: none; z-index: 1; position: relative; }
+  .ch3 .rule-stick svg { width: 100%; height: auto; overflow: visible; }
+
+  /* Chapter four: no paper, a line of pins on the desk with notes beside them. On a phone they run
+     straight down. On a wider desk they run down beside the words, then turn and run leftwards under
+     them, the way Arabic reads, so the thread goes round the words. */
+  .ch4 .words { grid-column: 1 / span 6; grid-row: 1; padding-top: 2vh; }
+  .lineage { list-style: none; margin: 0; padding: 0; position: relative; }
+  .lineage .stop { position: relative; display: grid; grid-template-columns: var(--tsize) minmax(0, 1fr); align-items: center; gap: 28px; margin-left: var(--dx, 0); --tsize: clamp(80px, 8vw, 108px); }
+  .lineage .stop:nth-child(6) { --tsize: clamp(96px, 10vw, 136px); }
+  @media (min-width: 761px) {
+    .ch4 { grid-template-rows: repeat(3, auto) auto; }
+    .ch4 .words { grid-row: 1 / span 3; }
+    /* the list spans the whole chapter and shares its grid; the words show through it */
+    .lineage { grid-column: 1 / -1; grid-row: 1 / span 4; display: grid; grid-template-columns: subgrid; grid-template-rows: subgrid; pointer-events: none; }
+    .lineage .stop { pointer-events: auto; align-self: center; }
+    /* down the right of the words: 977, c. 1000, the 1870s */
+    .lineage .stop:nth-child(-n+3) { grid-column: 8 / span 5; }
+    .lineage .stop:nth-child(1) { grid-row: 1; --dx: 3%; }
+    .lineage .stop:nth-child(2) { grid-row: 2; --dx: 13%; }
+    .lineage .stop:nth-child(3) { grid-row: 3; --dx: 5%; }
+    /* then leftwards under them, each note below its pin so the thread runs clear: 2000, 2012, 2026 */
+    .lineage .stop:nth-child(n+4) { grid-row: 4; grid-template-columns: minmax(0, 1fr); justify-items: start; align-self: start; gap: 14px; margin-top: clamp(64px, 10vh, 120px); }
+    .lineage .stop:nth-child(n+4) .desc p { max-width: 24ch; }
+    .lineage .stop:nth-child(4) { grid-column: 8 / span 5; --dx: 1%; }
+    .lineage .stop:nth-child(5) { grid-column: 4 / span 4; --dx: 14%; margin-top: clamp(96px, 14vh, 160px); }
+    .lineage .stop:nth-child(6) { grid-column: 1 / span 3; --dx: 4%; margin-top: clamp(54px, 8vh, 100px); }
+  }
+  .lineage .tk { position: relative; width: var(--tsize); height: var(--tsize); }
+  .lineage .tk > .token { position: absolute; left: 50%; top: 50%; --size: var(--tsize); }
+  .lineage .tk > .token .t-figure { font-size: clamp(13px, 1.25vw, 16px); }
+  /* Zij's own stop carries the Seal: 0.42 of the token keeps it at 40px of ink or more, the large drawing's floor */
+  .lineage .tk .seal { display: block; height: calc(var(--tsize) * 0.42); width: auto; }
+  .lineage .desc { opacity: 0; transform: translateY(8px); transition: opacity var(--dur-ink) var(--ease-ink) 500ms, transform var(--dur-ink) var(--ease-ink) 500ms; }
+  .lineage .stop.is-in .desc { opacity: 1; transform: none; }
+  .lineage .yr { display: block; font: var(--type-display-m); font-size: clamp(28px, 2.8vw, 36px); color: var(--brass); font-feature-settings: "lnum" 1; }
+  .lineage .desc p { margin: 2px 0 0; max-width: 28ch; font: var(--type-marginal); color: var(--ink-muted); }
+
+  /* ===== Closing: the lamp goes out, the sky remains ======================= */
+  /* The closing starts over the end of the desk, where the room is already dark. It is lamp-black
+     where the desk ends (36vh down), turns to the night sky below that, and its stars are painted
+     fading in from there (landing.js), so nothing has an edge. */
+  .closing { position: relative; z-index: 9; min-height: 120vh; margin-top: -36vh; padding: 56vh clamp(16px, 6vw, 96px) 64px; display: grid; align-content: end; content-visibility: auto; contain-intrinsic-size: auto 1200px; background: linear-gradient(180deg, transparent 0, var(--ground) 36vh, color-mix(in srgb, var(--sky) 34%, var(--ground)) 50vh, color-mix(in srgb, var(--sky) 78%, var(--ground)) 68vh, var(--sky) 86vh); }
+  .closing .twinkles { inset: 66vh 0 0 0; }
+  .closing .last { position: relative; max-width: 1240px; margin: 0 auto; width: 100%; }
+  .closing h2 { font: var(--type-display-l); font-size: clamp(40px, 6vw, 84px); line-height: 1.02; max-width: 14em; margin: 0 0 18px; }
+  .closing .sub { color: var(--ink-muted); max-width: 32em; }
+  .closing .acts { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 28px; margin: 32px 0 80px; }
+  .colophon { position: relative; display: grid; grid-template-columns: auto 1fr; gap: 24px 32px; align-items: start; border-top: var(--stroke-hair) solid var(--rule); padding-top: 26px; color: var(--ink-muted); font-size: 16px; line-height: 26px; max-width: 1240px; margin: 0 auto; width: 100%; }
+  .colophon img { display: block; height: 56px; width: auto; }
+  .colophon p { max-width: 62em; margin: 0 0 8px; }
+
+  /* a tall tablet: the instrument a little further off to the right, clear of the words */
+  @media (min-width: 761px) and (max-aspect-ratio: 4/5) { .orbits { right: -16vw; } }
+
+  /* ===== Phones ============================================================ */
+  @media (max-width: 760px) {
+    .stage { height: 300vh; }
+    /* on a phone the instrument hangs small at the upper right and the words stand under it, low
+       on the left above the land, so no ring crosses them */
+    .orbits { width: 88vw; right: -20vw; top: 3svh; opacity: 0.8; }
+    .orbits text { display: none; }
+    .hero { top: 22svh; height: 48svh; left: 16px; width: calc(100% - 32px); --seal: min(84px, 12.5svh); }
+    .hero .line { font-size: clamp(26px, min(7.6vw, 5svh), 34px); }
+    .hero .dek { font-size: 17px; line-height: 26px; max-width: 22em; }
+    .desk { padding: calc(var(--V) + var(--E) + 4vh) 16px 30vh; }
+    .chapter { display: block; margin-bottom: 18vh; }
+    .chapter-head .abjad { font-size: 80px; }
+    .chapter-text { padding-top: 18px; }
+    .chapter-text p { font-size: 18px; line-height: 29px; }
+    .ch1 .words, .ch3 .words, .ch4 .words { padding-top: 0; }
+    .ch1 .card { display: block; width: 86%; margin-top: 32px; }
+    .ch1 .c-viirs { margin: -26px 0 0 14%; }
+    .ch1 .c-note { margin: -16px 0 0 4%; width: 84%; }
+    .ch2 .c-words { margin: 0 0 -14px; width: 94%; }
+    .ch2 .map-sheet { margin: 0; padding: 10px; }
+    .map-key { display: block; }
+    .ch3 .table-sheet { margin-top: 28px; }
+    .ch3 .rule-stick { width: 80%; margin: -8px 0 0 10%; }
+    .table-wrap { display: block; }
+    .cal-row { grid-template-columns: 38px minmax(0, 1fr); }
+    .cal .yr { font-size: 12px; padding-right: 5px; height: 18px; line-height: 18px; }
+    .cal .cell { height: 18px; }
+    .cal .mh { font-size: 10px; letter-spacing: 0; }
+    .margin-note { margin-top: 18px; }
+    .lineage { padding-top: 6vh; }
+    .lineage .stop { gap: 18px; --tsize: 78px; }
+    .lineage .stop + .stop { margin-top: clamp(54px, 7vh, 90px); }
+    .lineage .stop:nth-child(n) { --dx: 0%; }
+    .lineage .stop:nth-child(2n) { --dx: 12%; }
+    .lineage .stop:nth-child(6) { --tsize: 96px; }
+    .closing { padding-top: 30vh; }
+    .colophon { grid-template-columns: 1fr; }
+  }
+
+  /* ===== Still: reduced motion, or ?still for testing ====================== */
+  .still { --E: 0px; }
+  .still .stage { height: auto; }
+  .still .view { position: relative; height: 100svh; }
+  .still .rig { display: none; }
+  .still .desk { margin-top: 0; }
+  .still .token.place, .still .lineage .desc, .still .anomaly, .still .margin-note { opacity: 1; transform: none; transition: none; }
+  .still .desk-threads .t, .still .desk-threads .t-sh { stroke-dashoffset: 0; transition: none; }
+  .still .tw, .still .meteor, .still .orbits .rete, .still .orbit .spin, .still .lantern .flame-wrap, .still .lantern .halo, .still .land *, .still .drop { animation: none; }
+  .still .meteor, .still .drops, .still .land .smoke, .still .land .spark { display: none; }
+
+  /* ===== Wallpaper mode (?wallpaper): the opening scene alone, no words, no scrolling ===== */
+  .wallpaper, .wallpaper body { overflow: hidden; height: 100%; }
+  .wallpaper .skip, .wallpaper .head, .wallpaper .hero, .wallpaper .orbits text { display: none; }
+  /* what the wallpaper never shows isn't laid out, painted or animated */
+  .wallpaper .desk, .wallpaper .rig, .wallpaper .closing { display: none; }
+  .wallpaper body { cursor: default; user-select: none; }
+  /* sized by the screen's height, not capped at 820px, so a large screen frames it as a laptop does */
+  .wallpaper .orbits { width: min(64vw, 91vh); }
+  /* the seal, written in the sky where the words were (drawn by landing.js): a drift of stars in a
+     nebula of its own shape. Only opacity and transform move. */
+  .sigil { position: absolute; left: 11.5vw; top: 11vh; height: 46vh; aspect-ratio: 287 / 246; pointer-events: none; }
+  /* the star layers and the wave reach 15% past the seal (landing.js paints them so), the aura 35% */
+  .sigil > canvas, .sigil .wave { position: absolute; left: -15%; top: -15%; width: 130%; height: 130%; max-width: none; }
+  .sigil > canvas.aura { left: -35%; top: -35%; width: 170%; height: 170%; animation: sigil-aura 12s ease-in-out infinite alternate; }
+  @keyframes sigil-aura { from { opacity: 0.7; transform: scale(0.985); } to { opacity: 1; transform: scale(1.025); } }
+  /* three sets of its stars, each fading and coming back on its own beat */
+  .sigil .stars { animation: sigil-shimmer var(--d) ease-in-out var(--o) infinite alternate; }
+  .sigil .stars.a { --d: 4.3s; --o: 0s; }
+  .sigil .stars.b { --d: 5.9s; --o: -2.1s; }
+  .sigil .stars.c { --d: 5.1s; --o: -3.7s; }
+  @keyframes sigil-shimmer { from { opacity: 1; } to { opacity: 0.4; } }
+  /* now and then a wave of light runs through the letters: a band of light behind a mask of its stars */
+  .sigil .wave { overflow: hidden; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; }
+  .sigil .wave i { position: absolute; top: -40%; left: 0; width: 38%; height: 180%; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ink) 85%, var(--brass)) 50%, transparent); transform: translateX(-130%) rotate(14deg); animation: sigil-wave 18s cubic-bezier(.45, .05, .55, .95) -9s infinite; }
+  @keyframes sigil-wave { 0% { transform: translateX(-130%) rotate(14deg); } 40%, 100% { transform: translateX(300%) rotate(14deg); } }
+  /* the dots of the letters, four-pointed stars that point as the diamonds do; the ring, a ring of light round a star.
+     Sized in % of the seal's width (--z); a margin in % is of the width too, so they centre on their point */
+  .sigil .star4, .sigil .loop { position: absolute; width: calc(var(--z) * 1%); aspect-ratio: 1; margin: calc(var(--z) * -0.5%) 0 0 calc(var(--z) * -0.5%); --c: color-mix(in srgb, var(--ink) 84%, var(--brass)); }
+  .sigil .star4 {
+    background:
+      radial-gradient(closest-side, var(--c) 0 7%, color-mix(in srgb, var(--c) 45%, transparent) 14%, color-mix(in srgb, var(--c) 10%, transparent) 32%, transparent 60%),
+      linear-gradient(90deg, transparent, var(--c) 50%, transparent) 50% 50% / 100% 1.4px no-repeat,
+      linear-gradient(0deg, transparent, var(--c) 50%, transparent) 50% 50% / 1.4px 100% no-repeat;
+    animation: sigil-star var(--d) ease-in-out var(--o) infinite alternate;
+  }
+  @keyframes sigil-star { from { opacity: 1; transform: scale(1) rotate(0deg); } to { opacity: 0.6; transform: scale(0.78) rotate(8deg); } }
+  .sigil .loop { background: radial-gradient(closest-side, var(--ink) 0 5%, color-mix(in srgb, var(--ink) 30%, transparent) 11%, transparent 26%, color-mix(in srgb, var(--ink) 10%, transparent) 40%, color-mix(in srgb, var(--c) 34%, transparent) 58%, color-mix(in srgb, var(--brass) 14%, transparent) 70%, transparent 84%); animation: sigil-loop 7s ease-in-out infinite alternate; }
+  @keyframes sigil-loop { from { opacity: 0.75; transform: scale(0.95); } to { opacity: 1; transform: scale(1.05); } }
+  .still .sigil > canvas, .still .sigil i { animation: none; }
+  .still .sigil .wave { display: none; }
+</style>
+</head>
+<body>
+<a class="skip" href="#desk">Skip to the desk</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <pattern id="khatam-band" width="48" height="48" patternUnits="userSpaceOnUse">
+      <g style="fill: none; stroke: var(--brass); stroke-width: 0.8" transform="scale(.5)">
+        <polygon points="81.94,48 72,57.94 72,72 57.94,72 48,81.94 38.06,72 24,72 24,57.94 14.06,48 24,38.06 24,24 38.06,24 48,14.06 57.94,24 72,24 72,38.06"/>
+        <polygon points="33.94,0 24,9.94 24,24 9.94,24 0,33.94 -9.94,24 -24,24 -24,9.94 -33.94,0 -24,-9.94 -24,-24 -9.94,-24 -0,-33.94 9.94,-24 24,-24 24,-9.94"/>
+        <polygon points="129.94,0 120,9.94 120,24 105.94,24 96,33.94 86.06,24 72,24 72,9.94 62.06,0 72,-9.94 72,-24 86.06,-24 96,-33.94 105.94,-24 120,-24 120,-9.94"/>
+        <polygon points="33.94,96 24,105.94 24,120 9.94,120 0,129.94 -9.94,120 -24,120 -24,105.94 -33.94,96 -24,86.06 -24,72 -9.94,72 -0,62.06 9.94,72 24,72 24,86.06"/>
+        <polygon points="129.94,96 120,105.94 120,120 105.94,120 96,129.94 86.06,120 72,120 72,105.94 62.06,96 72,86.06 72,72 86.06,72 96,62.06 105.94,72 120,72 120,86.06"/>
+      </g>
+    </pattern>
+    <radialGradient id="glint-glow">
+      <stop offset="0" style="stop-color: var(--flame); stop-opacity: .95"/>
+      <stop offset=".3" style="stop-color: var(--rubric); stop-opacity: .35"/>
+      <stop offset="1" style="stop-color: var(--rubric); stop-opacity: 0"/>
+    </radialGradient>
+    <pattern id="globe-hatch" width="3.2" height="3.2" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)">
+      <line x1="0" y1="0" x2="0" y2="3.2" style="stroke: var(--brass); stroke-width: .7; opacity: .6"/>
+    </pattern>
+    <!-- the lantern's glass, lit from within -->
+    <radialGradient id="lt-glass" cx="70" cy="140" r="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" style="stop-color: var(--flame); stop-opacity: .95"/>
+      <stop offset=".38" style="stop-color: var(--flame); stop-opacity: .6"/>
+      <stop offset=".72" style="stop-color: color-mix(in srgb, var(--flame) 50%, var(--rubric)); stop-opacity: .34"/>
+      <stop offset="1" style="stop-color: var(--wood); stop-opacity: .55"/>
+    </radialGradient>
+    <radialGradient id="lt-glow" cx="70" cy="138" r="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0" style="stop-color: var(--flame); stop-opacity: .75"/>
+      <stop offset=".45" style="stop-color: var(--flame); stop-opacity: .18"/>
+      <stop offset="1" style="stop-color: var(--flame); stop-opacity: 0"/>
+    </radialGradient>
+    <radialGradient id="g-disc" cx=".3" cy=".26" r=".9">
+      <stop offset="0" style="stop-color: color-mix(in srgb, var(--brass) 78%, var(--flame))"/>
+      <stop offset=".45" style="stop-color: color-mix(in srgb, var(--brass) 70%, var(--shadow))"/>
+      <stop offset="1" style="stop-color: color-mix(in srgb, var(--brass) 34%, var(--shadow))"/>
+    </radialGradient>
+    <radialGradient id="g-pin" cx=".34" cy=".3" r=".75">
+      <stop offset="0" style="stop-color: color-mix(in srgb, var(--brass) 60%, var(--flame))"/>
+      <stop offset=".35" style="stop-color: var(--brass)"/>
+      <stop offset="1" style="stop-color: color-mix(in srgb, var(--brass) 30%, var(--shadow))"/>
+    </radialGradient>
+    <linearGradient id="g-leather-r" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" style="stop-color: color-mix(in srgb, var(--rubric) 32%, var(--wood))"/>
+      <stop offset="1" style="stop-color: color-mix(in srgb, var(--rubric) 18%, var(--shadow))"/>
+    </linearGradient>
+    <linearGradient id="g-leather-b" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" style="stop-color: color-mix(in srgb, var(--wood) 80%, var(--brass))"/>
+      <stop offset="1" style="stop-color: color-mix(in srgb, var(--wood) 55%, var(--shadow))"/>
+    </linearGradient>
+    <linearGradient id="g-glaze" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" style="stop-color: color-mix(in srgb, var(--brass) 40%, var(--shadow))"/>
+      <stop offset=".3" style="stop-color: color-mix(in srgb, var(--brass) 78%, var(--flame))"/>
+      <stop offset=".55" style="stop-color: color-mix(in srgb, var(--brass) 62%, var(--shadow))"/>
+      <stop offset="1" style="stop-color: color-mix(in srgb, var(--brass) 26%, var(--shadow))"/>
+    </linearGradient>
+    <linearGradient id="g-reed" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" style="stop-color: color-mix(in srgb, var(--brass) 70%, var(--ink))"/>
+      <stop offset="1" style="stop-color: color-mix(in srgb, var(--brass) 45%, var(--wood))"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<!-- Running head: the book's header, not a navbar -->
+<header class="head" id="head">
+  <a class="mark" href="#top" aria-label="Zij, back to the top">
+    <img src="/landing/logo/zij-seal-small-night.svg" alt="" width="306" height="255">
+  </a>
+  <div class="where">
+    <span class="chap t-eyebrow" id="chap" aria-live="polite"></span>
+    <button class="catchword" id="contents-btn" aria-expanded="false" aria-controls="contents">Contents</button>
+  </div>
+  <div class="progress" id="progress"></div>
+  <nav class="contents sheet" data-theme="folio" id="contents" aria-label="Contents">
+    <span class="t-eyebrow">contents</span>
+    <ol>
+      <li><a href="#ch-1"><span class="abjad">أ</span><span>Two satellites, two records</span><span class="t-figure t-muted">i</span></a></li>
+      <li><a href="#ch-2"><span class="abjad">ب</span><span>One thread between them</span><span class="t-figure t-muted">ii</span></a></li>
+      <li><a href="#ch-3"><span class="abjad">ج</span><span>The table</span><span class="t-figure t-muted">iii</span></a></li>
+      <li><a href="#ch-4"><span class="abjad">د</span><span>A thousand years of tables</span><span class="t-figure t-muted">iv</span></a></li>
+    </ol>
+  </nav>
+</header>
+
+<!-- ===== Opening: from the sky, back through the window, down to the desk ===== -->
+<section class="stage" id="top" aria-label="Opening">
+  <div class="view" id="view">
+    <div class="sky" id="sky">
+      <canvas id="sky-canvas" aria-hidden="true"></canvas>
+      <div class="twinkles" id="sky-twinkles" aria-hidden="true"></div>
+      <div class="meteors" aria-hidden="true">
+        <i class="meteor" style="--x: 34%; --y: 12%; --w: 190px; --a: 152deg; --len: 340px; --d: 13s; --o: -4s"></i>
+        <i class="meteor" style="--x: 78%; --y: 9%; --w: 150px; --a: 138deg; --len: 260px; --d: 19s; --o: -11s"></i>
+        <i class="meteor" style="--x: 56%; --y: 30%; --w: 120px; --a: 165deg; --len: 200px; --d: 27s; --o: -20s"></i>
+      </div>
+      <div class="orbits" aria-hidden="true">
+        <div class="rete"><svg id="rete" viewBox="-320 -320 640 640"></svg></div>
+        <svg viewBox="-320 -320 640 640">
+          <g transform="rotate(-20)">
+            <path class="ring back" stroke-width="1" d="M -300 0 A 300 92 0 0 1 300 0"/>
+          </g>
+          <g transform="rotate(34)">
+            <path class="ring back" stroke-width="1" d="M -262 0 A 262 74 0 0 1 262 0"/>
+          </g>
+          <!-- the Earth: an engraved globe, the night side hatched, one fire near Cairo -->
+          <g class="globe" id="globe"></g>
+          <!-- each satellite's name is engraved along the front of its own ring, as names are on a rete -->
+          <g transform="rotate(-20)">
+            <path class="ring front" id="ring-modis" stroke-width="1.2" d="M -300 0 A 300 92 0 0 0 300 0"/>
+            <text class="eng" dy="-7"><textPath href="#ring-modis" startOffset="58%">modis · 2000</textPath></text>
+          </g>
+          <g transform="rotate(34)">
+            <path class="ring front" id="ring-viirs" stroke-width="1.2" d="M -262 0 A 262 74 0 0 0 262 0"/>
+            <text class="eng" dy="17"><textPath href="#ring-viirs" startOffset="18%">viirs · 2012</textPath></text>
+          </g>
+        </svg>
+        <div class="orbit" style="--tilt: -20deg; --squash: 0.3067; --r: 46.875%; --period: 60s; --phase: -21s"><div class="spin"><i class="sat"></i></div></div>
+        <div class="orbit rev" style="--tilt: 34deg; --squash: 0.2824; --r: 40.94%; --period: 46s; --phase: -9s"><div class="spin"><i class="sat"></i></div></div>
+      </div>
+      <!-- the desert, painted by landing.js; its fires, the camp and the man walking to it are small layers of their own -->
+      <div class="land" id="land" aria-hidden="true">
+        <canvas id="land-canvas"></canvas>
+        <canvas class="far a" id="far-a"></canvas>
+        <canvas class="far b" id="far-b"></canvas>
+        <div class="plume" id="burn-1"><div class="fx"><i class="smoke" style="--d: 11s"></i><i class="smoke" style="--d: 11s; --o: -3.7s"></i><i class="smoke" style="--d: 11s; --o: -7.3s"></i></div></div>
+        <div class="plume" id="burn-2"><div class="fx"><i class="smoke" style="--d: 13s; --o: -2s"></i><i class="smoke" style="--d: 13s; --o: -6.4s"></i><i class="smoke" style="--d: 13s; --o: -10.7s"></i></div></div>
+        <canvas class="lit" id="camp-lit"></canvas>
+        <div class="camp" id="camp"><div class="fx">
+          <i class="air"></i>
+          <div class="blaze"><canvas id="camp-flame"></canvas></div>
+          <i class="spark" style="--d: 3.4s; --o: -0.4s; rotate: -6deg"></i><i class="spark" style="--d: 5.1s; --o: -2.2s; rotate: 11deg"></i><i class="spark" style="--d: 7.3s; --o: -4.9s; rotate: -15deg"></i>
+          <i class="smoke" style="--d: 9s; --o: -1s"></i><i class="smoke" style="--d: 9s; --o: -5.5s"></i>
+        </div></div>
+        <div class="walker" id="walker"><div class="man"><i class="light"></i><svg viewBox="-12 -38 24 38">
+          <path class="fig" d="M-2.3 -27C-3.6 -19 -4.6 -9 -5.4 0L-1.3 0L-0.5 -3.2L0.3 0L4.6 0C4.1 -9 3.3 -19 2.4 -27C1.6 -28.6 -1.5 -28.6 -2.3 -27ZM2.6 -31A2.6 2.6 0 1 1 -2.6 -31A2.6 2.6 0 1 1 2.6 -31ZM-2.2 -32.6C-1 -35.2 2.4 -35 2.9 -31.6L4.6 -25.4L2.2 -27.4ZM-1.4 -26.8L-6.5 -29.9L-7.4 -28.5L-2.2 -24.8ZM-6.9 -29.5L-8.6 -36.4L-7.8 -36.6L-6.2 -29.7Z"/>
+          <path class="rim" d="M-2.3 -27C-3.6 -19 -4.6 -9 -5.4 0M-2.6 -31.2A2.6 2.6 0 0 1 -0.6 -33.5M-1.4 -26.8L-6.5 -29.9"/>
+        </svg><i class="torch"><i class="air"></i><span class="blaze"><canvas id="torch-flame"></canvas></span></i></div></div>
+      </div>
+      <div class="below"></div>
+    </div>
+
+    <div class="hero" id="hero">
+      <h1><img src="/landing/logo/zij-seal-night.svg" alt="Zij · زيج" width="287" height="246"></h1>
+      <p class="line">Satellites do the watching.<br>We make the tables.</p>
+      <p class="dek">A fire calendar for any place on Earth, from 26 years of NASA satellite records.</p>
+      <a class="catchword begin" id="begin" href="#record">Begin reading</a>
+      <a class="catchword enter" href="/explore">Open the map</a>
+    </div>
+
+    <!-- The room: the wall with its Fatimid keel-arch window, and the desk under it, painted by landing.js -->
+    <div class="rig" id="rig" aria-hidden="true">
+      <canvas class="wall" id="wall"></canvas>
+      <canvas class="plane" id="plane"></canvas>
+      <div class="lantern lt copy" id="lantern-copy"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== The desk ===== -->
+<main class="desk" id="desk">
+  <div class="props" id="desk-props" aria-hidden="true"></div>
+  <div class="lamp-under" id="lamp-under" aria-hidden="true"></div>
+  <div class="dark-all" aria-hidden="true"></div>
+
+  
+    <section class="record" id="record" aria-labelledby="h-record">
+      <div class="sheet" data-theme="folio" data-paper="sheet">
+        <p class="t-eyebrow">The Nile Delta, fire seasons 2001 to 2026 · from the record</p>
+        <h2 id="h-record">The satellites changed in 2012. The fires did not.</h2>
+        <input type="radio" name="rec" id="rec-raw" class="sr-only" checked>
+        <input type="radio" name="rec" id="rec-true" class="sr-only">
+        <div class="rec-switch">
+          <label for="rec-raw">What the satellites recorded</label>
+          <label for="rec-true">What actually happened</label>
+        </div>
+        <figure class="rec-figure">
+          <div class="rec-chart" role="img" aria-label="Season totals for the Nile Delta. As recorded, the record jumps about 10 times in 2012, when VIIRS replaces MODIS. Harmonized, 2011 and 2012 are level.">
+            <div class="rec-col is-modis" style="--raw:1.59%;--true:29.31%;--lo:26.77%;--hi:33.05%" title="2001: MODIS recorded 38. Harmonized: 702 (likely 641 to 791)."><span class="rec-bar"></span><span class="rec-band"></span></div>
+            <div class="rec-col is-modis" style="--raw:3.26%;--true:45.40%;--lo:41.12%;--hi:49.56%" title="2002: MODIS recorded 78. Harmonized: 1,087 (likely 984 to 1,187)."><span class="rec-bar"></span><span class="rec-band"></span></div>
+            <div class="rec-col is-modis" style="--raw:2.78%;--true:40.13%;--lo:36.35%;--hi:43.81%" title="2003: MODIS recorded 67. Harmonized: 961 (likely 870 to 1,049)."><span class="rec-bar"></span><span class="rec-band"></span></div>
+            <div class="rec-col is-modis" style="--raw:4.18%;--true:52.27%;--lo:47.34%;--hi:57.06%" title="2004: MODIS recorded 100. Harmonized: 1,251 (likely 1,133 to 1,366)."><span class="rec-bar"></span><span class="rec-band"></span></div>
+            <div class="rec-col is-modis" style="--raw:6.29%;--true:67.81%;--lo:61.42%;--hi:74.02%" title="2005: MODIS recorded 151. Harmonized: 1,623 (likely 1,470 to 1,772)."><span class="rec-bar"></span><span class="rec-band"></span><span class="rec-year">2005</span></div>
+            <div class="rec-col is-modis" style="--raw:9.04%;--true:84.14%;--lo:76.21%;--hi:91.86%" title="2006: MODIS recorded 217. Harmonized: 2,014 (likely 1,825 to 2,199)."><span class="rec-bar"></span><span class="rec-band"></span></div>
+            <div class="rec-col is-modis" style="--raw:7.56%;--true:74.69%;--lo:67.65%;--hi:81.54%" title="2007: MODIS recorded 181. Harmonized: 1,788 (likely 1,620 to 1,952)."><span class="rec-bar"></span><span class="rec-band"></span></div>
+            <div class="rec-col is-modis" style="--raw:6.79%;--true:71.84%;--lo:65.08%;--hi:78.43%" title="2008: MODIS recorded 163. Harmonized: 1,720 (likely 1,558 to 1,878)."><span class="rec-bar"></span><span class="rec-band"></span></div>
+            <div class="rec-col is-modis" style="--raw:7.56%;--true:77.33%;--lo:70.04%;--hi:84.42%" title="2009: MODIS recorded 181. Harmonized: 1,851 (likely 1,677 to 2,021)."><span class="rec-bar"></span><span class="rec-band"></span></div>
+            <div class="rec-col is-modis" style="--raw:7.83%;--true:79.66%;--lo:72.15%;--hi:86.96%" title="2010: MODIS recorded 188. Harmonized: 1,907 (likely 1,727 to 2,082)."><span class="rec-bar"></span><span class="rec-band"></span><span class="rec-year">2010</span></div>
+            <div class="rec-col is-modis" style="--raw:6.77%;--true:72.06%;--lo:65.27%;--hi:78.67%" title="2011: MODIS recorded 162. Harmonized: 1,725 (likely 1,563 to 1,883)."><span class="rec-bar"></span><span class="rec-band"></span></div>
+            <div class="rec-col is-viirs is-first-viirs" style="--raw:67.21%;--true:67.21%;--lo:67.21%;--hi:67.21%" title="2012: VIIRS recorded 1,609. Harmonized: 1,609."><span class="rec-bar"></span><span class="rec-year">2012</span></div>
+            <div class="rec-col is-viirs" style="--raw:96.15%;--true:96.15%;--lo:96.15%;--hi:96.15%" title="2013: VIIRS recorded 2,302. Harmonized: 2,302."><span class="rec-bar"></span></div>
+            <div class="rec-col is-viirs" style="--raw:93.31%;--true:93.31%;--lo:93.31%;--hi:93.31%" title="2014: VIIRS recorded 2,234. Harmonized: 2,234."><span class="rec-bar"></span></div>
+            <div class="rec-col is-viirs" style="--raw:71.55%;--true:71.55%;--lo:71.55%;--hi:71.55%" title="2015: VIIRS recorded 1,713. Harmonized: 1,713."><span class="rec-bar"></span><span class="rec-year">2015</span></div>
+            <div class="rec-col is-viirs" style="--raw:89.18%;--true:89.18%;--lo:89.18%;--hi:89.18%" title="2016: VIIRS recorded 2,135. Harmonized: 2,135."><span class="rec-bar"></span></div>
+            <div class="rec-col is-viirs" style="--raw:67.46%;--true:67.46%;--lo:67.46%;--hi:67.46%" title="2017: VIIRS recorded 1,615. Harmonized: 1,615."><span class="rec-bar"></span></div>
+            <div class="rec-col is-viirs" style="--raw:22.43%;--true:22.43%;--lo:22.43%;--hi:22.43%" title="2018: VIIRS recorded 537. Harmonized: 537."><span class="rec-bar"></span></div>
+            <div class="rec-col is-viirs" style="--raw:26.00%;--true:26.00%;--lo:26.00%;--hi:26.00%" title="2019: VIIRS recorded 623. Harmonized: 623."><span class="rec-bar"></span></div>
+            <div class="rec-col is-viirs" style="--raw:37.28%;--true:37.28%;--lo:37.28%;--hi:37.28%" title="2020: VIIRS recorded 893. Harmonized: 893."><span class="rec-bar"></span><span class="rec-year">2020</span></div>
+            <div class="rec-col is-viirs" style="--raw:38.60%;--true:38.60%;--lo:38.60%;--hi:38.60%" title="2021: VIIRS recorded 924. Harmonized: 924."><span class="rec-bar"></span></div>
+            <div class="rec-col is-viirs" style="--raw:39.43%;--true:39.43%;--lo:39.43%;--hi:39.43%" title="2022: VIIRS recorded 944. Harmonized: 944."><span class="rec-bar"></span></div>
+            <div class="rec-col is-viirs" style="--raw:71.26%;--true:71.26%;--lo:71.26%;--hi:71.26%" title="2023: VIIRS recorded 1,706. Harmonized: 1,706."><span class="rec-bar"></span></div>
+            <div class="rec-col is-viirs" style="--raw:46.67%;--true:46.67%;--lo:46.67%;--hi:46.67%" title="2024: VIIRS recorded 1,117. Harmonized: 1,117."><span class="rec-bar"></span></div>
+            <div class="rec-col is-viirs" style="--raw:25.08%;--true:25.08%;--lo:25.08%;--hi:25.08%" title="2025: VIIRS recorded 601. Harmonized: 601."><span class="rec-bar"></span><span class="rec-year">2025</span></div>
+            <div class="rec-col is-viirs" style="--raw:24.76%;--true:24.76%;--lo:24.76%;--hi:24.76%" title="2026: VIIRS recorded 593. Harmonized: 593."><span class="rec-bar"></span></div>
+          </div>
+          <figcaption>
+            <p class="rec-legend">
+              <span class="when-raw"><i class="key key-modis"></i> MODIS, as recorded <i class="key key-viirs"></i> VIIRS, as recorded</span>
+              <span class="when-true"><i class="key key-viirs"></i> One scale (VIIRS terms) <i class="key key-band"></i> Likely range of a year converted from MODIS</span>
+            </p>
+            <p class="rec-line when-raw">In 2011 MODIS recorded <strong>162</strong>. In 2012 VIIRS recorded <strong>1,609</strong>. The burning did not grow 10 times in a year: the instrument changed, and VIIRS sees much smaller fires.</p>
+            <p class="rec-line when-true">On one scale 2011 and 2012 are level, <strong>1,725</strong> and <strong>1,609</strong>, and the real story shows: the peak years, then the fall to <strong>537</strong> in 2018. A converted season is likely within -8.4% to +10.4% of the truth.</p>
+            <p class="rec-unit">Unit: fire cell-days per season (August to October), on a 0.1° grid, averaged over the satellites of each instrument. Harmonized values are hotspot-days (VIIRS-equivalent). Data to 2026-11-12.</p>
+          </figcaption>
+        </figure>
+        <details class="rec-table">
+          <summary>The numbers behind the chart</summary>
+          <div class="rec-scroll"><table>
+            <thead><tr><th>Season</th><th>Recorded by</th><th>As recorded</th><th>Harmonized</th><th>Likely range</th></tr></thead>
+            <tbody>
+              <tr><td>2001</td><td>MODIS</td><td>38</td><td>702</td><td>641 to 791</td></tr>
+              <tr><td>2002</td><td>MODIS</td><td>78</td><td>1,087</td><td>984 to 1,187</td></tr>
+              <tr><td>2003</td><td>MODIS</td><td>67</td><td>961</td><td>870 to 1,049</td></tr>
+              <tr><td>2004</td><td>MODIS</td><td>100</td><td>1,251</td><td>1,133 to 1,366</td></tr>
+              <tr><td>2005</td><td>MODIS</td><td>151</td><td>1,623</td><td>1,470 to 1,772</td></tr>
+              <tr><td>2006</td><td>MODIS</td><td>217</td><td>2,014</td><td>1,825 to 2,199</td></tr>
+              <tr><td>2007</td><td>MODIS</td><td>181</td><td>1,788</td><td>1,620 to 1,952</td></tr>
+              <tr><td>2008</td><td>MODIS</td><td>163</td><td>1,720</td><td>1,558 to 1,878</td></tr>
+              <tr><td>2009</td><td>MODIS</td><td>181</td><td>1,851</td><td>1,677 to 2,021</td></tr>
+              <tr><td>2010</td><td>MODIS</td><td>188</td><td>1,907</td><td>1,727 to 2,082</td></tr>
+              <tr><td>2011</td><td>MODIS</td><td>162</td><td>1,725</td><td>1,563 to 1,883</td></tr>
+              <tr><td>2012</td><td>VIIRS</td><td>1,609</td><td>1,609</td><td>measured</td></tr>
+              <tr><td>2013</td><td>VIIRS</td><td>2,302</td><td>2,302</td><td>measured</td></tr>
+              <tr><td>2014</td><td>VIIRS</td><td>2,234</td><td>2,234</td><td>measured</td></tr>
+              <tr><td>2015</td><td>VIIRS</td><td>1,713</td><td>1,713</td><td>measured</td></tr>
+              <tr><td>2016</td><td>VIIRS</td><td>2,135</td><td>2,135</td><td>measured</td></tr>
+              <tr><td>2017</td><td>VIIRS</td><td>1,615</td><td>1,615</td><td>measured</td></tr>
+              <tr><td>2018</td><td>VIIRS</td><td>537</td><td>537</td><td>measured</td></tr>
+              <tr><td>2019</td><td>VIIRS</td><td>623</td><td>623</td><td>measured</td></tr>
+              <tr><td>2020</td><td>VIIRS</td><td>893</td><td>893</td><td>measured</td></tr>
+              <tr><td>2021</td><td>VIIRS</td><td>924</td><td>924</td><td>measured</td></tr>
+              <tr><td>2022</td><td>VIIRS</td><td>944</td><td>944</td><td>measured</td></tr>
+              <tr><td>2023</td><td>VIIRS</td><td>1,706</td><td>1,706</td><td>measured</td></tr>
+              <tr><td>2024</td><td>VIIRS</td><td>1,117</td><td>1,117</td><td>measured</td></tr>
+              <tr><td>2025</td><td>VIIRS</td><td>601</td><td>601</td><td>measured</td></tr>
+              <tr><td>2026</td><td>VIIRS</td><td>593</td><td>593</td><td>measured</td></tr>
+            </tbody>
+          </table></div>
+        </details>
+      </div>
+    </section>
+
+    <section class="chapter ch1" id="ch-1" data-abjad="أ" data-name="two records" aria-labelledby="h-1">
+    <i class="spot" aria-hidden="true"></i>
+    <div class="words">
+      <div class="chapter-head">
+        <div class="abjad" aria-hidden="true">أ</div>
+        <p class="t-eyebrow">chapter one</p>
+        <h2 id="h-1">Two satellites, two records</h2>
+      </div>
+      <div class="chapter-text t-reading">
+        <p>NASA’s MODIS has looked for fires since 2000. VIIRS joined in 2012 with sharper eyes: its pixels are 375 metres across, where MODIS sees a kilometre.</p>
+        <p>Over the Nile Delta in autumn, VIIRS on Suomi NPP records 11 to 20 times more fire pixels than MODIS on Aqua in most years, and 42 times in 2018. The gap changes from year to year. Laid end to end, the two records would show a boom in burning in 2012 that never happened.</p>
+      </div>
+    </div>
+    <figure class="sheet card c-modis" id="sheet-modis" data-theme="folio" data-paper="card" data-ink>
+      <i class="cast" aria-hidden="true"></i>
+      <div class="ink">
+        <div class="head-row"><span class="t-label modis">MODIS · 1 km pixels</span><span class="plate-mark jadwal-box">illustration · not data</span></div>
+        <svg class="grid-fig" id="grid-modis" viewBox="0 0 400 400" role="img" aria-label="Illustration: fields with small fires under a coarse 1 km grid. Few cells register fire."></svg>
+        <p class="count"><b class="modis" id="count-modis">0</b> pixels see fire</p>
+      </div>
+      <i class="pin tl" aria-hidden="true"></i><i class="pin tr" aria-hidden="true"></i>
+      <div class="tk" data-anchor="modis1" aria-hidden="true"><div class="token is-modis place"><b>MODIS</b><span class="t-figure">1 km</span></div></div>
+    </figure>
+    <figure class="sheet card c-viirs" id="sheet-viirs" data-theme="folio" data-paper="card" data-torn="t" data-ink>
+      <i class="cast" aria-hidden="true"></i>
+      <div class="ink">
+        <div class="head-row"><span class="t-label viirs">VIIRS · 375 m pixels</span><span class="plate-mark jadwal-box">illustration · not data</span></div>
+        <div style="position: relative">
+          <svg class="grid-fig" id="grid-viirs" viewBox="0 0 400 400" role="img" aria-label="Illustration: the same fields and fires under a fine 375 m grid. Many more cells register fire."></svg>
+          <div class="lens" id="lens" aria-hidden="true" style="left: 46%; top: 8%"><div class="mag"></div></div>
+        </div>
+        <p class="count"><b class="viirs" id="count-viirs">0</b> pixels see fire</p>
+      </div>
+      <i class="pin tc" aria-hidden="true"></i>
+      <div class="tk" data-anchor="viirs1" aria-hidden="true"><div class="token is-fire place"><b>VIIRS</b><span class="t-figure">375 m</span></div></div>
+    </figure>
+    <p class="sheet slip c-note" id="sheet-note" data-theme="folio" data-paper="slip" data-torn="r" data-ink><i class="cast" aria-hidden="true"></i><span class="ink note" style="display: block">The same fires, counted by both. Small fires slip between the coarse pixels; the fine ones catch them. Fields and fires are drawn, not observed.</span></p>
+  </section>
+
+  <section class="chapter ch2" id="ch-2" data-abjad="ب" data-name="one thread" aria-labelledby="h-2">
+    <i class="spot" aria-hidden="true"></i>
+    <div class="sheet slip c-words" id="sheet-words" data-theme="folio" data-paper="slip" data-ink>
+      <i class="cast" aria-hidden="true"></i>
+      <div class="ink">
+        <div class="chapter-head">
+          <div class="abjad" aria-hidden="true">ب</div>
+          <p class="t-eyebrow">chapter two</p>
+          <h2 id="h-2">One thread between them</h2>
+        </div>
+        <div class="chapter-text">
+          <p>We don’t multiply by a fixed number. In the years both satellites flew, we learn how one record maps onto the other, place by place, then test the fit on years it never saw.</p>
+          <p>The older record is then read on the newer scale, with its uncertainty shown, so a fire in 2004 and a fire in 2024 count the same.</p>
+        </div>
+      </div>
+      <i class="pin tc" aria-hidden="true"></i>
+    </div>
+    <div class="sheet map-sheet" id="sheet-map" data-theme="folio" data-paper="map" data-ink>
+      <i class="cast" aria-hidden="true"></i>
+      <div class="map" id="map">
+        <div class="ink art">
+          <svg viewBox="0 0 1000 640" aria-hidden="true" id="map-art">
+            <defs>
+              <pattern id="water-hatch" width="8" height="5" patternUnits="userSpaceOnUse">
+                <line x1="0" y1="2.5" x2="8" y2="2.5" style="stroke: var(--rule); stroke-width: .9"/>
+              </pattern>
+              <pattern id="field-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(28)">
+                <line x1="0" y1="0" x2="0" y2="7" style="stroke: var(--rule); stroke-width: .7"/>
+              </pattern>
+            </defs>
+            <clipPath id="sea-clip"><path d="M0 214 L40 214 C90 214 130 206 160 214 C200 196 250 192 290 180 C312 168 326 160 334 168 C350 190 410 202 470 204 C520 204 580 196 640 178 C668 160 690 150 700 166 C716 186 780 196 846 204 C890 208 940 216 990 206 L1000 206 L1000 0 L0 0 Z"/></clipPath>
+            <g id="sea" clip-path="url(#sea-clip)"></g>
+            <path class="fan" d="M500 590 C470 520 420 470 360 410 C300 350 230 280 150 214 C210 196 260 190 300 178 C360 196 420 204 470 204 C530 200 600 190 660 168 C720 180 780 196 840 206 C780 290 690 380 610 470 C560 520 520 560 500 590 Z"/>
+            <g class="stipple" id="stipple"></g>
+            <path class="coast" d="M40 214 C90 214 130 206 160 214 C200 196 250 192 290 180 C312 168 326 160 334 168 C350 190 410 202 470 204 C520 204 580 196 640 178 C668 160 690 150 700 166 C716 186 780 196 846 204 C890 208 940 216 990 206"/>
+            <path class="coast2" d="M40 222 C90 222 130 214 160 222 C200 205 250 200 290 188 C312 176 326 168 334 176 C350 198 410 210 470 212 C520 212 580 204 640 186 C668 168 690 158 700 174 C716 194 780 204 846 212 C890 216 940 224 990 214"/>
+            <path class="lake" d="M384 216 C420 208 500 210 552 214 C540 230 470 236 400 232 C388 228 382 222 384 216 Z"/>
+            <path class="lake" d="M748 214 C790 210 850 214 880 220 C870 246 812 256 770 246 C752 238 744 226 748 214 Z"/>
+            <path class="lake" d="M196 230 C226 224 252 226 262 234 C250 248 214 252 198 244 Z"/>
+            <path class="river" d="M512 640 C510 610 506 590 500 560 C494 530 480 512 470 500"/>
+            <path class="river" d="M470 500 C440 450 410 400 380 340 C360 300 344 250 334 172"/>
+            <path class="river" d="M470 500 C520 460 570 420 610 360 C650 300 680 240 700 168"/>
+            <path class="river2" d="M476 498 C446 448 416 398 386 338 C366 298 350 248 340 176"/>
+            <path class="river2" d="M476 502 C526 462 576 422 616 362 C656 302 686 242 706 170"/>
+            <path class="river2" d="M430 420 C380 400 330 380 270 380 M560 450 C620 470 700 470 770 452 M520 330 C560 300 600 300 640 296"/>
+            <circle class="city" cx="508" cy="596" r="6"/>
+            <circle class="city" cx="188" cy="218" r="5"/>
+            <text class="lbl" x="522" y="600">Cairo</text>
+            <text class="lbl" x="128" y="246">Alexandria</text>
+            <text class="lbl-sea" x="500" y="96" text-anchor="middle">mediterranean sea</text>
+            <text class="lbl-big" x="520" y="318" text-anchor="middle" transform="rotate(-6 520 318)">nile delta</text>
+            <text class="lbl" x="310" y="300" transform="rotate(-62 310 300)">Rosetta branch</text>
+            <text class="lbl" x="640" y="330" transform="rotate(-58 640 330)">Damietta branch</text>
+            <text class="lbl" x="468" y="254">Lake Burullus</text>
+            <text class="lbl" x="800" y="186">Lake Manzala</text>
+            <g transform="translate(905 90)">
+              <polygon class="rose" points="17,17 -17,17 -17,-17 17,-17"/>
+              <polygon class="rose" points="24,0 0,24 -24,0 0,-24"/>
+              <line x1="0" y1="-36" x2="0" y2="36" style="stroke: var(--brass); stroke-width: 1"/>
+              <line x1="-36" y1="0" x2="36" y2="0" style="stroke: var(--brass); stroke-width: 1"/>
+              <text class="rose-n" x="0" y="-44" text-anchor="middle">N</text>
+            </g>
+          </svg>
+          <div class="cartouche" aria-hidden="true">
+            <span class="jadwal" style="--jadwal-inset: 4px"></span>
+            <div class="t-display-m">The Nile Delta</div>
+            <div class="t-marginal">Illustrative map, not to scale</div>
+          </div>
+        </div>
+        <div class="tk" style="left: 33%; top: 46%" aria-hidden="true"><div class="token place" style="--i: 0"><span class="num">1</span><span class="t-label">Beheira</span></div></div>
+        <div class="tk" style="left: 46%; top: 30%" aria-hidden="true"><div class="token place" style="--i: 1"><span class="num">2</span><span class="t-label">Kafr El Sheikh</span></div></div>
+        <div class="tk" style="left: 51%; top: 61%" aria-hidden="true"><div class="token place" style="--i: 2"><span class="num">3</span><span class="t-label">Gharbia</span></div></div>
+        <div class="tk" style="left: 76%; top: 42%" aria-hidden="true"><div class="token place" style="--i: 3"><span class="num">4</span><span class="t-label">Dakahlia</span></div></div>
+        <div class="tk" style="left: 66%; top: 62%" aria-hidden="true"><div class="token place" style="--i: 4"><span class="num">5</span><span class="t-label">Sharqia</span></div></div>
+        <div class="tk" data-anchor="map-m" style="left: 82%; top: 66%" aria-hidden="true"><div class="token is-modis sensor place" style="--i: 5"><span class="num">M</span><b>MODIS</b><span class="t-figure">2000–</span></div></div>
+        <div class="tk" data-anchor="map-v" style="left: 93%; top: 82%" aria-hidden="true"><div class="token is-fire sensor place" style="--i: 6"><span class="num">V</span><b>VIIRS</b><span class="t-figure">2012–</span></div></div>
+        <div class="tk" data-anchor="map-k" style="left: 76%; top: 89%" aria-hidden="true"><div class="token knot place" style="--i: 7"><span class="num">Z</span><b>One record</b></div></div>
+        <div class="dividers" id="dividers" aria-hidden="true"></div>
+      </div>
+      <div class="ink">
+        <p class="illus-tag"><span class="plate-mark jadwal-box">illustration · not data</span></p><p class="note map-note">Thread ties the two records where both flew, 2012 to 2020; the fit is then tested on years held back.</p>
+        <ol class="map-key" aria-label="Places on the map">
+          <li><b>1</b>Beheira</li><li><b>2</b>Kafr El Sheikh</li><li><b>3</b>Gharbia</li><li><b>4</b>Dakahlia</li><li><b>5</b>Sharqia</li><li><b>M</b>MODIS, 2000 on</li><li><b>V</b>VIIRS, 2012 on</li><li><b>Z</b>One record</li>
+        </ol>
+      </div>
+      <div class="folds" aria-hidden="true"></div>
+      <i class="pin tl" aria-hidden="true"></i><i class="pin tr" aria-hidden="true"></i><i class="pin bl" aria-hidden="true"></i><i class="pin br" aria-hidden="true"></i>
+    </div>
+  </section>
+
+  <section class="chapter ch3" id="ch-3" data-abjad="ج" data-name="the table" aria-labelledby="h-3">
+    <i class="spot" aria-hidden="true"></i>
+    <div class="words">
+      <div class="chapter-head">
+        <div class="abjad" aria-hidden="true">ج</div>
+        <p class="t-eyebrow">chapter three</p>
+        <h2 id="h-3">The table</h2>
+      </div>
+      <div class="chapter-text t-reading">
+        <p>Ibn Yunus kept tables of where the Sun and Moon would stand on any day. Zij keeps one of fire.</p>
+        <p>Years run down, months run across, and each cell shows how much burned: when the season comes, which years broke the pattern, and how this one compares.</p>
+      </div>
+    </div>
+    <div class="sheet table-sheet" id="sheet-table" data-theme="folio" data-paper="sheet" data-ink>
+      <i class="cast" aria-hidden="true"></i>
+      <div class="ink">
+        <div class="table-top">
+          <div>
+            <p class="t-eyebrow" style="margin:0">hotspot-days (VIIRS-equivalent) per month</p>
+            <h3>The Nile Delta, 2000 to 2026</h3>
+          </div>
+          <span class="plate-mark jadwal-box">from the record</span>
+        </div>
+        <div class="table-wrap">
+          <div class="cal" id="cal" role="img" aria-label="Calendar of the Nile Delta: years 2000 to 2026 down, months across, coloured from fewer to more fire. Autumn is the burning season. The autumn of 2018 is boxed in red."></div>
+          <div class="margin-note" id="margin-note">
+            <p class="note is-fire">Autumn 2018: 67% below the median season. Boxed and noted in the margin the way a scribe would.</p>
+          </div>
+        </div>
+        <div class="legend">
+          <span class="ramp">fewer <span class="sw" style="background: var(--heat-1)"></span><span class="sw" style="background: var(--heat-2)"></span><span class="sw" style="background: var(--heat-3)"></span><span class="sw" style="background: var(--heat-4)"></span><span class="sw" style="background: var(--heat-5)"></span> more fire</span>
+          <span class="ramp"><span class="sw-zero"></span> none</span>
+          <span class="ramp"><span class="sw-nd"></span> no data</span>
+        </div>
+        <span class="jadwal" aria-hidden="true"></span>
+      </div>
+      <i class="pin tl" aria-hidden="true"></i><i class="pin bl" aria-hidden="true"></i>
+      <i class="anchor a-in" data-anchor="table-in" aria-hidden="true"></i>
+      <i class="anchor a-out" data-anchor="table-out" aria-hidden="true"></i>
+    </div>
+    <div class="rule-stick" id="rule-stick" aria-hidden="true"></div>
+  </section>
+
+  <section class="chapter ch4" id="ch-4" data-abjad="د" data-name="a thousand years" aria-labelledby="h-4">
+    <i class="spot" aria-hidden="true"></i>
+    <div class="words">
+      <div class="chapter-head">
+        <div class="abjad" aria-hidden="true">د</div>
+        <p class="t-eyebrow">chapter four</p>
+        <h2 id="h-4">A thousand years of tables</h2>
+      </div>
+      <div class="chapter-text t-reading">
+        <p>Ibn Yunus began observing in Cairo in 977 and compiled al-Zij al-Hakimi al-Kabir for the caliph al-Hakim.</p>
+        <p>Centuries later, the astronomer Simon Newcomb still used his eclipse records to refine the Moon’s orbit.</p>
+      </div>
+    </div>
+    <ol class="lineage" id="lineage" aria-label="A thousand years of tables">
+      <li class="stop"><div class="tk" data-anchor="l0" aria-hidden="true"><div class="token place"><b>Ibn Yunus</b></div></div><div class="desc"><span class="yr">977</span><p>Ibn Yunus begins observing in Cairo</p></div></li>
+      <li class="stop"><div class="tk" data-anchor="l1" aria-hidden="true"><div class="token place"><b>Zij al-Hakimi</b></div></div><div class="desc"><span class="yr">c. 1000</span><p>His tables, made for the caliph al-Hakim</p></div></li>
+      <li class="stop"><div class="tk" data-anchor="l2" aria-hidden="true"><div class="token place"><b>Newcomb</b></div></div><div class="desc"><span class="yr">1870s</span><p>Simon Newcomb reads his eclipses to refine the Moon’s orbit</p></div></li>
+      <li class="stop"><div class="tk" data-anchor="l3" aria-hidden="true"><div class="token is-modis place"><b>MODIS</b></div></div><div class="desc"><span class="yr">2000</span><p>The fire record begins</p></div></li>
+      <li class="stop"><div class="tk" data-anchor="l4" aria-hidden="true"><div class="token is-fire place"><b>VIIRS</b></div></div><div class="desc"><span class="yr">2012</span><p>Sharper eyes, and a record that disagrees</p></div></li>
+      <li class="stop"><div class="tk" data-anchor="l5" aria-hidden="true"><div class="token place"><img class="seal" src="/landing/logo/zij-seal-night.svg" alt="" width="287" height="246"></div></div><div class="desc"><span class="yr">2026</span><p>One record, read on one scale</p></div></li>
+    </ol>
+  </section>
+
+  <svg class="desk-threads" id="desk-threads" aria-hidden="true"></svg>
+  <div class="desk-pins" id="desk-pins" aria-hidden="true"></div>
+  <div class="lamp-over" id="lamp-over" aria-hidden="true"></div>
+  <div class="lantern lt" id="lantern" aria-hidden="true"></div>
+</main>
+
+<!-- ===== Closing: the lamp goes out, the sky remains ===== -->
+<section class="closing" id="closing" aria-labelledby="h-close">
+  <canvas id="close-canvas" aria-hidden="true"></canvas>
+  <div class="twinkles" id="close-twinkles" aria-hidden="true"></div>
+  <div class="meteors" aria-hidden="true"><i class="meteor" style="--x: 72%; --y: 70%; --w: 160px; --a: 150deg; --len: 280px; --d: 17s; --o: -6s"></i></div>
+  <div class="last">
+    <p class="t-eyebrow">afterword</p>
+    <h2 id="h-close">An old record, read correctly, still counts.</h2>
+    <p class="sub t-reading">Zij opens at the Cairo event, 13 and 14 November 2026.</p>
+    <div class="numbers">
+        <div><p class="fig">77% <span aria-hidden="true">→</span><span class="sr-only">to</span> 14%</p><p>Typical error of a season total across 8 test areas: raw MODIS read as VIIRS, then after Zij. Each year was predicted without being used to fit.</p></div>
+        <div><p class="fig">7%</p><p>The same error in the Nile Delta, where the autumn rice-straw burning is the largest signal.</p></div>
+        <div><p class="fig">26 years</p><p>One record per area, from the first MODIS season to yesterday, by week, month and season.</p></div>
+      </div>
+      <p class="numbers-note">The numbers are the pipeline’s own, from its validation. <a href="/how-it-works#models">How they were measured</a>.</p>
+      <p class="sub t-reading whom">For anyone who has to say whether this season is unusual: environment and air-quality teams, agricultural advisers, fire agencies, journalists, students. Zij answers for 10 areas in Egypt, Portugal and Argentina, and for any area you draw inside them.</p>
+      <div class="acts">
+      <a class="stamp" href="/explore">Open the map</a>
+        <a class="catchword" href="/explore?area=nile-delta&amp;tour=1">Take the 60-second tour</a>
+      <a class="catchword" href="/how-it-works">How it works</a>
+        <a class="catchword" href="/downloads">Download the numbers</a>
+    </div>
+  </div>
+  <footer class="colophon">
+    <img src="/landing/logo/zij-seal-night.svg" alt="Zij · زيج" width="287" height="246">
+    <div>
+      <p>Made in Cairo for the 2026 NASA International Space Apps Challenge.</p>
+      <p>Fire records: NASA FIRMS (MODIS Collection 6.1, VIIRS 375 m). Imagery: NASA GIBS. Map: made with Natural Earth. Set in Cormorant Garamond, Amiri and Reem Kufi. <a href="/how-it-works#sources">All sources</a>.</p>
+      <p>Zij is not affiliated with or endorsed by NASA.</p>
+      <p>The season chart, the calendar and every number on this page come from the record. The two pixel grids and the map of the Delta are drawings, each marked “illustration”. The sky and the desk are the page’s setting.</p>
+    </div>
+  </footer>
+</section>
+
+<script>window.ZIJ_TABLE = {"rows":[{"year":2000,"cells":["nd","nd","nd","nd","nd","nd","nd","nd","nd","h1","h4","h1"]},{"year":2001,"cells":["h1","h2","h1","h2","h4","h1","h1","h3","h5","h5","h4","h1"]},{"year":2002,"cells":["h1","h1","h1","h2","h3","h4","h3","h4","h5","h5","h4","h1"]},{"year":2003,"cells":["h1","h1","h1","h1","h3","h3","h2","h2","h5","h5","h3","h2"]},{"year":2004,"cells":["h1","h1","h2","h2","h2","h4","h2","h4","h5","h5","h4","h2"]},{"year":2005,"cells":["h1","h2","h2","h1","h4","h3","h1","h4","h5","h5","h4","h2"]},{"year":2006,"cells":["h1","h1","h1","h2","h4","h3","h3","h4","h5","h5","h4","h1"]},{"year":2007,"cells":["h1","h1","h2","h2","h4","h4","h3","h4","h5","h5","h4","h1"]},{"year":2008,"cells":["h3","h2","h3","h2","h4","h4","h1","h4","h5","h5","h5","h3"]},{"year":2009,"cells":["h3","h3","h2","h2","h4","h4","h2","h5","h5","h5","h4","h3"]},{"year":2010,"cells":["h3","h2","h1","h3","h4","h3","h3","h5","h5","h5","h4","h1"]},{"year":2011,"cells":["h3","h3","h2","h2","h3","h3","h1","h4","h5","h5","h4","h2"]},{"year":2012,"cells":["h1","h1","h3","h2","h4","h4","h1","h4","h5","h5","h4","h2"]},{"year":2013,"cells":["h1","h2","h2","h1","h4","h3","h1","h4","h5","h5","h3","h1"]},{"year":2014,"cells":["h1","h1","h2","h2","h4","h3","h3","h5","h5","h5","h4","h1"]},{"year":2015,"cells":["h3","h2","h2","h3","h4","h3","h3","h5","h5","h5","h4","h2"]},{"year":2016,"cells":["h1","h3","h2","h3","h5","h3","h3","h5","h5","h5","h3","h2"]},{"year":2017,"cells":["h2","h3","h3","h3","h5","h4","h3","h5","h5","h5","h4","h1"]},{"year":2018,"cells":["h2","h1","h3","h3","h4","h2","h2","h4","h5","h4","h2","h1"]},{"year":2019,"cells":["h1","h1","h3","h2","h4","h3","h3","h3","h5","h5","h4","h2"]},{"year":2020,"cells":["h1","h2","h1","h3","h5","h3","h3","h3","h5","h5","h3","h2"]},{"year":2021,"cells":["h2","h2","h2","h3","h4","h4","h2","h4","h5","h5","h4","h2"]},{"year":2022,"cells":["h2","h2","h2","h3","h4","h4","h2","h3","h5","h5","h4","h1"]},{"year":2023,"cells":["h1","h1","h3","h3","h5","h3","h1","h4","h5","h5","h4","h1"]},{"year":2024,"cells":["h1","h1","h2","h3","h5","h2","h2","h4","h5","h5","h4","h1"]},{"year":2025,"cells":["h1","h1","h2","h2","h4","h3","h2","h4","h5","h5","h3","h1"]},{"year":2026,"cells":["h2","h2","h1","h3","h4","h4","h4","h4","h5","h5","h1","nd"]}],"box":{"year":2018,"from":7,"months":3}};</script>
+<script src="/landing/reference/landing.js"></script>
+</body>
+</html>

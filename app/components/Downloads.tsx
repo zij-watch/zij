@@ -1,5 +1,6 @@
 "use client";
 
+import { RangeField, Select } from "./ui";
 import { useEffect, useState } from "react";
 import { loadArea, loadIndex, type Area, type Index } from "@/lib/data";
 import { hotspotsCsvFor } from "@/lib/dayData";
@@ -7,7 +8,6 @@ import { loadingWords, useLoading } from "@/lib/download";
 import { COVERED, resolveDrawn } from "@/lib/drawnArea";
 import type { Shape } from "@/lib/fit/cells";
 import { monthSpan } from "@/lib/format";
-import type { Theme } from "@/lib/tokens";
 import { COLOURS } from "@/lib/tokens";
 import { useAppState } from "@/lib/url";
 import Calendar from "./Calendar";
@@ -129,7 +129,6 @@ export default function Downloads() {
   const [state, update] = useAppState();
   const [index, setIndex] = useState<Index | null>(null);
   const [area, setArea] = useState<Area | null>(null);
-  const [theme, setTheme] = useState<Theme>("folio");
 
   useEffect(() => {
     loadIndex().then(setIndex).catch(() => setIndex(null));
@@ -195,21 +194,20 @@ export default function Downloads() {
   const base = area ? `zij_${slugOf(area)}_${from}_${to}` : "zij";
 
   return (
-    <main className="page" data-theme="folio">
+    <main className="page">
       <div className="page-inner">
         <p className="eyebrow">Downloads</p>
         <h1>Take the numbers with you</h1>
         <p>The harmonized series as CSV, and the calendar as a picture. Files cover the area and dates chosen here.</p>
         <div className="actions">
-          <label>
-            Area{" "}
-            <select value={shapeKey ? "drawn" : areaId ?? ""} onChange={(e) => e.target.value !== "drawn" && update({ area: e.target.value, shape: null, month: null })}>
-              {shapeKey && <option value="drawn">Your drawn area</option>}
-              {index?.areas.map((a) => <option key={a.id} value={a.id}>{a.name}, {a.country}</option>)}
-            </select>
-          </label>
-          <label>From <input type="month" value={from} min={span?.[0]} max={to} onChange={(e) => e.target.value && update({ from: e.target.value })} /></label>
-          <label>To <input type="month" value={to} min={from} max={span?.[1]} onChange={(e) => e.target.value && update({ to: e.target.value })} /></label>
+          <div className="field"><span>Area</span>
+            <Select label="Area" placeholder="Choose an area" value={shapeKey ? "drawn" : areaId ?? null}
+              options={[...(shapeKey ? [{ value: "drawn", label: "Your drawn area" }] : []), ...(index?.areas ?? []).map((a) => ({ value: a.id, label: `${a.name}, ${a.country}` }))]}
+              onChange={(next) => next !== "drawn" && update({ area: next, shape: null, month: null })} />
+          </div>
+          <div className="field"><span>From and to</span>
+            <RangeField label="From and to" from={from} to={to} min={span ? `${span[0]}-01` : "2000-11-01"} max={index?.last_full_day ?? `${to}-28`} onChange={(a, b) => update({ from: a, to: b })} />
+          </div>
         </div>
 
         {problem && <p className="placeholder">{problem}</p>}
@@ -247,13 +245,11 @@ export default function Downloads() {
 
             <h2>Calendar (PNG and SVG)</h2>
             <div className="actions">
-              <button type="button" className={theme === "folio" ? "is-active" : ""} aria-pressed={theme === "folio"} onClick={() => setTheme("folio")}>Light, for print</button>
-              <button type="button" className={theme === "night" ? "is-active" : ""} aria-pressed={theme === "night"} onClick={() => setTheme("night")}>Dark, for screens</button>
-              <button type="button" onClick={() => savePng(`${base}_calendar.png`, COLOURS[theme].ground)}>Calendar PNG</button>
+              <button type="button" onClick={() => savePng(`${base}_calendar.png`, COLOURS.ground)}>Calendar PNG</button>
               <button type="button" onClick={() => { const text = svgText(); if (text) save(`${base}_calendar.svg`, new Blob([text], { type: "image/svg+xml" })); }}>Calendar SVG</button>
             </div>
             <div className="preview">
-              <Calendar id={SVG_ID} area={area} from={from} to={to} theme={theme} title />
+              <Calendar id={SVG_ID} area={area} from={from} to={to} title />
             </div>
           </>
         )}

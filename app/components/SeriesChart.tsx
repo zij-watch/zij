@@ -9,16 +9,16 @@ import { CanvasRenderer } from "echarts/renderers";
 import { useEffect, useRef } from "react";
 import type { Area } from "@/lib/data";
 import { num } from "@/lib/format";
-import { COLOURS, FONT_TEXT, type Theme } from "@/lib/tokens";
+import { COLOURS, FONT_TEXT} from "@/lib/tokens";
 
 echarts.use([LineChart, ScatterChart, CustomChart, GridComponent, TooltipComponent, MarkLineComponent, CanvasRenderer]);
 
-export default function SeriesChart({ area, theme, fromYear, toYear, normal }: { area: Area; theme: Theme; fromYear: number; toYear: number; normal: number }) {
+export default function SeriesChart({ area, fromYear, toYear, normal }: { area: Area; fromYear: number; toYear: number; normal: number }) {
   const element = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!element.current) return;
-    const c = COLOURS[theme];
+    const c = COLOURS;
     const s = area.seasons;
     const rows = s.year.map((year, i) => i).filter((i) => s.year[i] >= fromYear && s.year[i] <= toYear);
     const years = rows.map((i) => String(s.year[i]));
@@ -86,7 +86,7 @@ export default function SeriesChart({ area, theme, fromYear, toYear, normal }: {
       window.removeEventListener("resize", resize);
       chart.dispose();
     };
-  }, [area, theme, fromYear, toYear, normal]);
+  }, [area, fromYear, toYear, normal]);
 
   return <div ref={element} className="chart" role="img" aria-label={`Season totals per year for ${area.name}, with the band on converted years`} />;
 }

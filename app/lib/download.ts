@@ -22,6 +22,11 @@ function set(next: Loading | null) {
   listeners.forEach((listener) => listener());
 }
 
+/** For loaders that fetch in their own way (the map's detail cells): say what is in progress, or null when done. */
+export function reportLoading(next: Loading | null) {
+  set(next);
+}
+
 /** The download in progress, if any, for showing to the user. */
 export function useLoading(): Loading | null {
   return useSyncExternalStore(

@@ -7,19 +7,30 @@ import "@fontsource/amiri/400.css";
 import "@fontsource/amiri/400-italic.css";
 import "@fontsource/amiri/700.css";
 import "./globals.css";
+import "./ui.css";
 import { tokensCss } from "@/lib/tokens";
 
 export const metadata: Metadata = {
   title: "Zij: 26 years of fire on one scale",
   description: "Satellite fire detections from MODIS and VIIRS, 2000 to today, harmonized into one record per area.",
+  // The Seal, the same mark as the logo: drawn by scripts/icons.mjs.
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+  },
+  manifest: "/manifest.webmanifest",
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#f6edd8" };
 
 // The bare frame: fonts, tokens and the theme. The top bar and credits are in app/(site)/layout.tsx.
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" data-theme="night">
+    <html lang="en">
       <head>
         <style dangerouslySetInnerHTML={{ __html: tokensCss() }} />
       </head>

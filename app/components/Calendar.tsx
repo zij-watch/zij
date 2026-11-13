@@ -8,7 +8,7 @@ import type { Area } from "@/lib/data";
 import { MONTHS, MONTHS_SHORT, num } from "@/lib/format";
 import { rawByMonth, strongAnomalies } from "@/lib/derive";
 import { heatBreaks, heatClass } from "@/lib/heat";
-import { COLOURS, FONT_DISPLAY, FONT_TEXT, heatRamp, type Theme } from "@/lib/tokens";
+import { COLOURS, FONT_DISPLAY, FONT_TEXT, heatRamp} from "@/lib/tokens";
 
 const CELL_W = 40;
 const CELL_H = 22;
@@ -17,19 +17,19 @@ const TOP = 30;
 const GAP = 2;
 
 export interface CalendarProps {
+  labelSize?: number; // the month and year labels; bigger in the narrow panel, where the drawing is scaled down
   area: Area;
   from: string; // YYYY-MM
   to: string;
-  theme: Theme;
   selected?: string | null;
   onSelect?: (ym: string) => void;
   title?: boolean;
   id?: string;
 }
 
-export default function Calendar({ area, from, to, theme, selected, onSelect, title, id }: CalendarProps) {
-  const c = COLOURS[theme];
-  const ramp = heatRamp(theme);
+export default function Calendar({ area, from, to, labelSize = 13, selected, onSelect, title, id }: CalendarProps) {
+  const c = COLOURS;
+  const ramp = heatRamp();
   const m = area.months;
   const breaks = heatBreaks(m.value);
   const firstYear = Number(from.slice(0, 4));
@@ -45,7 +45,7 @@ export default function Calendar({ area, from, to, theme, selected, onSelect, ti
   const legendY = titleH + TOP + gridH + 18;
   const width = LEFT + 12 * (CELL_W + GAP) + 8;
   const height = legendY + 78;
-  const label = { fontFamily: FONT_TEXT, fontSize: 13, fill: c["ink-muted"] };
+  const label = { fontFamily: FONT_TEXT, fontSize: labelSize, fill: c["ink-muted"] };
 
   return (
     <svg id={id} xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${width} ${height}`} width="100%" role="img"
