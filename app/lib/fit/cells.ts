@@ -113,7 +113,7 @@ export function boundsOf(shape: Shape): Box {
 }
 
 /** Even-odd rule over every ring, so holes are left out. */
-function inPolygon(polygon: Polygon, lon: number, lat: number): boolean {
+export function inPolygon(polygon: Polygon, lon: number, lat: number): boolean {
   let inside = false;
   for (const ring of polygon.coordinates) {
     for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
@@ -125,7 +125,7 @@ function inPolygon(polygon: Polygon, lon: number, lat: number): boolean {
 }
 
 /** Is the centre of grid cell (gx, gy) in the shape? Box edges are compared in hundredths of a degree, as exact numbers. */
-function centreIn(shape: Shape, bounds: Box, gx: number, gy: number): boolean {
+export function centreIn(shape: Shape, bounds: Box, gx: number, gy: number): boolean {
   const lon = gx * 10 + 5, lat = gy * 10 + 5;
   if (!(lon > bounds[0] * 100 && lon < bounds[2] * 100 && lat > bounds[1] * 100 && lat < bounds[3] * 100)) return false;
   return isBox(shape) || inPolygon(shape, lon / 100, lat / 100);
