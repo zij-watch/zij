@@ -7,6 +7,9 @@ import type { Area } from "@/lib/data";
 import type { DayResult } from "@/lib/dayData";
 import { MONTHS, againstNormal, num } from "@/lib/format";
 
+// Every satellite of a sensor is listed on every day: one that was not flying says so.
+const SATELLITES = { MODIS: ["Terra", "Aqua"], VIIRS: ["Suomi NPP", "NOAA-20", "NOAA-21"] } as const;
+
 function dayWords(date: string): string {
   const [y, m, d] = date.split("-").map(Number);
   return `${d} ${MONTHS[m - 1]} ${y}`;
@@ -61,7 +64,7 @@ export default function DayPanel({ area, date, result, loading, onClose }: { are
                     <td><i className={s.name === "VIIRS" ? "mark-viirs" : "mark-modis"} aria-hidden="true" /> {s.name}</td>
                     <td><strong>{count(s.hotspots)}</strong></td>
                     <td>{s.hotspots === null ? "–" : `${num(s.day)} / ${num(s.night)}`}</td>
-                    <td>{Object.entries(s.satellites).map(([name, n]) => `${name}: ${count(n)}`).join("; ")}</td>
+                    <td>{SATELLITES[s.name].map((name) => `${name}: ${count(s.satellites[name] ?? null)}`).join("; ")}</td>
                   </tr>
                 ))}
               </tbody>

@@ -200,3 +200,5 @@ p.warning { margin-bottom: 10px; }
 
 table.wrap td, table.wrap th { white-space: normal; }
 table.wrap td:last-child { white-space: nowrap; }
+
+.day td:last-child { white-space: normal; }
