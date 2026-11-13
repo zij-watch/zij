@@ -1,0 +1,421 @@
+/* Zij reference materials.
+   Shared styling for the reference pages in docs/design/reference. It shows how things should look;
+   it is not a component library, and nothing in app/ imports it. Link ../tokens.css before this file.
+   Fonts come from Google Fonts (each page links them); offline, everything falls back to a system serif. */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  background: var(--ground);
+  color: var(--ink);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font: var(--type-reading);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-kerning: normal;
+}
+
+img, svg { display: block; max-width: 100%; }
+p { margin: 0 0 1em; }
+
+::selection { background: color-mix(in srgb, var(--flame) 45%, transparent); color: inherit; }
+
+/* ---- Type ------------------------------------------------------------- */
+
+.t-display-xl { font: var(--type-display-xl); letter-spacing: var(--tracking-display-xl); }
+.t-display-l  { font: var(--type-display-l); }
+.t-display-m  { font: var(--type-display-m); }
+.t-eyebrow {
+  font: var(--type-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  font-feature-settings: var(--features-eyebrow);
+  color: var(--brass);
+}
+.t-reading  { font: var(--type-reading); }
+.t-ui       { font: var(--type-ui); }
+.t-marginal { font: var(--type-marginal); color: var(--ink-muted); }
+.t-marginal.is-fire { color: var(--rubric); }
+.t-label {
+  font: var(--type-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+.t-label:lang(ar) { letter-spacing: 0; text-transform: none; }
+.t-figure { font: var(--type-figure); font-feature-settings: var(--features-figure); font-variant-numeric: tabular-nums; }
+.t-muted { color: var(--ink-muted); }
+.t-brass { color: var(--brass); }
+.t-rubric { color: var(--rubric); }
+
+/* Arabic in display: Reem Kufi. The display stack already falls through to it; this pins it. */
+.kufi { font-family: "Reem Kufi", var(--font-display); font-weight: 700; }
+/* Abjad chapter letters (أ ب ج د): Amiri, the Naskh hand the tables were written in. */
+.abjad { font-family: var(--font-text); font-weight: 700; font-style: normal; }
+
+/* ---- Paper ------------------------------------------------------------ */
+/* A sheet is a Folio island: put data-theme="folio" on it in Night. */
+
+.sheet {
+  position: relative;
+  isolation: isolate;
+  background: var(--ground);
+  color: var(--ink);
+  --cast: var(--shadow-sheet);
+  box-shadow:
+    var(--cast),
+    inset 0 0 70px color-mix(in srgb, var(--shadow) 10%, transparent);
+}
+.sheet::before {
+  /* grain */
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: url("../assets/patterns/paper-grain.svg") 0 0 / 320px;
+  opacity: var(--grain);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+[data-theme="night"] .sheet::before, .sheet[data-theme="night"]::before { mix-blend-mode: soft-light; opacity: 0.5; }
+
+.slip {
+  position: relative;
+  background: var(--ground-raised);
+  color: var(--ink);
+  box-shadow: var(--shadow-card);
+}
+
+/* The jadwal: a double rule, brass outside, rule inside, space-1 apart. */
+.jadwal {
+  position: absolute;
+  inset: var(--jadwal-inset, 14px);
+  border: var(--stroke-hair) solid var(--brass);
+  pointer-events: none;
+}
+.jadwal::before {
+  content: "";
+  position: absolute;
+  inset: var(--space-1);
+  border: var(--stroke-hair) solid var(--rule);
+}
+.jadwal-box {
+  border: var(--stroke-hair) solid var(--rule);
+  outline: var(--stroke-hair) solid var(--brass);
+  outline-offset: var(--space-1);
+}
+
+.hatch { background: url("../assets/patterns/hatch-night.svg"); }
+[data-theme="folio"] .hatch, .hatch[data-theme="folio"] { background: url("../assets/patterns/hatch-folio.svg"); }
+
+.khatam {
+  background: url("../assets/patterns/khatam-night.svg") 0 0 / 96px;
+  opacity: var(--pattern-max);
+}
+[data-theme="folio"] .khatam { background-image: url("../assets/patterns/khatam-folio.svg"); }
+
+/* ---- Light ------------------------------------------------------------ */
+
+.room { position: relative; background: var(--ground); overflow: hidden; isolation: isolate; }
+.room > .pool, .room > .dark { position: absolute; inset: 0; pointer-events: none; }
+.room > .pool {
+  z-index: 0;
+  background: radial-gradient(circle at var(--lx, var(--lamp-x)) var(--ly, var(--lamp-y)),
+    color-mix(in srgb, var(--flame) calc(var(--glow) * 100%), transparent) 0,
+    color-mix(in srgb, var(--flame) calc(var(--glow) * 30%), transparent) 28%,
+    transparent 62%);
+  mix-blend-mode: screen;
+}
+.room > .dark {
+  z-index: 0;
+  background: radial-gradient(circle at var(--lx, var(--lamp-x)) var(--ly, var(--lamp-y)),
+    transparent 0, transparent 30%,
+    color-mix(in srgb, var(--shadow) calc(var(--vignette) * 100%), transparent) 100%);
+}
+.room > :where(:not(.pool):not(.dark)) { position: relative; z-index: 1; }
+
+/* ---- Instruments ------------------------------------------------------ */
+/* Every control is an object from the desk. Each must still be at least 44px to press,
+   reachable by keyboard, and show the brass double rule when focused. */
+
+.instrument:focus-visible,
+.stamp:focus-visible,
+.catchword:focus-visible,
+.tab:focus-visible,
+.lever:focus-within,
+.ruled:focus-within,
+.alidade:focus-visible,
+.token:focus-visible {
+  outline: 5px double var(--brass);
+  outline-offset: 3px;
+}
+
+/* Primary action: a rubric-inked stamped label. Presses into the paper. */
+.stamp {
+  -webkit-appearance: none;
+  appearance: none;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 48px;
+  padding: 10px 24px 11px;
+  border: 0;
+  border-radius: var(--radius-0);
+  background: var(--rubric);
+  color: var(--on-rubric);
+  font: var(--type-ui);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow:
+    inset 0 0 0 3px var(--rubric),
+    inset 0 0 0 4px color-mix(in srgb, var(--on-rubric) 45%, transparent),
+    var(--shadow-token);
+  transition:
+    transform var(--dur-touch) var(--ease-ink),
+    box-shadow var(--dur-touch) var(--ease-ink),
+    filter var(--dur-touch) var(--ease-ink);
+}
+.stamp::after {
+  /* uneven ink */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("../assets/patterns/paper-grain.svg") 37px 11px / 320px;
+  mix-blend-mode: multiply;
+  opacity: 0.35;
+  pointer-events: none;
+}
+.stamp:hover { filter: brightness(1.07) saturate(1.05); box-shadow: inset 0 0 0 3px var(--rubric), inset 0 0 0 4px color-mix(in srgb, var(--on-rubric) 45%, transparent), var(--shadow-token), 0 0 26px -4px color-mix(in srgb, var(--flame) 40%, transparent); }
+.stamp:active, .stamp.is-pressed { transform: translateY(1px); box-shadow: inset 0 0 0 3px var(--rubric), inset 0 0 0 4px color-mix(in srgb, var(--on-rubric) 45%, transparent), var(--shadow-pressed); }
+.stamp[aria-disabled="true"], .stamp:disabled { background: transparent; color: var(--ink-muted); box-shadow: inset 0 0 0 1px var(--rule); cursor: default; filter: none; }
+.stamp[aria-disabled="true"]::after, .stamp:disabled::after { display: none; }
+
+/* Secondary action: a catchword. Ink, underlined with a brass rule. */
+.catchword {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: var(--type-ui);
+  text-decoration: underline;
+  text-decoration-color: var(--brass);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 6px;
+  cursor: pointer;
+  transition: text-decoration-color var(--dur-touch) var(--ease-ink), color var(--dur-touch) var(--ease-ink);
+}
+.catchword:hover { text-decoration-style: double; text-decoration-thickness: 3px; }
+
+/* Text input: a ruled line on the sheet, its label in small caps above. */
+.ruled { display: grid; gap: var(--space-2); }
+.ruled > span { font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); font-feature-settings: var(--features-eyebrow); color: var(--brass); }
+.ruled input {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 44px;
+  width: 100%;
+  border: 0;
+  border-bottom: var(--stroke-hair) solid var(--brass);
+  border-radius: var(--radius-0);
+  background: transparent;
+  color: var(--ink);
+  font: var(--type-ui);
+  font-size: 19px;
+  padding: 6px 0 4px;
+  caret-color: var(--brass);
+}
+.ruled input::placeholder { color: var(--ink-muted); font-style: italic; opacity: 1; }
+.ruled input:focus { outline: none; border-bottom-style: double; border-bottom-width: 4px; padding-bottom: 1px; }
+
+/* Choice: paper bookmark tabs at a sheet's top edge. */
+.tabs { display: flex; gap: 2px; align-items: flex-end; }
+.tab {
+  -webkit-appearance: none;
+  appearance: none;
+  position: relative;
+  min-height: 44px;
+  padding: 8px 18px 6px;
+  border: 0;
+  border-radius: var(--radius-0);
+  background: color-mix(in srgb, var(--ground) 82%, var(--shadow));
+  color: var(--ink-muted);
+  font: var(--type-ui);
+  cursor: pointer;
+  box-shadow: inset 0 -6px 8px -6px color-mix(in srgb, var(--shadow) 35%, transparent);
+  transition: background var(--dur-touch) var(--ease-ink), color var(--dur-touch) var(--ease-ink), transform var(--dur-touch) var(--ease-ink);
+}
+.tab:hover { color: var(--ink); transform: translateY(-2px); }
+.tab[aria-selected="true"] { background: var(--ground); color: var(--ink); box-shadow: 2px -2px 6px -2px color-mix(in srgb, var(--shadow) 30%, transparent); transform: translateY(-4px); }
+.tab[aria-selected="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 4px; background: var(--ground); }
+
+/* Toggle: a two-position brass lever. Built on a real checkbox. */
+.lever { display: inline-flex; align-items: center; gap: var(--space-3); min-height: 44px; cursor: pointer; font: var(--type-ui); }
+.lever input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.lever .track {
+  position: relative;
+  width: 64px;
+  height: 22px;
+  border-top: var(--stroke-hair) solid var(--brass);
+  border-bottom: var(--stroke-hair) solid var(--rule);
+}
+.lever .track::before, .lever .track::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 1px;
+  height: 14px;
+  translate: 0 -50%;
+  background: var(--brass);
+}
+.lever .track::before { left: 0; }
+.lever .track::after { right: 0; }
+.lever .knob {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 22px;
+  height: 22px;
+  translate: -11px -50%;
+  border-radius: var(--radius-full);
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--flame) 55%, var(--brass)) 0, var(--brass) 45%, color-mix(in srgb, var(--brass) 70%, var(--shadow)) 100%);
+  box-shadow: var(--shadow-token);
+  transition: left var(--dur-sheet) var(--ease-paper);
+}
+.lever input:checked + .track .knob { left: 100%; }
+.lever .off, .lever .on { color: var(--ink-muted); transition: color var(--dur-touch); }
+.lever input:not(:checked) ~ .off, .lever input:checked ~ .on { color: var(--ink); }
+
+/* Range: a brass rule with an alidade marker. */
+.alidade {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 44px;
+  background: transparent;
+  cursor: pointer;
+}
+.alidade::-webkit-slider-runnable-track {
+  height: 12px;
+  background:
+    linear-gradient(var(--brass), var(--brass)) 0 50% / 100% 1px no-repeat,
+    repeating-linear-gradient(90deg, var(--brass) 0 1px, transparent 1px 10%) 0 0 / 100% 12px;
+}
+.alidade::-moz-range-track {
+  height: 12px;
+  background:
+    linear-gradient(var(--brass), var(--brass)) 0 50% / 100% 1px no-repeat,
+    repeating-linear-gradient(90deg, var(--brass) 0 1px, transparent 1px 10%) 0 0 / 100% 12px;
+}
+.alidade::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 34px;
+  margin-top: -11px;
+  border: 0;
+  background: var(--brass);
+  clip-path: polygon(50% 0, 100% 40%, 60% 40%, 60% 100%, 40% 100%, 40% 40%, 0 40%);
+  filter: drop-shadow(2px 3px 2px color-mix(in srgb, var(--shadow) 60%, transparent));
+}
+.alidade::-moz-range-thumb {
+  width: 14px;
+  height: 34px;
+  border: 0;
+  border-radius: 0;
+  background: var(--brass);
+  clip-path: polygon(50% 0, 100% 40%, 60% 40%, 60% 100%, 40% 100%, 40% 40%, 0 40%);
+}
+
+/* Note: a marginal note joined by a hairline. Tooltips look like this too. */
+.note {
+  position: relative;
+  max-width: 26ch;
+  padding-left: var(--space-4);
+  border-left: var(--stroke-hair) solid var(--rule);
+  font: var(--type-marginal);
+  color: var(--ink-muted);
+}
+.note.is-fire { color: var(--rubric); border-left-color: color-mix(in srgb, var(--rubric) 50%, var(--rule)); }
+
+/* Error: an ink note with a struck mark. Never red: red means fire. */
+.erratum { font: var(--type-marginal); color: var(--ink); }
+.erratum s { text-decoration-color: var(--brass); text-decoration-thickness: 1.5px; color: var(--ink-muted); }
+
+/* Token: a wooden disc with an ink label. The ring carries the meaning. */
+.token {
+  --size: 88px;
+  --ring: var(--brass);
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--size);
+  height: var(--size);
+  padding: 10px;
+  border-radius: var(--radius-full);
+  background:
+    radial-gradient(circle at 34% 28%, color-mix(in srgb, var(--flame) 16%, transparent) 0, transparent 55%),
+    var(--wood);
+  color: var(--on-wood);
+  text-align: center;
+  font: var(--type-label);
+  font-size: 11px;
+  line-height: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  --cast: var(--shadow-token);
+  box-shadow:
+    inset 0 0 0 2px var(--ring),
+    inset 0 0 0 5px var(--wood),
+    inset 0 0 0 6px color-mix(in srgb, var(--on-wood) 30%, transparent),
+    inset -3px -5px 10px color-mix(in srgb, var(--shadow) 35%, transparent),
+    var(--cast);
+}
+.token b { display: block; font: inherit; font-size: 12px; }
+.token .t-figure { display: block; font-size: 13px; line-height: 16px; letter-spacing: 0; text-transform: none; }
+.token.is-fire  { --ring: var(--rubric); }
+.token.is-modis { --ring: var(--lapis); }
+
+/* Thread: drawn as an SVG path with this class. */
+.thread {
+  fill: none;
+  stroke: var(--brass);
+  stroke-width: var(--stroke-thread);
+  stroke-linecap: round;
+  filter: drop-shadow(1px 2px 1px color-mix(in srgb, var(--shadow) 55%, transparent));
+}
+
+/* Loading: the dial turning. */
+@keyframes zij-turn { to { rotate: 360deg; } }
+.dial-turning { animation: zij-turn 6s linear infinite; }
+
+/* ---- Running head (navigation, like a book) ---------------------------- */
+
+.running-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 14px var(--space-8) 10px;
+  border-bottom: var(--stroke-hair) solid var(--rule);
+  background: var(--ground);
+}
+
+/* ---- Motion ----------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}

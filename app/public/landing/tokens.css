@@ -1,0 +1,124 @@
+/* Zij design tokens, generated from tokens.json by build-tokens.mjs. Don't edit by hand.
+   Night is the default theme. Set data-theme="folio" on <html> for Folio, or on any element
+   to make it a sheet of paper: colour and shadow tokens are redefined inside it. */
+
+:root, [data-theme="night"] {
+  --ground: #100c09;
+  --ground-raised: #1b150f;
+  --sky: #0a0f1e;
+  --rule: #4a3c2a;
+  --ink: #ede3cc;
+  --ink-muted: #a99a7e;
+  --brass: #c9a35a;
+  --rubric: #f0643c;
+  --on-rubric: #100c09;
+  --lapis: #7ea2e6;
+  --wood: #3a2618;
+  --on-wood: #ede3cc;
+  --flame: #ffc56b;
+  --shadow: #030201;
+  --heat-1: #4a1810;
+  --heat-2: #9e2a16;
+  --heat-3: #e2582f;
+  --heat-4: #f2a541;
+  --heat-5: #f7dda0;
+  --shadow-sheet: 6px 12px 28px -4px color-mix(in srgb, var(--shadow) 70%, transparent);
+  --shadow-card: 3px 6px 14px -2px color-mix(in srgb, var(--shadow) 60%, transparent);
+  --shadow-token: 2px 4px 5px 0px color-mix(in srgb, var(--shadow) 65%, transparent);
+  --shadow-held: 12px 22px 34px -6px color-mix(in srgb, var(--shadow) 50%, transparent);
+  --shadow-pressed: 1px 1px 2px 0px color-mix(in srgb, var(--shadow) 70%, transparent);
+  color-scheme: dark;
+}
+
+[data-theme="folio"] {
+  --ground: #eee2c6;
+  --ground-raised: #f6edd8;
+  --sky: #d5dbe6;
+  --rule: #bfa678;
+  --ink: #1e1a15;
+  --ink-muted: #5b5244;
+  --brass: #7a5b1e;
+  --rubric: #a92f18;
+  --on-rubric: #fbf4e4;
+  --lapis: #22468f;
+  --wood: #5a3a22;
+  --on-wood: #f6edd8;
+  --flame: #f4c063;
+  --shadow: #3a2410;
+  --heat-1: #f2c978;
+  --heat-2: #e0873a;
+  --heat-3: #b8391c;
+  --heat-4: #7a1e12;
+  --heat-5: #3a0e0a;
+  --shadow-sheet: 6px 12px 28px -4px color-mix(in srgb, var(--shadow) 70%, transparent);
+  --shadow-card: 3px 6px 14px -2px color-mix(in srgb, var(--shadow) 60%, transparent);
+  --shadow-token: 2px 4px 5px 0px color-mix(in srgb, var(--shadow) 65%, transparent);
+  --shadow-held: 12px 22px 34px -6px color-mix(in srgb, var(--shadow) 50%, transparent);
+  --shadow-pressed: 1px 1px 2px 0px color-mix(in srgb, var(--shadow) 70%, transparent);
+  color-scheme: light;
+}
+
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+  --radius-0: 0px;
+  --radius-full: 9999px;
+  --stroke-hair: 1px;
+  --stroke-thread: 1.25px;
+  --stroke-instrument: 1.5px;
+  --stroke-focus: 2px;
+  --pattern-max: 0.12;
+  --band: 0.14;
+  --grain: 0.24;
+  --glow: 0.30;
+  --vignette: 0.72;
+  --shade-max: 0.16;
+  --lamp-x: 28%;
+  --lamp-y: 24%;
+  --lamp-reach: 62vmax;
+  --flicker: 0.04;
+  --dur-touch: 160ms;
+  --dur-ink: 480ms;
+  --dur-sheet: 700ms;
+  --dur-scene: 1200ms;
+  --dur-camera: 2400ms;
+  --ease-ink: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-paper: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-lamp: cubic-bezier(0.45, 0, 0.25, 1);
+  --depth-desk: 0;
+  --depth-sheet: 1;
+  --depth-card: 2;
+  --depth-token: 3;
+  --depth-held: 4;
+  --depth-step: 24px;
+  --font-display: "Cormorant Garamond", "Reem Kufi", Amiri, Georgia, serif;
+  --font-text: Amiri, "Noto Naskh Arabic", Georgia, serif;
+  --type-display-xl: 600 96px/96px var(--font-display);
+  --tracking-display-xl: -0.01em;
+  --type-display-l: 600 56px/60px var(--font-display);
+  --type-display-m: 500 36px/42px var(--font-display);
+  --type-eyebrow: 600 15px/20px var(--font-display);
+  --tracking-eyebrow: 0.16em;
+  --features-eyebrow: "smcp" 1, "c2sc" 1;
+  --type-reading: 400 20px/32px var(--font-text);
+  --type-ui: 400 17px/26px var(--font-text);
+  --type-marginal: italic 400 17px/26px var(--font-text);
+  --type-label: 700 13px/18px var(--font-text);
+  --tracking-label: 0.08em;
+  --type-figure: 400 15px/22px var(--font-text);
+  --features-figure: "tnum" 1;
+  --type-film-title: 600 144px/144px var(--font-display);
+  --type-film-chapter: 600 88px/96px var(--font-display);
+  --type-film-lower: 600 40px/48px var(--font-display);
+  --tracking-film-lower: 0.12em;
+  --features-film-lower: "smcp" 1, "c2sc" 1;
+  --type-film-caption: 400 44px/58px var(--font-text);
+}

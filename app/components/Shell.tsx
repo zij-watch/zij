@@ -10,7 +10,7 @@ export const INTRO = [
   "Both records are counted in one unit, hotspot-days (VIIRS-equivalent), so a year before 2012 can be read against a year after it: the busiest months, the critical period, and how this month compares with the past.",
 ];
 
-export function AreaLinks({ areas, base = "/" }: { areas: AreaIndexEntry[]; base?: string }) {
+export function AreaLinks({ areas, base = "/explore" }: { areas: AreaIndexEntry[]; base?: string }) {
   return (
     <ul className="plain">
       {areas.map((a) => (
@@ -50,7 +50,7 @@ export function FactsBlock({ facts, named = true }: { facts: AreaFacts; named?: 
   );
 }
 
-export function IntroBlock({ areas, base = "/" }: { areas: AreaIndexEntry[]; base?: string }) {
+export function IntroBlock({ areas, base = "/explore" }: { areas: AreaIndexEntry[]; base?: string }) {
   return (
     <div className="panel-body">
       <p className="eyebrow">Zij</p>

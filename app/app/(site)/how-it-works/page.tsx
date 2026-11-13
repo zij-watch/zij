@@ -30,21 +30,21 @@ const REASON_WORDS: Record<string, string> = {
 };
 
 const REQUIREMENTS: { ask: string; where: string; link: string; href: string }[] = [
-  { ask: "A web application with a burning activity calendar based on active fire hotspots", where: "Explore, Calendar tab: years as rows, months as columns", link: "Nile Delta calendar", href: "/?area=nile-delta" },
+  { ask: "A web application with a burning activity calendar based on active fire hotspots", where: "Explore, Calendar tab: years as rows, months as columns", link: "Nile Delta calendar", href: "/explore?area=nile-delta" },
   { ask: "Harmonize MODIS and VIIRS so the sensor of origin no longer matters", where: "One unit for both sensors; before 2012 MODIS is converted with the M4 fit. Method and validation on this page", link: "Models and validation", href: "#models" },
-  { ask: "A consistent time series from the early 2000s to the present", where: "November 2000 to yesterday, weekly, monthly and by season", link: "Seasons, 2001 to 2026", href: "/?area=nile-delta&view=series" },
-  { ask: "Select a region", where: "10 preset areas; draw a box or a polygon; or type latitude and longitude", link: "A drawn box", href: "/?box=30.5,30.6,31.5,31.4" },
-  { ask: "Select a specific date range", where: "From and To on Explore and on Downloads; a single day with the Day picker", link: "2010 to 2020", href: "/?area=nile-delta&from=2010-01&to=2020-12" },
-  { ask: "Which months and years had the highest fire activity", where: "Busiest tab: calendar months and whole years, ranked", link: "Busiest", href: "/?area=nile-delta&view=ranked" },
-  { ask: "Compare the current month against the historical median", where: "\u201cThis month against the median\u201d, on the same days of past years", link: "This month", href: "/?area=nile-delta&view=typical" },
-  { ask: "Anticipate critical periods", where: "Typical year tab: the fewest weeks holding 80% of a typical year, shaded", link: "Typical year", href: "/?area=nile-delta&view=typical" },
-  { ask: "Unusual conditions; anomalies against multi-year averages", where: "Anomalies tab in plain words; the strongest are boxed on the calendar", link: "Anomalies", href: "/?area=nile-delta&view=anomalies" },
-  { ask: "How a current fire compares with previous ones", where: "Day view: the day\u2019s hotspots on the map, and its week and month against the median", link: "Chilecito, 29 July 2026", href: "/?area=chilecito&day=2026-07-29" },
-  { ask: "Number of fires detected and reported", where: "Detections per sensor and per satellite: per day in the day view, per week in the month detail", link: "A month, week by week", href: "/?area=nile-delta&month=2018-10" },
+  { ask: "A consistent time series from the early 2000s to the present", where: "November 2000 to yesterday, weekly, monthly and by season", link: "Seasons, 2001 to 2026", href: "/explore?area=nile-delta&view=series" },
+  { ask: "Select a region", where: "10 preset areas; draw a box or a polygon; or type latitude and longitude", link: "A drawn box", href: "/explore?box=30.5,30.6,31.5,31.4" },
+  { ask: "Select a specific date range", where: "From and To on Explore and on Downloads; a single day with the Day picker", link: "2010 to 2020", href: "/explore?area=nile-delta&from=2010-01&to=2020-12" },
+  { ask: "Which months and years had the highest fire activity", where: "Busiest tab: calendar months and whole years, ranked", link: "Busiest", href: "/explore?area=nile-delta&view=ranked" },
+  { ask: "Compare the current month against the historical median", where: "\u201cThis month against the median\u201d, on the same days of past years", link: "This month", href: "/explore?area=nile-delta&view=typical" },
+  { ask: "Anticipate critical periods", where: "Typical year tab: the fewest weeks holding 80% of a typical year, shaded", link: "Typical year", href: "/explore?area=nile-delta&view=typical" },
+  { ask: "Unusual conditions; anomalies against multi-year averages", where: "Anomalies tab in plain words; the strongest are boxed on the calendar", link: "Anomalies", href: "/explore?area=nile-delta&view=anomalies" },
+  { ask: "How a current fire compares with previous ones", where: "Day view: the day\u2019s hotspots on the map, and its week and month against the median", link: "Chilecito, 29 July 2026", href: "/explore?area=chilecito&day=2026-07-29" },
+  { ask: "Number of fires detected and reported", where: "Detections per sensor and per satellite: per day in the day view, per week in the month detail", link: "A month, week by week", href: "/explore?area=nile-delta&month=2018-10" },
   { ask: "Download analytics and visualizations", where: "Weekly and monthly series as CSV; the calendar as PNG and SVG", link: "Downloads", href: "/downloads?area=nile-delta" },
   { ask: "A downloadable CSV file of hot spots detected during a search", where: "Hotspots CSV for the chosen area and dates, both sensors", link: "Downloads", href: "/downloads?area=nile-delta&from=2018-08&to=2018-10" },
   { ask: "Colour ramps for the number of hotspots across months; accessible colour ramps", where: "One 5-step heat ramp, checked for three kinds of colour blindness and in greyscale", link: "Colour check", href: "#colour" },
-  { ask: "An interactive map where users can draw the area of interest, or enter latitude and longitude", where: "Draw box, Draw polygon and Type coordinates on Explore", link: "Explore", href: "/" },
+  { ask: "An interactive map where users can draw the area of interest, or enter latitude and longitude", where: "Draw box, Draw polygon and Type coordinates on Explore", link: "Explore", href: "/explore" },
   { ask: "Use NASA Earthdata FIRMS hotspots", where: "FIRMS MODIS Collection 6.1 and VIIRS 375 m, yearly archives and the FIRMS API for 2026", link: "Sources", href: "#sources" },
 ];
 

@@ -7,7 +7,7 @@ import { Seal } from "@/components/Shell";
 export default function SiteLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      <Suspense fallback={<header className="strip paper"><a href="/" className="brand"><Seal /></a><nav aria-label="Pages"><a href="/">Explore</a><a href="/downloads">Downloads</a><a href="/how-it-works">How it works</a></nav></header>}>
+      <Suspense fallback={<header className="strip paper"><a href="/" className="brand"><Seal /></a><nav aria-label="Pages"><a href="/explore">Explore</a><a href="/downloads">Downloads</a><a href="/how-it-works">How it works</a></nav></header>}>
         <Nav />
       </Suspense>
       <noscript>
