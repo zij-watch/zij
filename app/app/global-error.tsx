@@ -12,8 +12,8 @@ import { tokensCss } from "@/lib/tokens";
 
 // The last resort: the frame of the app itself failed, so this replaces the root layout and brings
 // its own <html>, tokens and fonts. The binding broke and the leaves fell out of order; both
-// satellites are in Earth's shadow.
-export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+// satellites are in Earth's shadow. The one way on is home.
+export default function GlobalError({ error }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -30,17 +30,6 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
           title="The book came apart"
           art={<LooseLeaves />}
           plate="Folios 2, 7, 12 and 30, out of their binding"
-          log={[
-            { label: "MODIS", value: "In Earth's shadow: no signal", bad: true },
-            { label: "VIIRS", value: "In Earth's shadow: no signal", bad: true },
-            { label: "Reference", value: error.digest ? <code>{error.digest}</code> : "None given" },
-          ]}
-          actions={
-            <>
-              <button type="button" className="err-btn is-primary" onClick={reset}>Open it again</button>
-              <a className="err-btn" href="/">The first page</a>
-            </>
-          }
         >
           <p>Zij could not open at all: the frame of the page failed before anything was drawn.</p>
           <p className="note">

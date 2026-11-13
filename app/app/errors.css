@@ -91,21 +91,7 @@
   background: var(--ground-raised); color: var(--ink); border: 1px solid var(--rule); border-radius: var(--r-1); padding: 0 6px;
 }
 
-/* the pass report: a slip of the instruments' own words */
-.err-log {
-  margin: 22px 0 26px; padding: 10px 16px 6px; border-radius: var(--r-2);
-  background: color-mix(in srgb, var(--ground-raised) 88%, transparent);
-  border: 1px solid var(--rule); border-left: 3px solid var(--brass);
-  backdrop-filter: blur(3px);
-}
-.err-text .err-log-head { margin: 0 0 4px; font: 600 13px/18px var(--font-display); letter-spacing: 0.18em; text-transform: uppercase; color: var(--brass); }
-.err-log dl { margin: 0; }
-.err-log dl > div { display: grid; grid-template-columns: minmax(9em, 38%) 1fr; gap: 12px; padding: 6px 0; border-top: 1px solid var(--rule); }
-.err-log dt { font: 600 14px/23px var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
-.err-log dd { margin: 0; font-size: 16px; line-height: 23px; color: var(--ink); }
-.err-log dd.is-bad { color: var(--rubric); }
-
-.err-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.err-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
 .err-btn {
   display: inline-flex; align-items: center; min-height: var(--hit, 40px); padding: 0 20px;
   border: 1px solid var(--brass); border-radius: var(--r-2); background: transparent; color: var(--ink);
@@ -130,7 +116,6 @@
   .err-plate { max-width: 600px; }
 }
 @media (max-width: 480px) {
-  .err-log dl > div { grid-template-columns: 1fr; gap: 0; }
   .err-plate { padding: 28px 10px 10px; }
 }
 

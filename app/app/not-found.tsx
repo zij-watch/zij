@@ -14,18 +14,6 @@ export default function NotFound() {
       title="This leaf was cut from the book"
       art={<CutBook />}
       plate="Folio 404, cut from the book close to the binding"
-      log={[
-        { label: "MODIS · Terra, Aqua", value: "No pixel at this address" },
-        { label: "VIIRS · NOAA-20, NOAA-21", value: "No pixel at this address" },
-        { label: "Status", value: "404: not in the record", bad: true },
-      ]}
-      actions={
-        <>
-          <a className="err-btn is-primary" href="/explore">Open the map</a>
-          <a className="err-btn" href="/how-it-works">How it works</a>
-          <a className="err-btn" href="/">The first page</a>
-        </>
-      }
     >
       <p>
         Zij has no page at <MissingPath />. The link may be mistyped, or the page has moved.

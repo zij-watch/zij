@@ -1,13 +1,11 @@
 // The frame every error page shares, in the design system's Night, as the landing page opens: the
 // sky with its stars and the lamp's glow, the words in light ink on the night, and the drawing on a
-// sheet of Folio paper pinned beside them (the landing's plates: "illustration · not data"). Then
-// a pass report in the satellites' terms, and the ways on. No hooks, so it renders in error
-// boundaries, in not-found and in global-error alike. Styles: app/errors.css; colours: lib/tokens.ts.
+// sheet of Folio paper pinned beside them (the landing's plates: "illustration · not data"). One way
+// on: home. No hooks, so it renders in error boundaries, in not-found and in global-error alike.
+// Styles: app/errors.css; colours: lib/tokens.ts.
 
 import type { ReactNode } from "react";
 import { Seal } from "./Shell";
-
-export type LogRow = { label: string; value: ReactNode; bad?: boolean };
 
 export function ErrorStrip() {
   return (
@@ -28,15 +26,13 @@ export function ErrorCredits() {
   );
 }
 
-export default function ErrorPage({ code, title, art, plate, children, log, actions, strip = true, credits = true, variant }: {
+export default function ErrorPage({ code, title, art, plate, children, strip = true, credits = true, variant }: {
   code: string;
   title: string;
   art: ReactNode;
   /** The plate's own small caption, under the drawing. */
   plate: string;
   children: ReactNode;
-  log: LogRow[];
-  actions: ReactNode;
   /** The top strip. Off where a layout already draws one. */
   strip?: boolean;
   /** The credits line. Off inside the site layout, which already prints it. */
@@ -60,18 +56,9 @@ export default function ErrorPage({ code, title, art, plate, children, log, acti
             <p className="err-code">{code}</p>
             <h1>{title}</h1>
             {children}
-            <section className="err-log" aria-label="Pass report">
-              <p className="err-log-head">Pass report</p>
-              <dl>
-                {log.map((row) => (
-                  <div key={row.label}>
-                    <dt>{row.label}</dt>
-                    <dd className={row.bad ? "is-bad" : undefined}>{row.value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </section>
-            <div className="err-actions">{actions}</div>
+            {/* A plain link: the landing page is its own document, and an error page should not
+                depend on the client router to get out of it. */}
+            <div className="err-actions"><a className="err-btn is-primary" href="/">Return home</a></div>
           </div>
         </div>
       </main>
