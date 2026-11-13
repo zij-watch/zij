@@ -19,7 +19,7 @@ const num = (n) => Math.round(n).toLocaleString("en");
 
 mkdirSync(here("../public/landing/reference/"), { recursive: true });
 for (const dir of ["logo", "assets"]) cpSync(here(`../landing-src/${dir}/`), here(`../public/landing/${dir}/`), { recursive: true });
-for (const file of ["tokens.css", "reference/materials.css", "additions.css"]) cpSync(here(`../landing-src/${file}`), here(`../public/landing/${file}`));
+for (const file of ["tokens.css", "reference/materials.css", "additions.css", "life.js"]) cpSync(here(`../landing-src/${file}`), here(`../public/landing/${file}`));
 
 let html = read("../landing-src/landing.html");
 let js = read("../landing-src/landing.js");
@@ -181,11 +181,11 @@ if (head0 < 0 || head1 < 0) throw new Error("build-landing: the reference's head
 html = html.slice(0, head0) + html.slice(head1); // no font service: the faces are served from /atlas/fonts
 const edits = [
   ["<title>Zij · Landing reference</title>", "<title>Zij: 26 years of fire on one scale</title>", "the title"],
-  ['content="Design reference for Zij: how a page should look and feel. Every map, table and figure on it is an illustration, not data."', 'content="Satellite fire detections from MODIS and VIIRS, 2000 to today, harmonized into one record per area."', "the description"],
+  ['content="Design reference for Zij: how a page should look and feel. Every map, table and figure on it is an illustration, not data."', 'content="Satellite fire detections from MODIS and VIIRS, 2000 to today, harmonized into one record per area.">\n<link rel="canonical" href="https://zij.watch/">\n<meta property="og:type" content="website">\n<meta property="og:site_name" content="Zij">\n<meta property="og:url" content="https://zij.watch/">\n<meta property="og:title" content="Zij: 26 years of fire on one scale">\n<meta property="og:description" content="Satellite fire detections from MODIS and VIIRS, 2000 to today, harmonized into one record per area.">\n<meta property="og:image" content="https://zij.watch/og.jpg">\n<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">\n<meta property="og:image:alt" content="The Zij seal over a desert night sky: Satellites do the watching. We make the tables.">\n<meta name="twitter:card" content="summary_large_image"', "the description"],
   ['<link rel="icon" href="../logo/zij-impression.svg" type="image/svg+xml">', '<link rel="icon" href="/favicon.svg" type="image/svg+xml">\n<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">\n<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">\n<link rel="manifest" href="/manifest.webmanifest">', "the icon"],
   ['<link rel="stylesheet" href="../tokens.css">', '<link rel="stylesheet" href="/landing/tokens.css">', "tokens.css"],
   ['<link rel="stylesheet" href="materials.css">', '<link rel="stylesheet" href="/landing/reference/materials.css">\n<link rel="stylesheet" href="/landing/additions.css">', "materials.css"],
-  ['<script src="landing.js"></script>', `<script>window.ZIJ_TABLE = ${JSON.stringify(table)};</script>\n<script src="/landing/reference/landing.js"></script>`, "the script"],
+  ['<script src="landing.js"></script>', `<script>window.ZIJ_TABLE = ${JSON.stringify(table)};</script>\n<script src="/landing/reference/landing.js"></script>\n<script src="/landing/life.js"></script>`, "the script"],
   ["from 25 years of NASA satellite records.", `from ${years} years of NASA satellite records.`, "the dek"],
   ['<a class="catchword begin" id="begin" href="#ch-1">Begin reading</a>', '<a class="catchword enter" href="/explore">Open the map</a>\n      <a class="scroll-cue" id="begin" href="#record" aria-label="Scroll down to the record"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v15M5 13l7 7 7-7"/></svg></a>', "the hero's link"],
   ["Over the Nile Delta, VIIRS sees 11 to 20 times more fire pixels than MODIS, and the gap changes from year to year.", `Over the Nile Delta in autumn, VIIRS on Suomi NPP records ${Math.round(usual[0])} to ${Math.round(usual[usual.length - 1])} times more fire pixels than MODIS on Aqua in most years, and ${Math.round(peak.ratio)} times in ${peak.year}. The gap changes from year to year.`, "the pixel ratio"],
@@ -221,8 +221,8 @@ html = html.replaceAll('"../logo/', '"/landing/logo/');
 // The page's own styles point at the patterns beside the reference; here they are under /landing.
 html = html.replaceAll('"../assets/', '"/landing/assets/');
 // The two files that change with the data or the styles carry a stamp, so a cached copy is never stale.
-const stamp = createHash("sha1").update(js).update(read("../landing-src/additions.css")).digest("hex").slice(0, 8);
-html = html.replace('/landing/additions.css"', `/landing/additions.css?v=${stamp}"`).replace('/landing/reference/landing.js"', `/landing/reference/landing.js?v=${stamp}"`);
+const stamp = createHash("sha1").update(js).update(read("../landing-src/additions.css")).update(read("../landing-src/life.js")).digest("hex").slice(0, 8);
+html = html.replace('/landing/additions.css"', `/landing/additions.css?v=${stamp}"`).replace('/landing/reference/landing.js"', `/landing/reference/landing.js?v=${stamp}"`).replace('/landing/life.js"', `/landing/life.js?v=${stamp}"`);
 if (/fonts\.g(oogleapis|static)|\.\.\//.test(html)) throw new Error("build-landing: an outside or relative reference is left in the page");
 
 writeFileSync(here("../public/landing.html"), html);
