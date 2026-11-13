@@ -14,6 +14,7 @@ const here = (p) => new URL(p, import.meta.url);
 const read = (p) => readFileSync(here(p), "utf8");
 const area = JSON.parse(read("../public/data/areas/nile-delta.json"));
 const method = JSON.parse(read("../public/data/method.json"));
+const findings = JSON.parse(read("../public/data/findings.json"));
 const num = (n) => Math.round(n).toLocaleString("en");
 
 mkdirSync(here("../public/landing/reference/"), { recursive: true });
@@ -89,6 +90,45 @@ ${rows.map((r) => `              <tr><td>${r.year}</td><td>${r.converted ? "MODI
     </section>
 `;
 
+// ---- what 26 years show: three findings, each with its number, its band and its caveat ----------
+// The numbers are findings.json's (the pipeline's findings step). Wording limits: it is burning
+// seen from space; nothing here says what the ban did; 2026 is preliminary data.
+const signed = (x) => `${x > 0 ? "+" : "\u2212"}${Math.abs(Math.round(x))}%`;
+const cut = findings.ban.comparisons.find((c) => c.before.years[0] === 2001 && c.before.years[1] === 2003 && c.after.years[0] === 2005 && c.after.years[1] === 2011);
+const deltaSince = findings.since_2018.areas.find((a) => a.area === "nile-delta");
+const upper = findings.areas.find((a) => a.id === "upper-egypt-sugarcane-belt").numbers;
+const y2023 = deltaSince.years.find((y) => y.year === 2023);
+if (!cut || !deltaSince || !upper || !y2023) throw new Error("build-landing: findings.json changed shape");
+const shows = [
+  {
+    fig: `${num(cut.before.mean)} \u2192 ${num(cut.after.mean)}`,
+    head: `Burning seen from space did not fall after the ${findings.ban.ban_year} ban. It rose until 2018.`,
+    line: `A Nile Delta season averaged ${num(cut.before.mean)} in ${cut.before.years[0]} to ${cut.before.years[1]} and ${num(cut.after.mean)} in ${cut.after.years[0]} to ${cut.after.years[1]}: ${signed(cut.change.pct)} (band ${signed(cut.change.lo_pct)} to ${signed(cut.change.hi_pct)}). The rise had begun before the ban and only three seasons precede it, so this cannot show what the ban did.`,
+  },
+  {
+    fig: signed(deltaSince.change.pct),
+    head: `Since 2018 the Delta's season is about half below ${deltaSince.reference.years[0]} to ${deltaSince.reference.years[1]}.`,
+    line: `${num(deltaSince.recent.mean)} a season in ${deltaSince.recent.years[0]} to ${deltaSince.recent.years[1]} against ${num(deltaSince.reference.mean)}: ${signed(deltaSince.change.pct)} (band ${signed(deltaSince.change.lo_pct)} to ${signed(deltaSince.change.hi_pct)}). It is not a steady low: 2023 came back to ${num(y2023.value)}. 2026 is preliminary data.`,
+  },
+  {
+    fig: signed(upper.change_pct),
+    head: "Upper Egypt's sugarcane burning seen from space did not fall.",
+    line: `${num(upper.recent_mean)} a season (February to April) in ${upper.recent_years[0]} to ${upper.recent_years[1]} against ${num(upper.reference_mean)} in ${upper.reference_years[0]} to ${upper.reference_years[1]}: ${signed(upper.change_pct)} (band ${signed(upper.change_range_pct[0])} to ${signed(upper.change_range_pct[1])}). The count is of places and days with fire, not of cane burned. 2026 is preliminary data.`,
+  },
+];
+const showsSection = `
+    <section class="record shows" id="shows" aria-labelledby="h-shows">
+      <div class="sheet" data-theme="folio" data-paper="sheet">
+        <p class="t-eyebrow">From the record · ${rows[0].year} to ${rows[years - 1].year}</p>
+        <h2 id="h-shows">What ${years} years show</h2>
+        <ol class="shows-list">
+${shows.map((f) => `          <li><p class="shows-fig">${f.fig}</p><div><h3>${f.head}</h3><p>${f.line}</p></div></li>`).join("\n")}
+        </ol>
+        <p class="rec-unit">Seasons are counted in ${area.unit_label}: places and days with fire, as the satellites saw them. <a href="/how-it-works#findings">The full tables, and what this cannot show</a>.</p>
+      </div>
+    </section>
+`;
+
 // ---- the table of chapter three, from the Nile Delta's months --------------------------------
 const m = area.months;
 const nonZero = m.value.filter((v) => v > 0).sort((a, b) => a - b);
@@ -150,7 +190,7 @@ const edits = [
   ['<a class="catchword begin" id="begin" href="#ch-1">Begin reading</a>', '<a class="catchword enter" href="/explore">Open the map</a>\n      <a class="scroll-cue" id="begin" href="#record" aria-label="Scroll down to the record"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v15M5 13l7 7 7-7"/></svg></a>', "the hero's link"],
   ["Over the Nile Delta, VIIRS sees 11 to 20 times more fire pixels than MODIS, and the gap changes from year to year.", `Over the Nile Delta in autumn, VIIRS on Suomi NPP records ${Math.round(usual[0])} to ${Math.round(usual[usual.length - 1])} times more fire pixels than MODIS on Aqua in most years, and ${Math.round(peak.ratio)} times in ${peak.year}. The gap changes from year to year.`, "the pixel ratio"],
   // The record comes first, directly under the opening: it is the reason to keep reading.
-  ['<section class="chapter ch1" id="ch-1"', `${record}\n    <section class="chapter ch1" id="ch-1"`, "chapter one"],
+  ['<section class="chapter ch1" id="ch-1"', `${record}${showsSection}\n    <section class="chapter ch1" id="ch-1"`, "chapter one"],
   ["Thread ties the two records where both flew, 2012 to 2020; the fit is then tested on years held back.", `Thread ties the two records where both flew, ${train0} to ${train1}; the fit is then tested on years held back.`, "the training years"],
   ['<p class="t-eyebrow" style="margin:0">fire days per month</p>', `<p class="t-eyebrow" style="margin:0">${area.unit_label} per month</p>`, "the table's unit"],
   ["<h3>Any area, 2000 to 2025</h3>", `<h3>The Nile Delta, ${firstYear} to ${lastYear}</h3>`, "the table's title"],

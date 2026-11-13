@@ -7,6 +7,7 @@
 // counted from. Counts are never averaged over satellites and never harmonized,
 // so MODIS and VIIRS numbers do not compare with each other.
 
+import { versioned } from "../version";
 import { boundsOf, centreIn, gunzip, inPolygon, isBox } from "../fit/cells";
 import type { Box, Shape } from "../fit/cells";
 
@@ -132,7 +133,7 @@ export function createHotspotLoader(index: HotspotIndex, base = "/data/",
                                     fetchBytes?: (url: string) => Promise<ArrayBuffer>): HotspotLoader {
   const kept = new Map<string, Promise<HotspotFile>>();
   const get = fetchBytes ?? (async (url: string) => {
-    const response = await fetch(url);
+    const response = await fetch(versioned(url));
     if (!response.ok) throw new Error(`${url}: ${response.status}`);
     return response.arrayBuffer();
   });

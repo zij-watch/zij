@@ -14,6 +14,7 @@ import TypicalYear from "./TypicalYear";
 const VIEW_LABELS: Record<View, string> = { calendar: "Calendar", typical: "Typical year", series: "Seasons", ranked: "Busiest", anomalies: "Anomalies" };
 
 interface Props {
+  finding?: { sentence: string; note?: string } | null; // the area's one sentence from the findings
   recorded?: boolean; // the Seasons tab: as recorded, or harmonized
   onRecorded?: (recorded: boolean) => void;
   simple?: boolean; // Simple: the calendar, this month, three anomalies in words, and a way to the rest
@@ -371,7 +372,7 @@ function SimpleAnomalies({ area }: { area: Area }) {
 
 // ------------------------------------------------------------------ panel
 
-export default function Panel({ area, recorded = false, onRecorded, simple = false, onExpert, named = true, from, to, view, month, year, note, drawn, draft, onView, onMonth, onYear }: Props) {
+export default function Panel({ area, finding = null, recorded = false, onRecorded, simple = false, onExpert, named = true, from, to, view, month, year, note, drawn, draft, onView, onMonth, onYear }: Props) {
   const weekBand = area.bands.week_mult;
   const seasonBand = area.bands.season_pct;
   const lastYear = Number(area.last_full_day.slice(0, 4));
@@ -417,6 +418,14 @@ export default function Panel({ area, recorded = false, onRecorded, simple = fal
 
       {simple && (
         <>
+          {finding && (
+            <section className="block finding">
+              <h3>What the record shows here</h3>
+              <p>{finding.sentence}</p>
+              {finding.note && <p className="note">{finding.note}</p>}
+              <p className="note"><a href="/how-it-works#findings">How this was worked out, and what it cannot show</a></p>
+            </section>
+          )}
           <section className="block">
             <div className="calendar-scroll">
               <Calendar area={area} from={from} to={to} labelSize={17} selected={null} onSelect={() => undefined} />

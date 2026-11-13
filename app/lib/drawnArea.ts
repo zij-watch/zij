@@ -2,6 +2,7 @@
 // The work is done by lib/fit (see its README). This file loads what it needs, lazily:
 // the cell index when drawing starts, and a country's cell file the first time a shape falls in it.
 
+import { versioned } from "./version";
 import type { Area } from "./data";
 import { fetchData } from "./download";
 import { boundsOf, countriesFor, decodeCells, type Cells, type CellsIndex, type Shape } from "./fit/cells";
@@ -20,7 +21,7 @@ export const COVERED = "Egypt, mainland Portugal and Argentina";
 
 let indexPromise: Promise<CellsIndex> | null = null;
 export function loadCellsIndex(): Promise<CellsIndex> {
-  indexPromise ??= fetch("/data/cells/index.json").then((response) => {
+  indexPromise ??= fetch(versioned("/data/cells/index.json")).then((response) => {
     if (!response.ok) throw new Error(`Could not load the cell index (${response.status})`);
     return response.json() as Promise<CellsIndex>;
   });

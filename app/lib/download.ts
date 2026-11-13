@@ -6,6 +6,7 @@
 //   magic bytes are checked first and the bytes are inflated only if they are there. The inflate
 //   is fflate's, bundled, not the browser's DecompressionStream, so older Safari works too.
 
+import { versioned } from "./version";
 import { gunzipSync } from "fflate";
 import { useSyncExternalStore } from "react";
 
@@ -65,7 +66,7 @@ export function inflateIfGzip(bytes: Uint8Array): ArrayBuffer {
 export async function fetchData(url: string, label: string, bytes: number): Promise<ArrayBuffer> {
   set({ label, bytes, received: 0 });
   try {
-    const response = await fetch(url);
+    const response = await fetch(versioned(url));
     if (!response.ok) throw new Error(`Could not load ${label} (${response.status})`);
     const chunks: Uint8Array[] = [];
     let received = 0;

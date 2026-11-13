@@ -359,3 +359,7 @@ details.choice ul.plain li { min-height: var(--hit); display: flex; align-items:
 .mark-modis-bar, .mark-viirs-bar { display: inline-block; width: 12px; height: 12px; border-radius: var(--r-1); vertical-align: -1px; margin-right: 2px; }
 .mark-modis-bar { background: var(--lapis); }
 .mark-viirs-bar { background: var(--rubric); }
+
+/* The intensity line beside the verdict, and the area's finding in Simple mode. */
+.verdict-intensity { display: block; padding-left: var(--s-3); border-left: 3px solid var(--rubric); font-weight: 700; }
+.finding p { margin-bottom: var(--s-2); }

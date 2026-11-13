@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { areaVerdict, dayVerdicts, levelFrom, standing } from "../../verdict.ts";
+import { approx, areaVerdict, dayVerdicts, levelFrom, monthIntensity, standing } from "../../verdict.ts";
 
 const read = (path) => JSON.parse(readFileSync(new URL(`../../../public/data/${path}`, import.meta.url), "utf8"));
 
@@ -153,4 +153,46 @@ test("an area file from before the per-year export still gets a verdict, worded 
   assert.equal(v.level, exact.level);
   assert.equal(v.rank, "");
   assert.match(v.sentence, /That is (about the \d+(st|nd|rd|th)|under the 10th|over the 90th) percentile of the 25 years 2001 to 2025\.$/);
+});
+
+// ---------------------------------------------------------------- intensity
+
+/** Weeks of one July per year: `detections` VIIRS detections over `cellDays` VIIRS fire cell-days. */
+function julys(rows) {
+  return {
+    weeks: {
+      year: rows.map((r) => r[0]), month: rows.map(() => 7),
+      viirs_hotspots: rows.map((r) => r[1]), viirs: rows.map((r) => r[2]),
+    },
+  };
+}
+const QUIET = [[2012, 20, 10], [2013, 30, 10], [2014, 25, 10], [2015, 40, 10], [2016, 35, 10], [2017, 30, 10]];
+
+test("intensity: a month far over its usual detections per cell-day gets the line", () => {
+  const line = monthIntensity(julys([...QUIET, [2018, 900, 20]]), 2018, 7, "normal");
+  assert.equal(line, "Normal in spread, unusually intense: about 900 VIIRS detections over 20 cell-days, 15.0 times the usual for July here.");
+});
+test("intensity: an ordinary month gets no line", () => {
+  assert.equal(monthIntensity(julys([...QUIET, [2018, 60, 20]]), 2018, 7, "normal"), null);
+});
+test("intensity: too few detections, or too few years to compare, gets no line", () => {
+  assert.equal(monthIntensity(julys([...QUIET, [2018, 29, 1]]), 2018, 7, "normal"), null);
+  assert.equal(monthIntensity(julys([...QUIET.slice(0, 4), [2018, 900, 20]]), 2018, 7, "normal"), null);
+});
+test("intensity: a named fire is worded with its detections and its cells", () => {
+  const fire = { fire_days: ["2018-07-27", "2018-08-01"], viirs_detections: 918, grid_cells: 8 };
+  assert.equal(monthIntensity(julys([...QUIET, [2018, 935, 23]]), 2018, 7, "above", fire), "Above normal in spread, unusually intense: about 900 detections in 8 cells.");
+  assert.equal(approx(918), 900);
+  assert.equal(approx(47), 50);
+});
+
+test("Chilecito in July 2026 never reads as plain normal: the intensity line is there, from findings.json", () => {
+  const area = read("areas/chilecito.json");
+  const finding = read("findings.json").areas.find((a) => a.id === "chilecito").numbers;
+  const { month } = dayVerdicts(area, "2026-07-29", finding);
+  assert.match(month.intensity, /in spread, unusually intense: about 900 detections in 8 cells\.$/);
+  // Without the finding the line is still there, in the general words.
+  assert.match(dayVerdicts(area, "2026-07-29").month.intensity, /unusually intense: about 900 VIIRS detections over/);
+  // The July before it was an ordinary one.
+  assert.equal(dayVerdicts(area, "2025-07-15").month.intensity, null);
 });

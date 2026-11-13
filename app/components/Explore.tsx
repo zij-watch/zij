@@ -12,7 +12,7 @@ import Link from "next/link";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { captureMap, saveBlob } from "@/lib/capture";
-import { loadArea, loadIndex, loadNotes, type Area, type Index } from "@/lib/data";
+import { loadArea, loadFindings, loadIndex, loadNotes, type Area, type AreaFinding, type Index } from "@/lib/data";
 import { loadDay, loadHotspotDays, shapeOf, type DayResult } from "@/lib/dayData";
 import { loadingWords, useLoading } from "@/lib/download";
 import { COVERED, loadCellsIndex, resolveDrawn, type DrawnResult } from "@/lib/drawnArea";
@@ -167,6 +167,7 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
   const [state, update, query] = useAppState();
   const [index, setIndex] = useState<Index | null>(initialIndex);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [findings, setFindings] = useState<AreaFinding[]>([]);
   const [area, setArea] = useState<Area | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [drawMode, setDrawMode] = useState<DrawMode>(null);
@@ -200,6 +201,7 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
   useEffect(() => {
     if (!initialIndex) loadIndex().then(setIndex).catch((e: Error) => setError(e.message));
     loadNotes().then(setNotes);
+    loadFindings().then((f) => setFindings(f.areas));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -452,8 +454,14 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
     { id: "share", label: "Share", tip: "Copy a link to this view", go: share },
   ];
   // The verdict the panel opens with: the area's this month, or the chosen day's week and month.
-  const verdict = useMemo(() => (panelArea ? areaVerdict(panelArea) : null), [panelArea]);
-  const dayVerdict = useMemo(() => (day && dayArea ? dayVerdicts(dayArea, day) : { week: null, month: null }), [day, dayArea]);
+  const finding = areaId ? findings.find((f) => f.id === areaId) ?? null : null;
+  // A named fire in the findings gives the intensity line its words: its detections and its cells.
+  const fire = useMemo(() => {
+    const n = finding?.numbers;
+    return n?.fire_days && n.viirs_detections && n.grid_cells ? { fire_days: n.fire_days, viirs_detections: n.viirs_detections, grid_cells: n.grid_cells } : null;
+  }, [finding]);
+  const verdict = useMemo(() => (panelArea ? areaVerdict(panelArea, fire) : null), [panelArea, fire]);
+  const dayVerdict = useMemo(() => (day && dayArea ? dayVerdicts(dayArea, day, fire) : { week: null, month: null }), [day, dayArea, fire]);
   const q = query ? `?${query}` : "";
   const closed = state.panel === "closed";
   const wide = state.panel === "wide";
@@ -528,7 +536,7 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
         </div>
       )}
       {!error && panelArea && (
-        <Panel area={panelArea} simple={state.mode === "simple"} onExpert={() => update({ mode: "expert" })} recorded={state.recorded} onRecorded={(recorded) => update({ recorded })} named={false} from={from} to={to} view={state.view} month={state.month} year={state.year}
+        <Panel area={panelArea} simple={state.mode === "simple"} onExpert={() => update({ mode: "expert" })} recorded={state.recorded} onRecorded={(recorded) => update({ recorded })} finding={finding} named={false} from={from} to={to} view={state.view} month={state.month} year={state.year}
           note={notes[panelArea.id]} drawn={Boolean(shown)} draft={isDraft}
           onView={(view) => update({ view })} onMonth={(month) => update({ month })} onYear={(year) => update({ year })} />
       )}

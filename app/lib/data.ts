@@ -1,5 +1,6 @@
 // Types and loaders for the files the pipeline exports. The format is docs/event/DATA_CONTRACT.md.
 
+import { versioned } from "./version";
 export type Source = "VIIRS" | "MODIS" | "mixed" | "none";
 export type Flag = "high" | "low" | null;
 
@@ -124,7 +125,7 @@ export interface Area {
 }
 
 async function getJson<T>(path: string): Promise<T> {
-  const response = await fetch(path);
+  const response = await fetch(versioned(path));
   if (!response.ok) throw new Error(`Could not load ${path} (${response.status})`);
   return (await response.json()) as T;
 }
@@ -143,6 +144,22 @@ export function loadArea(id: string): Promise<Area> {
     areaCache.set(id, promise);
   }
   return promise;
+}
+
+export interface AreaFinding {
+  id: string;
+  name: string;
+  country: string;
+  sentence: string; // the one sentence the record supports for this area
+  note?: string;
+  numbers: Record<string, unknown> & { fire_days?: [string, string]; viirs_detections?: number; grid_cells?: number };
+}
+
+/** The findings (docs/event/FINDINGS.md), as the pipeline's `findings` step exports them. */
+let findingsPromise: Promise<{ areas: AreaFinding[] }> | null = null;
+export function loadFindings(): Promise<{ areas: AreaFinding[] }> {
+  findingsPromise ??= getJson<{ areas: AreaFinding[] }>("/data/findings.json").catch(() => ({ areas: [] }));
+  return findingsPromise;
 }
 
 /** Notes per area id, shown at the top of the panel. Written by the pipeline (appdata). */

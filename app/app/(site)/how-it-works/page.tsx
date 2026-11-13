@@ -1,7 +1,9 @@
 // Placeholder page: the structure and the numbers. The final text is still to be written.
 // Every number comes from public/data/method.json, which the pipeline writes.
 
+import Link from "next/link";
 import method from "@/public/data/method.json";
+import findings from "@/public/data/findings.json";
 import { MONTHS, num } from "@/lib/format";
 import { checkRamp, VISIONS } from "@/lib/cvd";
 import { COLOURS, heatRamp } from "@/lib/tokens";
@@ -47,6 +49,9 @@ const REQUIREMENTS: { ask: string; where: string; link: string; href: string }[]
   { ask: "An interactive map where users can draw the area of interest, or enter latitude and longitude", where: "Draw box, Draw polygon and Type coordinates on Explore", link: "Explore", href: "/explore" },
   { ask: "Use NASA Earthdata FIRMS hotspots", where: "FIRMS MODIS Collection 6.1 and VIIRS 375 m, yearly archives and the FIRMS API for 2026", link: "Sources", href: "#sources" },
 ];
+
+/** "+97" or "-53": a change with its sign. */
+const signed = (x: number) => `${x > 0 ? "+" : ""}${num(x)}`;
 
 export default function Page() {
   const areas = method.areas as unknown as AreaRow[];
@@ -231,7 +236,111 @@ export default function Page() {
         })}
         <p className="note">Anomalies and converted values are also marked with a shape (a box, a corner), never by colour alone.</p>
 
-        <h2 id="sources">8. Sources</h2>
+        <h2 id="findings">8. Findings</h2>
+        <p>
+          Three questions asked of the harmonized record. Every number here is written by the pipeline&rsquo;s <code>findings</code> step
+          (<code>docs/event/FINDINGS.md</code>), and every comparison that was made is shown, none dropped for looking weaker.
+          The values are burning seen from space, in {findings.unit_label}. The 2026 seasons are preliminary: their latest months are
+          near-real-time data, which NASA later replaces with standard processing.
+        </p>
+        <p className="note">{findings.band_note}</p>
+
+        <h3>The Nile Delta and the 2004 ban on burning rice straw</h3>
+        <p>{findings.ban.answer}</p>
+        <div className="table-scroll">
+          <table>
+            <thead><tr><th>Season (Aug to Oct)</th><th>Seen from space</th><th>Likely range</th><th>Recorded by</th></tr></thead>
+            <tbody>
+              {findings.ban.seasons.map((s) => (
+                <tr key={s.year}>
+                  <td>{s.year}{s.year === findings.ban.ban_year ? " (ban year)" : ""}</td>
+                  <td>{num(s.value)}</td>
+                  <td>{s.source !== "VIIRS" && s.lo !== null && s.hi !== null ? `${num(s.lo)} to ${num(s.hi)}` : "measured"}</td>
+                  <td>{s.source === "VIIRS" ? "VIIRS" : s.terra_only ? "MODIS, Terra alone, converted" : "MODIS, converted"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="note">Before against after, every way it was cut:</p>
+        <div className="table-scroll">
+          <table className="wrap">
+            <thead><tr><th>Before</th><th>Mean (range)</th><th>After</th><th>Mean (range)</th><th>Change (range)</th><th>Why this cut</th></tr></thead>
+            <tbody>
+              {findings.ban.comparisons.map((c) => (
+                <tr key={`${c.before.years}-${c.after.years}`}>
+                  <td>{c.before.years[0]} to {c.before.years[1]}</td>
+                  <td>{num(c.before.mean)} ({num(c.before.lo)} to {num(c.before.hi)})</td>
+                  <td>{c.after.years[0]} to {c.after.years[1]}</td>
+                  <td>{num(c.after.mean)} ({num(c.after.lo)} to {num(c.after.hi)})</td>
+                  <td>{signed(c.change.pct)}% ({signed(c.change.lo_pct)}% to {signed(c.change.hi_pct)}%)</td>
+                  <td>{c.why}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="note">Day and night, per MODIS satellite ({findings.ban.day_night.unit}):</p>
+        <div className="table-scroll">
+          <table>
+            <thead><tr><th>Period</th><th>Satellite</th><th>Years</th><th>Day</th><th>Night</th><th>Night share (95% interval)</th></tr></thead>
+            <tbody>
+              {findings.ban.day_night.shares.map((s) => (
+                <tr key={`${s.period}-${s.satellite}-${s.years}`}>
+                  <td>{s.period}</td><td>{s.satellite}</td><td>{s.years[0]} to {s.years[1]}</td><td>{num(s.day)}</td><td>{num(s.night)}</td>
+                  <td>{num(s.night_share_pct, 1)}% ({num(s.ci95_pct[0], 1)}% to {num(s.ci95_pct[1], 1)}%)</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <h3>The Delta since 2018</h3>
+        <p>{findings.since_2018.answer}</p>
+        <div className="table-scroll">
+          <table>
+            <thead><tr><th>Area</th><th>{findings.since_2018.reference_years[0]} to {findings.since_2018.reference_years[1]} (range)</th><th>{findings.since_2018.recent_years[0]} to {findings.since_2018.recent_years[1]}</th><th>Change (range)</th><th>Without 2026</th></tr></thead>
+            <tbody>
+              {findings.since_2018.areas.map((a) => (
+                <tr key={a.area}>
+                  <td>{a.name}</td>
+                  <td>{num(a.reference.mean)} ({num(a.reference.lo)} to {num(a.reference.hi)})</td>
+                  <td>{num(a.recent.mean)}</td>
+                  <td>{signed(a.change.pct)}% ({signed(a.change.lo_pct)}% to {signed(a.change.hi_pct)}%)</td>
+                  <td>{signed(a.without_last_season.change.pct)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <h3>One sentence per area</h3>
+        <div className="table-scroll">
+          <table className="wrap">
+            <thead><tr><th>Area</th><th>What the record shows</th></tr></thead>
+            <tbody>
+              {findings.areas.map((a) => (
+                <tr key={a.id}>
+                  <td><Link href={`/explore?area=${a.id}`}>{a.name}</Link>, {a.country}</td>
+                  <td>{a.sentence}{"note" in a && a.note ? ` ${a.note}` : ""}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <h3>What this cannot show</h3>
+        <ul>
+          <li><strong>The intensity of a single fire.</strong> The unit measures spread and duration: how many places burned, on how many days. One fierce fire in a few cells counts little. The Chilecito fire of July 2026 gave about 900 detections and counts as an ordinary season. The panel adds an intensity line when a month&rsquo;s detections per burning cell are unusual.</li>
+          <li><strong>Whether the ban had any effect.</strong> There is no record of what would have burned without it. A ban that slowed a rise and a ban that did nothing look the same here. Rice area, harvest dates and how the straw was handled are not in satellite fire data.</li>
+          <li><strong>A level before the ban worth the name.</strong> Three seasons, one of them Terra alone, on a record that was already climbing.</li>
+          <li><strong>Burning between overpasses.</strong> MODIS looks four times a day. A fire lit after the early-afternoon pass and out before the late-evening one is never counted.</li>
+          <li><strong>Whether the bands hold before 2012.</strong> They are measured on 2012 to 2020. Nothing can test the conversion on 2001 to 2011, because VIIRS was not flying.</li>
+          <li><strong>How much straw burned.</strong> Hotspot-days count cells and days, not hectares or tonnes. Small, short or smoke-covered fires are missed by both sensors.</li>
+          <li><strong>The final 2026 figures.</strong> The latest months are near-real-time data and will change a little when NASA reprocesses them.</li>
+        </ul>
+
+        <h2 id="sources">9. Sources</h2>
         <ul>
           <li>NASA FIRMS active fire detections: MODIS Collection 6.1 (Terra, Aqua) and VIIRS 375 m (Suomi NPP, NOAA-20, NOAA-21).</li>
           <li>NASA GIBS true-colour imagery, for the satellite basemap.</li>

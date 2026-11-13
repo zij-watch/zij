@@ -15,6 +15,11 @@
 //   "3rd lowest of 26 years, 2001 to 2026, the 8th percentile". The rank counts the year itself;
 //   the percentile is the share of the other years under the value, ties counted half.
 // - The percentiles that set the badge are interpolated the way the pipeline does (numpy's default).
+// - Beside the verdict, an intensity line when a month is unusually intense for the area. The unit
+//   counts places and days with fire, so one fierce fire in a few cells can read as "normal". The
+//   measure is the month's VIIRS detections per VIIRS fire cell-day; it is unusual when it is over
+//   the 90th percentile of the same calendar month in the other VIIRS years (5 or more of them,
+//   and 30 or more detections). Mean fire radiative power is not in the area files, so it is not used.
 // - No verdict where the area has no fit (fit mode "none"), where the value is missing, or where
 //   fewer than 5 other years can be compared.
 
@@ -30,17 +35,56 @@ export const LEVEL_WORDS: Record<Level, string> = {
   "far-above": "far above normal",
 };
 
+const badge = (level: Level) => LEVEL_WORDS[level][0].toUpperCase() + LEVEL_WORDS[level].slice(1);
+
 export interface Verdict {
   level: Level;
   badge: string; // "Below normal"
   percentile: number; // 0 to 100, exact
   rank: string; // "3rd lowest of 26 years"
   sentence: string;
+  intensity?: string | null; // "Above normal in spread, unusually intense: about 900 detections in 8 cells."
+}
+
+/** A named fire from findings.json: its days, its VIIRS detections and the grid cells it burned in. */
+export interface FireNote { fire_days: [string, string]; viirs_detections: number; grid_cells: number }
+
+/** "about 900": a count as people say it. */
+export const approx = (n: number) => (n >= 100 ? Math.round(n / 100) * 100 : n >= 20 ? Math.round(n / 10) * 10 : Math.round(n));
+
+export const MIN_DETECTIONS = 30;
+
+/**
+ * The intensity line for a calendar month, or null when the month is not unusually intense.
+ * `level` is the activity verdict it stands beside; `fire` gives the words for a named fire.
+ */
+export function monthIntensity(area: Area, year: number, month: number, level: Level, fire?: FireNote | null): string | null {
+  const w = area.weeks as Area["weeks"] & { viirs_hotspots: (number | null)[]; viirs: (number | null)[]; month: number[] };
+  if (!w.viirs_hotspots || !w.viirs || !w.month) return null; // an area file without the raw counts
+  const detections = new Map<number, number>(), cellDays = new Map<number, number>();
+  for (let i = 0; i < w.year.length; i++) {
+    const d = w.viirs_hotspots[i], c = w.viirs[i];
+    if (w.month[i] !== month || d === null || d === undefined || c === null || c === undefined) continue;
+    detections.set(w.year[i], (detections.get(w.year[i]) ?? 0) + d);
+    cellDays.set(w.year[i], (cellDays.get(w.year[i]) ?? 0) + c);
+  }
+  const d = detections.get(year) ?? 0, c = cellDays.get(year) ?? 0;
+  if (d < MIN_DETECTIONS || !(c > 0)) return null;
+  const others = [...cellDays.keys()].filter((y) => y !== year && (cellDays.get(y) as number) > 0).map((y) => (detections.get(y) as number) / (cellDays.get(y) as number));
+  if (others.length < MIN_YEARS) return null;
+  const sorted = others.sort((a, b) => a - b);
+  const ratio = d / c;
+  if (!(ratio > quantile(sorted, 0.9))) return null;
+  const usual = quantile(sorted, 0.5);
+  const named = fire && fire.fire_days[0].slice(0, 7) === `${year}-${String(month).padStart(2, "0")}`;
+  const what = named
+    ? `about ${num(approx(fire.viirs_detections))} detections in ${fire.grid_cells} cells`
+    : `about ${num(approx(d))} VIIRS detections over ${num(c)} cell-days${usual > 0 ? `, ${num(ratio / usual, 1)} times the usual for ${MONTHS[month - 1]} here` : ""}`;
+  return `${badge(level)} in spread, unusually intense: ${what}.`;
 }
 
 export const MIN_YEARS = 5;
 export const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
-const badge = (level: Level) => LEVEL_WORDS[level][0].toUpperCase() + LEVEL_WORDS[level].slice(1);
 
 export function levelFrom(value: number, p10: number, p25: number, p75: number, p90: number): Level {
   if (value > p90) return "far-above";
@@ -78,7 +122,7 @@ const span = (years: number[]) => `${Math.min(...years)} to ${Math.max(...years)
 const make = (s: Standing, sentence: string): Verdict => ({ level: s.level, badge: badge(s.level), percentile: s.percentile, rank: s.rank, sentence });
 
 /** The area's opening verdict: this month so far, against the same days of the past years. */
-export function areaVerdict(area: Area): Verdict | null {
+export function areaVerdict(area: Area, fire?: FireNote | null): Verdict | null {
   if (area.fit.mode === "none") return null;
   const t = area.this_month;
   if (t.value_to_date === null) return null;
@@ -86,8 +130,12 @@ export function areaVerdict(area: Area): Verdict | null {
   const s = standing(t.value_to_date, t.to_date_values);
   if (!s) return null;
   const years = [...t.to_date_years, t.year];
-  return make(s, `${MONTHS[t.month - 1]} ${t.year} so far is ${LEVEL_WORDS[s.level]} here: ${num(t.value_to_date, 1)} in its first ${t.days_so_far} days, ` +
-    `against a median of ${num(s.median, 1)} for the same days. That is ${s.rank}, ${span(years)}, the ${ordinal(s.percentile)} percentile.`);
+  return withIntensity(area, t.year, t.month, fire, make(s, `${MONTHS[t.month - 1]} ${t.year} so far is ${LEVEL_WORDS[s.level]} here: ${num(t.value_to_date, 1)} in its first ${t.days_so_far} days, ` +
+    `against a median of ${num(s.median, 1)} for the same days. That is ${s.rank}, ${span(years)}, the ${ordinal(s.percentile)} percentile.`));
+}
+
+function withIntensity(area: Area, year: number, month: number, fire: FireNote | null | undefined, verdict: Verdict): Verdict {
+  return { ...verdict, intensity: monthIntensity(area, year, month, verdict.level, fire) };
 }
 
 /**
@@ -115,7 +163,7 @@ function olderFile(area: Area): Verdict | null {
 }
 
 /** A chosen day: the verdicts of the week and of the month that hold it. */
-export function dayVerdicts(area: Area, date: string): { week: Verdict | null; month: Verdict | null } {
+export function dayVerdicts(area: Area, date: string, fire?: FireNote | null): { week: Verdict | null; month: Verdict | null } {
   const out: { week: Verdict | null; month: Verdict | null } = { week: null, month: null };
   if (area.fit.mode === "none") return out;
 
@@ -141,7 +189,7 @@ export function dayVerdicts(area: Area, date: string): { week: Verdict | null; m
   const j = m.year.findIndex((y, k) => y === year && m.month[k] === monthNumber);
   if (j >= 0 && m.value[j] !== null) {
     if (!m.complete[j]) {
-      const running = area.this_month.year === year && area.this_month.month === monthNumber ? areaVerdict(area) : null;
+      const running = area.this_month.year === year && area.this_month.month === monthNumber ? areaVerdict(area, fire) : null;
       out.month = running && { ...running, sentence: running.sentence.replace(" here:", ":") };
     } else {
       const years: number[] = [], values: number[] = [];
@@ -150,8 +198,8 @@ export function dayVerdicts(area: Area, date: string): { week: Verdict | null; m
       });
       const s = standing(m.value[j] as number, values);
       if (s) {
-        out.month = make(s, `Its month, ${MONTHS[monthNumber - 1]} ${year}, was ${LEVEL_WORDS[s.level]}: ${num(m.value[j] as number, 1)} against a median ${MONTHS[monthNumber - 1]} of ${num(s.median, 1)}. ` +
-          `That is ${s.rank}, ${span([...years, year])}, the ${ordinal(s.percentile)} percentile.`);
+        out.month = withIntensity(area, year, monthNumber, fire, make(s, `Its month, ${MONTHS[monthNumber - 1]} ${year}, was ${LEVEL_WORDS[s.level]}: ${num(m.value[j] as number, 1)} against a median ${MONTHS[monthNumber - 1]} of ${num(s.median, 1)}. ` +
+          `That is ${s.rank}, ${span([...years, year])}, the ${ordinal(s.percentile)} percentile.`));
       }
     }
   }
