@@ -204,3 +204,7 @@ table.wrap td:last-child { white-space: nowrap; }
 .day td:last-child { white-space: normal; }
 
 .map-waiting { display: flex; align-items: center; justify-content: center; color: var(--ink-muted); }
+
+/* ---------------------------------------------------------------- first HTML, before scripts */
+.shell-title { font: 600 24px/30px var(--font-display); margin: 4px 0; }
+.noscript { margin: 0; padding: 8px 16px; background: var(--ground-raised); border-bottom: 1px solid var(--rule); }

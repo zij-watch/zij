@@ -8,7 +8,9 @@ import { COVERED, loadCellsIndex, resolveDrawn, type DrawnResult } from "@/lib/d
 import type { Shape } from "@/lib/fit/cells";
 import { monthSpan } from "@/lib/format";
 import { BASEMAPS } from "@/lib/map/style";
+import type { AreaFacts } from "@/lib/facts";
 import { useAppState } from "@/lib/url";
+import { AreaLinks, FactsBlock, INTRO } from "./Shell";
 import DayPanel from "./DayPanel";
 import type { DrawMode } from "./MapView";
 import { loadingWords, useLoading } from "@/lib/download";
@@ -76,9 +78,9 @@ function CoordinateEntry({ shape, onBox }: { shape: Shape | null; onBox: (box: S
   );
 }
 
-export default function Explore() {
+export default function Explore({ initialIndex = null, facts = null }: { initialIndex?: Index | null; facts?: AreaFacts | null }) {
   const [state, update] = useAppState();
-  const [index, setIndex] = useState<Index | null>(null);
+  const [index, setIndex] = useState<Index | null>(initialIndex);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [area, setArea] = useState<Area | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -99,7 +101,7 @@ export default function Explore() {
   const [dayLoading, setDayLoading] = useState(false);
 
   useEffect(() => {
-    loadIndex().then(setIndex).catch((e: Error) => setError(e.message));
+    if (!initialIndex) loadIndex().then(setIndex).catch((e: Error) => setError(e.message));
     loadNotes().then(setNotes);
   }, []);
 
@@ -240,21 +242,31 @@ export default function Explore() {
             <div className="panel-body">
               <p className="eyebrow">Zij</p>
               <h2>26 years of fire, on one scale</h2>
-              <p>
-                MODIS has watched fires since 2000, VIIRS since 2012, and VIIRS sees many more of them. Zij puts both records
-                in one unit, so a year before 2012 can be read against a year after it.
-              </p>
-              <p>Choose an area on the map or from the list, or draw your own in {COVERED}.</p>
-              <ul className="plain">
-                {index?.areas.map((a) => (
-                  <li key={a.id}><button type="button" className="link" onClick={() => update({ area: a.id })}>{a.name}</button>, {a.country}</li>
-                ))}
-              </ul>
+              {INTRO.map((text) => <p key={text}>{text}</p>)}
+              <p>Choose an area on the map or below, or draw your own in {COVERED}.</p>
+              <div onClick={(event) => {
+                // The links work without scripts; with them, the page changes area without reloading.
+                const link = (event.target as HTMLElement).closest("a");
+                const id = link ? new URL(link.href).searchParams.get("area") : null;
+                if (id) {
+                  event.preventDefault();
+                  update({ area: id, shape: null, month: null });
+                }
+              }}>
+                <AreaLinks areas={index?.areas ?? []} />
+              </div>
             </div>
           )}
           {!error && drawMode && !shown && <p className="panel-body" role="status">{loading ? loadingWords(loading) : "Draw on the map. The numbers appear here as the shape grows."}</p>}
           {!error && !drawMode && hasPanel && !panelArea && !(shown && shown.status !== "ok") && (
-            <p className="panel-body" role="status">{loading ? loadingWords(loading) : working && shapeKey ? "Fitting your area…" : "Loading…"}</p>
+            facts && facts.id === areaId ? (
+              <FactsBlock facts={facts} />
+            ) : (
+              <div className="panel-body" role="status">
+                <p>{loading ? loadingWords(loading) : shapeKey ? "Fitting your drawn area. This runs in your browser, once the page's scripts and the region's cells have loaded." : "Loading…"}</p>
+                {shapeKey && INTRO.map((text) => <p key={text} className="note">{text}</p>)}
+              </div>
+            )
           )}
           {!error && shown && shown.status !== "ok" && <CoverageMessage result={shown} />}
           {!error && day && !panelArea && !drawMode && (

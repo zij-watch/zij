@@ -24,9 +24,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <style dangerouslySetInnerHTML={{ __html: tokensCss() }} />
       </head>
       <body>
-        <Suspense fallback={<header className="nav" />}>
+        <Suspense fallback={<header className="nav"><a href="/" className="wordmark">Zij</a><nav aria-label="Pages"><a href="/">Explore</a><a href="/downloads">Downloads</a><a href="/how-it-works">How it works</a></nav></header>}>
           <Nav />
         </Suspense>
+        <noscript>
+          <p className="noscript">
+            The map, the calendar and the downloads need JavaScript. Without it, <a href="/how-it-works">How it works</a> shows the
+            method and all the numbers.
+          </p>
+        </noscript>
         {children}
         <footer className="credits">
           Fire data: NASA FIRMS (MODIS and VIIRS active fires). Imagery: NASA GIBS. Outlines: Natural Earth.
