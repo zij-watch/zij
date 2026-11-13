@@ -20,13 +20,30 @@ DATA = REPO / "data"
 DB_PATH = DATA / "zij.duckdb"
 PROCESSED = DATA / "processed"
 
-COUNTRIES = ["Egypt", "Portugal"]
+# Country folder -> ISO code (Natural Earth outline) and the box the FIRMS area API is asked for.
+# Boxes are [west, south, east, north]. Portugal's box is the mainland.
+COUNTRY_INFO = {
+    "Egypt": {"iso3": "EGY", "box": (24.6, 21.9, 37.0, 31.8)},
+    "Portugal": {"iso3": "PRT", "box": (-9.6, 36.9, -6.1, 42.2)},
+    "Argentina": {"iso3": "ARG", "box": (-73.6, -55.1, -53.6, -21.7)},
+}
+COUNTRIES = list(COUNTRY_INFO)
+OUTLINES = FIRMS_RAW / "boundaries" / "ne_10m_admin_0_countries.geojson"
 
 # Folder under firms/<Country>/ -> sensor family.
 SOURCES = {
     "modis": "MODIS",
     "viirs-snpp": "VIIRS",
     "viirs-jpss1": "VIIRS",
+    "viirs-jpss2": "VIIRS",  # NOAA-21: API pulls only, FIRMS publishes no yearly files
+}
+
+# Folder -> FIRMS area API source name, without the _SP or _NRT ending.
+API_SOURCES = {
+    "modis": "MODIS",
+    "viirs-snpp": "VIIRS_SNPP",
+    "viirs-jpss1": "VIIRS_NOAA20",
+    "viirs-jpss2": "VIIRS_NOAA21",
 }
 
 # FIRMS `satellite` codes -> (family, readable name).
@@ -35,11 +52,17 @@ SATELLITES = {
     "Aqua": ("MODIS", "Aqua"),
     "N": ("VIIRS", "Suomi NPP"),
     "N20": ("VIIRS", "NOAA-20"),
+    "N21": ("VIIRS", "NOAA-21"),
 }
 
-# The yearly country files end here. A satellite counts as flying from its first
-# detection in the loaded countries to this day, known gaps left out.
-LAST_DAY = date(2025, 12, 31)
+# The yearly country files end here; the API pulls carry on from the next day.
+YEARLY_LAST_DAY = date(2025, 12, 31)
+
+# A satellite counts as flying from its first detection in the loaded countries
+# to the last full day pulled, known gaps left out. Suomi NPP's data ends on
+# 2 Nov 2026, a partial day, so its last day flown is 1 Nov 2026 (end of mission,
+# not an outage).
+MISSION_END = {"N": date(2026, 11, 1)}
 
 # Filters (SPEC 5.1).
 MODIS_MIN_CONFIDENCE = 30
