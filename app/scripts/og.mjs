@@ -1,8 +1,6 @@
-// Draws the share images from the landing page's opening (public/landing.html, so run
+// Draws the share image from the landing page's opening (public/landing.html, so run
 // build-landing.mjs first):
 //   public/og.jpg                  1200 x 630, the picture a link to zij.watch unfurls with
-//   ../docs/social-preview.jpg     1280 x 640, the repository's social preview (uploaded by hand in
-//                                  the repository's settings on GitHub)
 // It serves public/ itself and starts its own headless browser on a free port, so it disturbs no
 // other. Usage: node scripts/og.mjs   (BROWSER=<path to a Chromium> to choose the browser)
 import { spawn } from "node:child_process";
@@ -15,7 +13,6 @@ import { fileURLToPath } from "node:url";
 const pub = fileURLToPath(new URL("../public/", import.meta.url));
 const SHOTS = [
   { file: new URL("../public/og.jpg", import.meta.url), w: 1200, h: 630, line: "zij.watch" },
-  { file: new URL("../../docs/social-preview.jpg", import.meta.url), w: 1280, h: 640, line: "zij.watch" },
 ];
 const TYPES = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".png": "image/png", ".json": "application/json" };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
