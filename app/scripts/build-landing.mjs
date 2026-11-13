@@ -318,12 +318,12 @@ js = swap(js, "  document.querySelectorAll('.desk > .record [data-ink]').forEach
   (function abjadInk() {
     if (still) return;
     // each stroke: points across the letter's ink box (0,0 its top left, 1,1 its bottom right),
-    // the brush's width in ems, how long it takes, and its wet tip as a share of the stroke
+    // the brush's width in ems, how long it takes (0: a dot, set down whole), and its wet tip as a share
     const DUCTUS = {
-      'أ': [[[[0.5, 0.42], [0.5, 1.06]], 0.26, 0.55, 0.3], [[[0.9, 0], [0.3, 0.06], [0.62, 0.16], [0.2, 0.24]], 0.22, 0.4, 0.4]],
-      'ب': [[[[1.02, 0], [0.98, 0.45], [0.75, 0.62], [0.25, 0.62], [0, 0.5], [-0.02, 0.15]], 0.34, 0.75, 0.16], [[[0.5, 0.78], [0.5, 1]], 0.26, 0.18, 1]],
-      'ج': [[[[0.92, 0.04], [0.2, 0.1], [0.62, 0.34], [0.12, 0.58], [0.22, 0.92], [0.72, 1], [1, 0.84]], 0.3, 1, 0.12], [[[0.6, 0.56], [0.55, 0.68]], 0.22, 0.18, 1]],
-      'د': [[[[0.4, 0], [0.9, 0.58], [0.7, 0.95], [-0.02, 0.95]], 0.34, 0.6, 0.2]],
+      'أ': [[[[0.5, 0.42], [0.5, 1.06]], 0.26, 0.45, 0.3], [[[0.9, 0], [0.3, 0.06], [0.62, 0.16], [0.2, 0.24]], 0.22, 0.32, 0.4]],
+      'ب': [[[[1.02, 0], [0.98, 0.45], [0.75, 0.62], [0.25, 0.62], [0, 0.5], [-0.02, 0.15]], 0.34, 0.6, 0.16], [[[0.5, 0.78], [0.5, 1]], 0.26, 0, 0]],
+      'ج': [[[[0.92, 0.04], [0.2, 0.1], [0.62, 0.34], [0.12, 0.58], [0.22, 0.92], [0.72, 1], [1, 0.84]], 0.3, 0.8, 0.12], [[[0.6, 0.56], [0.55, 0.68]], 0.22, 0, 0]],
+      'د': [[[[0.4, 0], [0.9, 0.58], [0.7, 0.95], [-0.02, 0.95]], 0.34, 0.5, 0.2]],
     };
     const ctx = document.createElement('canvas').getContext('2d');
     function write(letterEl, k) {
@@ -342,9 +342,9 @@ js = swap(js, "  document.querySelectorAll('.desk > .record [data-ink]').forEach
       let t = 0.15, ink = '', wet = '';
       for (const [pts, w, dur, tip] of strokes) {
         const d = \`M\${pts.map(P).join(' L')}\`, timing = \`--at:\${n1(t)}s;--dur:\${dur}s;--tip:\${tip}\`;
-        ink += \`<path class="ab-stroke" pathLength="1" d="\${d}" stroke-width="\${n1(w * fs)}" style="\${timing}"/>\`;
-        wet += \`<path class="ab-wet-stroke" pathLength="1" d="\${d}" stroke-width="\${n1(w * fs)}" style="\${timing}"/>\`;
-        t += dur + 0.12;
+        ink += \`<path class="\${dur ? 'ab-stroke' : 'ab-dot'}" pathLength="1" d="\${d}" stroke-width="\${n1(w * fs)}" style="\${timing}"/>\`;
+        if (dur) wet += \`<path class="ab-wet-stroke" pathLength="1" d="\${d}" stroke-width="\${n1(w * fs)}" style="\${timing}"/>\`;
+        t += (dur || 0.05) + 0.1;
       }
       // the letter, drawn again exactly where it stands, in its own face, for the brush to uncover
       const glyph = \`x="\${n1(left - x0 + pad)}" y="\${n1(base - y0 + pad)}" style="font: \${cs.fontStyle} \${cs.fontWeight} \${fs}px \${cs.fontFamily.replace(/"/g, "'")}"\`;
@@ -421,21 +421,22 @@ js = swap(js, "  function drawThread(t) {", `  function threadsOverRecord() {
 // brush strokes, each along the line a reed brush would take through its shape, uncovers the seal
 // in the order it is written. It is written as زيج, right to left, the way Arabic is: the ز (the
 // hooked stroke, then its dot), the ي (the stem and its ring, then its two dots, right one first),
-// then the ج (the Z in one stroke, every bar drawn right to left, its crossbar, its dot). A little
-// turbulence gives each stroke a brush's ragged edge, and a wet tip of warm ink runs ahead of each
-// stroke and dries behind it. The strokes rest fully drawn (additions.css animates them only from
+// then the ج (the Z in one stroke, every bar drawn right to left, its crossbar, its dot), in a little
+// over two seconds. A little turbulence gives each stroke a brush's ragged edge, and a wet tip of
+// warm ink runs at the head of each long stroke and dries behind it; a dot is set down whole, in one
+// touch of the brush. The strokes rest fully drawn (additions.css animates them only from
 // nothing), so with reduced motion the seal is simply there.
 const SEAL_STROKES = [
-  // [d, width, start s, duration s, wet tip as a share of the stroke]
-  ["M316 194 L316 340 L292 376 L254 376", 46, 0.3, 0.62, 0.16],
-  ["M316 141 L316 181", 40, 1.05, 0.16, 1],
-  ["M243 194 L243 306", 46, 1.32, 0.34, 0.3],
-  ["M243 149.25 A11.75 11.75 0 1 0 243 172.75 A11.75 11.75 0 1 0 243 149.25", 14, 1.72, 0.38, 0.3],
-  ["M260 311 L260 346", 34, 2.18, 0.14, 1],
-  ["M226 311 L226 346", 34, 2.36, 0.14, 1],
-  ["M198 376 L66 376 L198 214 L46 214", 46, 2.6, 1.15, 0.09],
-  ["M214 286 L162 286", 34, 3.85, 0.22, 0.6],
-  ["M145 313 L145 349", 34, 4.15, 0.14, 1],
+  // [d, width, start s, duration s (0: a dot, set down whole in one touch), wet tip as a share of the stroke]
+  ["M316 194 L316 340 L292 376 L254 376", 46, 0.15, 0.42, 0.2],
+  ["M316 141 L316 181", 40, 0.62, 0, 0],
+  ["M243 194 L243 306", 46, 0.74, 0.24, 0.35],
+  ["M243 149.25 A11.75 11.75 0 1 0 243 172.75 A11.75 11.75 0 1 0 243 149.25", 14, 1.02, 0, 0],
+  ["M260 311 L260 346", 34, 1.1, 0, 0],
+  ["M226 311 L226 346", 34, 1.18, 0, 0],
+  ["M198 376 L66 376 L198 214 L46 214", 46, 1.32, 0.72, 0.1],
+  ["M214 286 L162 286", 34, 2.08, 0.15, 0.6],
+  ["M145 313 L145 349", 34, 2.28, 0, 0],
 ];
 const SEAL_SHAPES = [
   "M46,200L198,200L198,228L86.35,362L198,362L198,390L46,390L46,362L157.65,228L46,228Z",
@@ -455,12 +456,12 @@ const SEAL_WRITTEN = `<svg class="seal-written" viewBox="46 144 287 246" width="
           </filter>
           <mask id="seal-ink" maskUnits="userSpaceOnUse" x="20" y="120" width="340" height="300">
             <g filter="url(#seal-brush)" fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round">
-${SEAL_STROKES.map(([d, w, at, dur]) => `              <path class="seal-stroke" pathLength="1" d="${d}" stroke-width="${w}" style="--at:${at}s;--dur:${dur}s"/>`).join("\n")}
+${SEAL_STROKES.map(([d, w, at, dur]) => `              <path class="${dur ? "seal-stroke" : "seal-dot"}" pathLength="1" d="${d}" stroke-width="${w}" style="--at:${at}s;--dur:${dur}s"/>`).join("\n")}
             </g>
           </mask>
           <mask id="seal-wet" maskUnits="userSpaceOnUse" x="20" y="120" width="340" height="300">
             <g filter="url(#seal-brush)" fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round">
-${SEAL_STROKES.map(([d, w, at, dur, tip]) => `              <path class="seal-wet-stroke" pathLength="1" d="${d}" stroke-width="${w}" style="--at:${at}s;--dur:${dur}s;--tip:${tip}"/>`).join("\n")}
+${SEAL_STROKES.filter(([, , , dur]) => dur).map(([d, w, at, dur, tip]) => `              <path class="seal-wet-stroke" pathLength="1" d="${d}" stroke-width="${w}" style="--at:${at}s;--dur:${dur}s;--tip:${tip}"/>`).join("\n")}
             </g>
           </mask>
         </defs>
