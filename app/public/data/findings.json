@@ -1,0 +1,1740 @@
+{
+ "built_at_utc": "2026-11-13T17:07:26+00:00",
+ "last_full_day": "2026-11-12",
+ "unit": "fire_days",
+ "unit_label": "hotspot-days (VIIRS-equivalent)",
+ "band_note": "Ranges on converted (MODIS) seasons are the 10th to 90th percentile of the conversion error on 2012 to 2020. A period's range takes every converted season at one end of its band; a change's range sets one period's low against the other's high.",
+ "ban": {
+  "area": "nile-delta",
+  "ban_year": 2004,
+  "season": [
+   8,
+   9,
+   10
+  ],
+  "season_band_pct": [
+   -8.4,
+   10.4
+  ],
+  "terra_only_season_band_pct": [
+   -11.3,
+   9.5
+  ],
+  "verdict": {
+   "seasons": "higher_after",
+   "day_night": "cannot_tell",
+   "effect_of_ban": "cannot_tell"
+  },
+  "answer": "Cannot tell whether the ban changed burning. What the record shows is that detected burning did not fall after 2004: the August to October total averaged 916 in 2001 to 2003 and 1,804 in 2005 to 2011, +97% (+62% to +137%). The rise had started before the ban, there are only three seasons before it, and one of them is Terra alone. The seasons since 2018 are back near the level of before the ban (-4%, -13% to +6%). MODIS night detections are too few to show a move between day and night.",
+  "seasons": [
+   {
+    "year": 2001,
+    "value": 701.75,
+    "lo": 640.86,
+    "hi": 791.15,
+    "source": "MODIS",
+    "terra_only": true,
+    "terra_cell_days": 38.0,
+    "aqua_cell_days": null
+   },
+   {
+    "year": 2002,
+    "value": 1086.83,
+    "lo": 984.45,
+    "hi": 1186.5,
+    "source": "MODIS",
+    "terra_only": false,
+    "terra_cell_days": 81.0,
+    "aqua_cell_days": null
+   },
+   {
+    "year": 2003,
+    "value": 960.76,
+    "lo": 870.25,
+    "hi": 1048.86,
+    "source": "MODIS",
+    "terra_only": false,
+    "terra_cell_days": 53.0,
+    "aqua_cell_days": 78.0
+   },
+   {
+    "year": 2004,
+    "value": 1251.27,
+    "lo": 1133.4,
+    "hi": 1366.02,
+    "source": "MODIS",
+    "terra_only": false,
+    "terra_cell_days": 71.0,
+    "aqua_cell_days": 129.0
+   },
+   {
+    "year": 2005,
+    "value": 1623.34,
+    "lo": 1470.42,
+    "hi": 1772.21,
+    "source": "MODIS",
+    "terra_only": false,
+    "terra_cell_days": 132.0,
+    "aqua_cell_days": 176.0
+   },
+   {
+    "year": 2006,
+    "value": 2014.36,
+    "lo": 1824.6,
+    "hi": 2199.09,
+    "source": "MODIS",
+    "terra_only": false,
+    "terra_cell_days": 238.0,
+    "aqua_cell_days": 196.0
+   },
+   {
+    "year": 2007,
+    "value": 1788.08,
+    "lo": 1619.64,
+    "hi": 1952.05,
+    "source": "MODIS",
+    "terra_only": false,
+    "terra_cell_days": 162.0,
+    "aqua_cell_days": 221.0
+   },
+   {
+    "year": 2008,
+    "value": 1720.01,
+    "lo": 1557.98,
+    "hi": 1877.74,
+    "source": "MODIS",
+    "terra_only": false,
+    "terra_cell_days": 133.0,
+    "aqua_cell_days": 188.0
+   },
+   {
+    "year": 2009,
+    "value": 1851.3,
+    "lo": 1676.9,
+    "hi": 2021.07,
+    "source": "MODIS",
+    "terra_only": false,
+    "terra_cell_days": 143.0,
+    "aqua_cell_days": 216.0
+   },
+   {
+    "year": 2010,
+    "value": 1907.04,
+    "lo": 1727.39,
+    "hi": 2081.92,
+    "source": "MODIS",
+    "terra_only": false,
+    "terra_cell_days": 172.0,
+    "aqua_cell_days": 203.0
+   },
+   {
+    "year": 2011,
+    "value": 1725.16,
+    "lo": 1562.64,
+    "hi": 1883.36,
+    "source": "MODIS",
+    "terra_only": false,
+    "terra_cell_days": 136.0,
+    "aqua_cell_days": 188.0
+   },
+   {
+    "year": 2012,
+    "value": 1609.0,
+    "lo": 1609.0,
+    "hi": 1609.0,
+    "source": "VIIRS",
+    "terra_only": false,
+    "terra_cell_days": 113.0,
+    "aqua_cell_days": 180.0
+   },
+   {
+    "year": 2013,
+    "value": 2302.0,
+    "lo": 2302.0,
+    "hi": 2302.0,
+    "source": "VIIRS",
+    "terra_only": false,
+    "terra_cell_days": 237.0,
+    "aqua_cell_days": 303.0
+   },
+   {
+    "year": 2014,
+    "value": 2234.0,
+    "lo": 2234.0,
+    "hi": 2234.0,
+    "source": "VIIRS",
+    "terra_only": false,
+    "terra_cell_days": 224.44,
+    "aqua_cell_days": 243.0
+   },
+   {
+    "year": 2015,
+    "value": 1713.0,
+    "lo": 1713.0,
+    "hi": 1713.0,
+    "source": "VIIRS",
+    "terra_only": false,
+    "terra_cell_days": 172.0,
+    "aqua_cell_days": 132.0
+   },
+   {
+    "year": 2016,
+    "value": 2135.0,
+    "lo": 2135.0,
+    "hi": 2135.0,
+    "source": "VIIRS",
+    "terra_only": false,
+    "terra_cell_days": 180.0,
+    "aqua_cell_days": 240.0
+   },
+   {
+    "year": 2017,
+    "value": 1615.0,
+    "lo": 1615.0,
+    "hi": 1615.0,
+    "source": "VIIRS",
+    "terra_only": false,
+    "terra_cell_days": 127.0,
+    "aqua_cell_days": 145.0
+   }
+  ],
+  "comparisons": [
+   {
+    "before": {
+     "years": [
+      2001,
+      2003
+     ],
+     "n": 3,
+     "n_converted": 3,
+     "mean": 916.45,
+     "lo": 831.85,
+     "hi": 1008.84,
+     "median": 960.76
+    },
+    "after": {
+     "years": [
+      2005,
+      2007
+     ],
+     "n": 3,
+     "n_converted": 3,
+     "mean": 1808.59,
+     "lo": 1638.22,
+     "hi": 1974.45,
+     "median": 1788.08
+    },
+    "why": "the three seasons each side of the ban year",
+    "change": {
+     "pct": 97.35,
+     "lo_pct": 62.39,
+     "hi_pct": 137.36
+    }
+   },
+   {
+    "before": {
+     "years": [
+      2001,
+      2003
+     ],
+     "n": 3,
+     "n_converted": 3,
+     "mean": 916.45,
+     "lo": 831.85,
+     "hi": 1008.84,
+     "median": 960.76
+    },
+    "after": {
+     "years": [
+      2005,
+      2011
+     ],
+     "n": 7,
+     "n_converted": 7,
+     "mean": 1804.18,
+     "lo": 1634.22,
+     "hi": 1969.63,
+     "median": 1788.08
+    },
+    "why": "every later season that is also converted from MODIS",
+    "change": {
+     "pct": 96.87,
+     "lo_pct": 61.99,
+     "hi_pct": 136.78
+    }
+   },
+   {
+    "before": {
+     "years": [
+      2001,
+      2003
+     ],
+     "n": 3,
+     "n_converted": 3,
+     "mean": 916.45,
+     "lo": 831.85,
+     "hi": 1008.84,
+     "median": 960.76
+    },
+    "after": {
+     "years": [
+      2005,
+      2017
+     ],
+     "n": 13,
+     "n_converted": 7,
+     "mean": 1864.41,
+     "lo": 1772.89,
+     "hi": 1953.5,
+     "median": 1788.08
+    },
+    "why": "up to the last season before the fall of 2018",
+    "change": {
+     "pct": 103.44,
+     "lo_pct": 75.74,
+     "hi_pct": 134.84
+    }
+   },
+   {
+    "before": {
+     "years": [
+      2001,
+      2003
+     ],
+     "n": 3,
+     "n_converted": 3,
+     "mean": 916.45,
+     "lo": 831.85,
+     "hi": 1008.84,
+     "median": 960.76
+    },
+    "after": {
+     "years": [
+      2018,
+      2026
+     ],
+     "n": 9,
+     "n_converted": 0,
+     "mean": 881.85,
+     "lo": 881.85,
+     "hi": 881.85,
+     "median": 892.5
+    },
+    "why": "the seasons since the fall of 2018",
+    "change": {
+     "pct": -3.78,
+     "lo_pct": -12.59,
+     "hi_pct": 6.01
+    }
+   },
+   {
+    "before": {
+     "years": [
+      2001,
+      2003
+     ],
+     "n": 3,
+     "n_converted": 3,
+     "mean": 916.45,
+     "lo": 831.85,
+     "hi": 1008.84,
+     "median": 960.76
+    },
+    "after": {
+     "years": [
+      2005,
+      2026
+     ],
+     "n": 22,
+     "n_converted": 7,
+     "mean": 1462.45,
+     "lo": 1408.37,
+     "hi": 1515.09,
+     "median": 1664.73
+    },
+    "why": "every season after the ban year",
+    "change": {
+     "pct": 59.58,
+     "lo_pct": 39.6,
+     "hi_pct": 82.13
+    }
+   },
+   {
+    "before": {
+     "years": [
+      2002,
+      2003
+     ],
+     "n": 2,
+     "n_converted": 2,
+     "mean": 1023.79,
+     "lo": 927.35,
+     "hi": 1117.68,
+     "median": 1023.79
+    },
+    "after": {
+     "years": [
+      2005,
+      2011
+     ],
+     "n": 7,
+     "n_converted": 7,
+     "mean": 1804.18,
+     "lo": 1634.22,
+     "hi": 1969.63,
+     "median": 1788.08
+    },
+    "why": "without 2001, the Terra-only season",
+    "change": {
+     "pct": 76.23,
+     "lo_pct": 46.22,
+     "hi_pct": 112.39
+    }
+   },
+   {
+    "before": {
+     "years": [
+      2001,
+      2004
+     ],
+     "n": 4,
+     "n_converted": 4,
+     "mean": 1000.15,
+     "lo": 907.24,
+     "hi": 1098.13,
+     "median": 1023.79
+    },
+    "after": {
+     "years": [
+      2005,
+      2011
+     ],
+     "n": 7,
+     "n_converted": 7,
+     "mean": 1804.18,
+     "lo": 1634.22,
+     "hi": 1969.63,
+     "median": 1788.08
+    },
+    "why": "the ban year counted as before",
+    "change": {
+     "pct": 80.39,
+     "lo_pct": 48.82,
+     "hi_pct": 117.1
+    }
+   },
+   {
+    "before": {
+     "years": [
+      2001,
+      2003
+     ],
+     "n": 3,
+     "n_converted": 3,
+     "mean": 916.45,
+     "lo": 831.85,
+     "hi": 1008.84,
+     "median": 960.76
+    },
+    "after": {
+     "years": [
+      2004,
+      2011
+     ],
+     "n": 8,
+     "n_converted": 8,
+     "mean": 1735.07,
+     "lo": 1571.62,
+     "hi": 1894.18,
+     "median": 1756.62
+    },
+    "why": "the ban year counted as after",
+    "change": {
+     "pct": 89.33,
+     "lo_pct": 55.79,
+     "hi_pct": 127.71
+    }
+   }
+  ],
+  "one_satellite": {
+   "Terra": {
+    "before_years": [
+     2001,
+     2003
+    ],
+    "before_seasons": 3,
+    "before_mean": 57.33,
+    "after": [
+     {
+      "years": [
+       2005,
+       2007
+      ],
+      "mean": 177.33,
+      "times_before": 3.09
+     },
+     {
+      "years": [
+       2005,
+       2011
+      ],
+      "mean": 159.43,
+      "times_before": 2.78
+     },
+     {
+      "years": [
+       2005,
+       2017
+      ],
+      "mean": 166.88,
+      "times_before": 2.91
+     }
+    ],
+    "by_year": {
+     "2001": 38.0,
+     "2002": 81.0,
+     "2003": 53.0,
+     "2004": 71.0,
+     "2005": 132.0,
+     "2006": 238.0,
+     "2007": 162.0,
+     "2008": 133.0,
+     "2009": 143.0,
+     "2010": 172.0,
+     "2011": 136.0,
+     "2012": 113.0,
+     "2013": 237.0,
+     "2014": 224.44,
+     "2015": 172.0,
+     "2016": 180.0,
+     "2017": 127.0
+    }
+   },
+   "Aqua": {
+    "before_years": [
+     2003,
+     2003
+    ],
+    "before_seasons": 1,
+    "before_mean": 78.0,
+    "after": [
+     {
+      "years": [
+       2005,
+       2007
+      ],
+      "mean": 197.67,
+      "times_before": 2.53
+     },
+     {
+      "years": [
+       2005,
+       2011
+      ],
+      "mean": 198.29,
+      "times_before": 2.54
+     },
+     {
+      "years": [
+       2005,
+       2017
+      ],
+      "mean": 202.38,
+      "times_before": 2.59
+     }
+    ],
+    "by_year": {
+     "2003": 78.0,
+     "2004": 129.0,
+     "2005": 176.0,
+     "2006": 196.0,
+     "2007": 221.0,
+     "2008": 188.0,
+     "2009": 216.0,
+     "2010": 203.0,
+     "2011": 188.0,
+     "2012": 180.0,
+     "2013": 303.0,
+     "2014": 243.0,
+     "2015": 132.0,
+     "2016": 240.0,
+     "2017": 145.0
+    }
+   }
+  },
+  "day_night": {
+   "unit": "fire cell-days per satellite, day and night counted apart",
+   "shares": [
+    {
+     "period": "before",
+     "satellite": "Terra",
+     "years": [
+      2001,
+      2003
+     ],
+     "seasons": 3,
+     "day": 163,
+     "night": 9,
+     "night_share_pct": 5.23,
+     "ci95_pct": [
+      2.78,
+      9.64
+     ],
+     "night_per_season": [
+      2,
+      5
+     ]
+    },
+    {
+     "period": "after",
+     "satellite": "Terra",
+     "years": [
+      2005,
+      2011
+     ],
+     "seasons": 7,
+     "day": 1094,
+     "night": 22,
+     "night_share_pct": 1.97,
+     "ci95_pct": [
+      1.31,
+      2.97
+     ],
+     "night_per_season": [
+      1,
+      6
+     ]
+    },
+    {
+     "period": "after",
+     "satellite": "Terra",
+     "years": [
+      2005,
+      2017
+     ],
+     "seasons": 13,
+     "day": 2105,
+     "night": 62,
+     "night_share_pct": 2.86,
+     "ci95_pct": [
+      2.24,
+      3.65
+     ],
+     "night_per_season": [
+      1,
+      11
+     ]
+    },
+    {
+     "period": "before",
+     "satellite": "Aqua",
+     "years": [
+      2002,
+      2003
+     ],
+     "seasons": 2,
+     "day": 137,
+     "night": 4,
+     "night_share_pct": 2.84,
+     "ci95_pct": [
+      1.11,
+      7.07
+     ],
+     "night_per_season": [
+      1,
+      3
+     ]
+    },
+    {
+     "period": "after",
+     "satellite": "Aqua",
+     "years": [
+      2005,
+      2011
+     ],
+     "seasons": 7,
+     "day": 1374,
+     "night": 14,
+     "night_share_pct": 1.01,
+     "ci95_pct": [
+      0.6,
+      1.69
+     ],
+     "night_per_season": [
+      0,
+      7
+     ]
+    },
+    {
+     "period": "after",
+     "satellite": "Aqua",
+     "years": [
+      2005,
+      2017
+     ],
+     "seasons": 13,
+     "day": 2606,
+     "night": 25,
+     "night_share_pct": 0.95,
+     "ci95_pct": [
+      0.64,
+      1.4
+     ],
+     "night_per_season": [
+      0,
+      7
+     ]
+    }
+   ],
+   "by_year": [
+    {
+     "year": 2001,
+     "terra_day": 33,
+     "terra_night": 5,
+     "aqua_day": null,
+     "aqua_night": null
+    },
+    {
+     "year": 2002,
+     "terra_day": 79,
+     "terra_night": 2,
+     "aqua_day": 60,
+     "aqua_night": 3
+    },
+    {
+     "year": 2003,
+     "terra_day": 51,
+     "terra_night": 2,
+     "aqua_day": 77,
+     "aqua_night": 1
+    },
+    {
+     "year": 2004,
+     "terra_day": 65,
+     "terra_night": 6,
+     "aqua_day": 127,
+     "aqua_night": 2
+    },
+    {
+     "year": 2005,
+     "terra_day": 127,
+     "terra_night": 5,
+     "aqua_day": 175,
+     "aqua_night": 1
+    },
+    {
+     "year": 2006,
+     "terra_day": 237,
+     "terra_night": 1,
+     "aqua_day": 196,
+     "aqua_night": 0
+    },
+    {
+     "year": 2007,
+     "terra_day": 161,
+     "terra_night": 1,
+     "aqua_day": 214,
+     "aqua_night": 7
+    },
+    {
+     "year": 2008,
+     "terra_day": 131,
+     "terra_night": 2,
+     "aqua_day": 187,
+     "aqua_night": 1
+    },
+    {
+     "year": 2009,
+     "terra_day": 137,
+     "terra_night": 6,
+     "aqua_day": 213,
+     "aqua_night": 3
+    },
+    {
+     "year": 2010,
+     "terra_day": 167,
+     "terra_night": 5,
+     "aqua_day": 203,
+     "aqua_night": 0
+    },
+    {
+     "year": 2011,
+     "terra_day": 134,
+     "terra_night": 2,
+     "aqua_day": 186,
+     "aqua_night": 2
+    },
+    {
+     "year": 2012,
+     "terra_day": 108,
+     "terra_night": 5,
+     "aqua_day": 179,
+     "aqua_night": 1
+    },
+    {
+     "year": 2013,
+     "terra_day": 235,
+     "terra_night": 2,
+     "aqua_day": 301,
+     "aqua_night": 2
+    },
+    {
+     "year": 2014,
+     "terra_day": 215,
+     "terra_night": 7,
+     "aqua_day": 242,
+     "aqua_night": 1
+    },
+    {
+     "year": 2015,
+     "terra_day": 164,
+     "terra_night": 8,
+     "aqua_day": 129,
+     "aqua_night": 3
+    },
+    {
+     "year": 2016,
+     "terra_day": 169,
+     "terra_night": 11,
+     "aqua_day": 237,
+     "aqua_night": 3
+    },
+    {
+     "year": 2017,
+     "terra_day": 120,
+     "terra_night": 7,
+     "aqua_day": 144,
+     "aqua_night": 1
+    }
+   ],
+   "overpass": {
+    "Terra": {
+     "day_median_local": 10.85,
+     "night_median_local": 22.15,
+     "stable_years": [
+      2003,
+      2017
+     ],
+     "day_mean_range_stable": [
+      10.8,
+      10.9
+     ],
+     "day_mean_by_year": {
+      "2018": 11.04,
+      "2019": 11.07,
+      "2020": 11.01,
+      "2021": 10.78,
+      "2022": 10.73,
+      "2023": 10.48,
+      "2024": 10.05,
+      "2025": 9.85,
+      "2026": 9.12
+     }
+    },
+    "Aqua": {
+     "day_median_local": 13.22,
+     "night_median_local": 1.97,
+     "stable_years": [
+      2003,
+      2017
+     ],
+     "day_mean_range_stable": [
+      13.16,
+      13.28
+     ],
+     "day_mean_by_year": {
+      "2018": 13.22,
+      "2019": 13.19,
+      "2020": 13.2,
+      "2021": 13.22,
+      "2022": 13.29,
+      "2023": 13.51,
+      "2024": 13.9,
+      "2025": 14.43,
+      "2026": 15.23
+     }
+    }
+   }
+  }
+ },
+ "since_2018": {
+  "reference_years": [
+   2005,
+   2017
+  ],
+  "recent_years": [
+   2018,
+   2026
+  ],
+  "verdict": {
+   "delta": "lower",
+   "same_in_kafr_el_sheikh_and_sharqia": "both_lower_gap_cannot_tell"
+  },
+  "answer": "The Nile Delta's August to October seasons of 2018 to 2026 average 882 hotspot-days, 53% below (50% to 55% below) the 1,864 of 2005 to 2017. It is not a steady low: 2023 came back to 1,706. Kafr El Sheikh is 61% below (60% to 64% below) and Sharqia 56% below (53% to 58% below): both fell by more than half. Kafr El Sheikh is 5 points further down, a gap smaller than what leaving out one season does to either figure, so whether it fell further: cannot tell. The lowest season is 2026 in Kafr El Sheikh and 2018 in Sharqia.",
+  "areas": [
+   {
+    "area": "nile-delta",
+    "name": "Nile Delta",
+    "season": [
+     8,
+     9,
+     10
+    ],
+    "season_band_pct": [
+     -8.4,
+     10.4
+    ],
+    "reference": {
+     "years": [
+      2005,
+      2017
+     ],
+     "n": 13,
+     "n_converted": 7,
+     "mean": 1864.41,
+     "lo": 1772.89,
+     "hi": 1953.5,
+     "median": 1788.08
+    },
+    "recent": {
+     "years": [
+      2018,
+      2026
+     ],
+     "n": 9,
+     "n_converted": 0,
+     "mean": 881.85,
+     "lo": 881.85,
+     "hi": 881.85,
+     "median": 892.5
+    },
+    "change": {
+     "pct": -52.7,
+     "lo_pct": -54.86,
+     "hi_pct": -50.26
+    },
+    "change_median_pct": -50.09,
+    "viirs_only": {
+     "reference": {
+      "years": [
+       2012,
+       2017
+      ],
+      "n": 6,
+      "n_converted": 0,
+      "mean": 1934.67,
+      "lo": 1934.67,
+      "hi": 1934.67,
+      "median": 1924.0
+     },
+     "change_pct": -54.42
+    },
+    "without_last_season": {
+     "recent": {
+      "years": [
+       2018,
+       2025
+      ],
+      "n": 8,
+      "n_converted": 0,
+      "mean": 918.0,
+      "lo": 918.0,
+      "hi": 918.0,
+      "median": 908.25
+     },
+     "change": {
+      "pct": -50.76,
+      "lo_pct": -53.01,
+      "hi_pct": -48.22
+     }
+    },
+    "one_season_left_out_pct": [
+     -58.23,
+     -50.39
+    ],
+    "years": [
+     {
+      "year": 2018,
+      "value": 537.0,
+      "change": {
+       "pct": -71.2,
+       "lo_pct": -72.51,
+       "hi_pct": -69.71
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2019,
+      "value": 622.5,
+      "change": {
+       "pct": -66.61,
+       "lo_pct": -68.13,
+       "hi_pct": -64.89
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2020,
+      "value": 892.5,
+      "change": {
+       "pct": -52.13,
+       "lo_pct": -54.31,
+       "hi_pct": -49.66
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2021,
+      "value": 924.0,
+      "change": {
+       "pct": -50.44,
+       "lo_pct": -52.7,
+       "hi_pct": -47.88
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2022,
+      "value": 944.09,
+      "change": {
+       "pct": -49.36,
+       "lo_pct": -51.67,
+       "hi_pct": -46.75
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2023,
+      "value": 1706.12,
+      "change": {
+       "pct": -8.49,
+       "lo_pct": -12.66,
+       "hi_pct": -3.77
+      },
+      "below_every_reference_season": false
+     },
+     {
+      "year": 2024,
+      "value": 1117.27,
+      "change": {
+       "pct": -40.07,
+       "lo_pct": -42.81,
+       "hi_pct": -36.98
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2025,
+      "value": 600.5,
+      "change": {
+       "pct": -67.79,
+       "lo_pct": -69.26,
+       "hi_pct": -66.13
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2026,
+      "value": 592.67,
+      "change": {
+       "pct": -68.21,
+       "lo_pct": -69.66,
+       "hi_pct": -66.57
+      },
+      "below_every_reference_season": true
+     }
+    ],
+    "seasons_below_every_reference_season": 8,
+    "last_season_near_real_time_pct": 100.0,
+    "suomi_npp_day_night": {
+     "day_median_local": 13.07,
+     "night_median_local": 1.77,
+     "before_years": [
+      2012,
+      2017
+     ],
+     "after_years": [
+      2018,
+      2026
+     ],
+     "day_before": 1735.67,
+     "day_after": 708.53,
+     "night_before": 236.0,
+     "night_after": 181.53,
+     "day_change_pct": -59.18,
+     "night_change_pct": -23.08
+    }
+   },
+   {
+    "area": "kafr-el-sheikh-rice-core",
+    "name": "Kafr El Sheikh rice core",
+    "season": [
+     8,
+     9,
+     10
+    ],
+    "season_band_pct": [
+     -15.4,
+     4.5
+    ],
+    "reference": {
+     "years": [
+      2005,
+      2017
+     ],
+     "n": 13,
+     "n_converted": 7,
+     "mean": 354.59,
+     "lo": 347.17,
+     "hi": 385.95,
+     "median": 345.41
+    },
+    "recent": {
+     "years": [
+      2018,
+      2026
+     ],
+     "n": 9,
+     "n_converted": 0,
+     "mean": 138.61,
+     "lo": 138.61,
+     "hi": 138.61,
+     "median": 129.5
+    },
+    "change": {
+     "pct": -60.91,
+     "lo_pct": -64.09,
+     "hi_pct": -60.07
+    },
+    "change_median_pct": -62.51,
+    "viirs_only": {
+     "reference": {
+      "years": [
+       2012,
+       2017
+      ],
+      "n": 6,
+      "n_converted": 0,
+      "mean": 395.0,
+      "lo": 395.0,
+      "hi": 395.0,
+      "median": 401.5
+     },
+     "change_pct": -64.91
+    },
+    "without_last_season": {
+     "recent": {
+      "years": [
+       2018,
+       2025
+      ],
+      "n": 8,
+      "n_converted": 0,
+      "mean": 150.77,
+      "lo": 150.77,
+      "hi": 150.77,
+      "median": 135.0
+     },
+     "change": {
+      "pct": -57.48,
+      "lo_pct": -60.93,
+      "hi_pct": -56.57
+     }
+    },
+    "one_season_left_out_pct": [
+     -67.2,
+     -57.48
+    ],
+    "years": [
+     {
+      "year": 2018,
+      "value": 115.0,
+      "change": {
+       "pct": -67.57,
+       "lo_pct": -70.2,
+       "hi_pct": -66.88
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2019,
+      "value": 114.5,
+      "change": {
+       "pct": -67.71,
+       "lo_pct": -70.33,
+       "hi_pct": -67.02
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2020,
+      "value": 129.5,
+      "change": {
+       "pct": -63.48,
+       "lo_pct": -66.45,
+       "hi_pct": -62.7
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2021,
+      "value": 140.5,
+      "change": {
+       "pct": -60.38,
+       "lo_pct": -63.6,
+       "hi_pct": -59.53
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2022,
+      "value": 148.77,
+      "change": {
+       "pct": -58.04,
+       "lo_pct": -61.45,
+       "hi_pct": -57.15
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2023,
+      "value": 317.0,
+      "change": {
+       "pct": -10.6,
+       "lo_pct": -17.87,
+       "hi_pct": -8.69
+      },
+      "below_every_reference_season": false
+     },
+     {
+      "year": 2024,
+      "value": 175.92,
+      "change": {
+       "pct": -50.39,
+       "lo_pct": -54.42,
+       "hi_pct": -49.33
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2025,
+      "value": 65.0,
+      "change": {
+       "pct": -81.67,
+       "lo_pct": -83.16,
+       "hi_pct": -81.28
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2026,
+      "value": 41.33,
+      "change": {
+       "pct": -88.34,
+       "lo_pct": -89.29,
+       "hi_pct": -88.1
+      },
+      "below_every_reference_season": true
+     }
+    ],
+    "seasons_below_every_reference_season": 8,
+    "last_season_near_real_time_pct": 100.0,
+    "suomi_npp_day_night": {
+     "day_median_local": 13.08,
+     "night_median_local": 1.76,
+     "before_years": [
+      2012,
+      2017
+     ],
+     "after_years": [
+      2018,
+      2026
+     ],
+     "day_before": 389.33,
+     "day_after": 132.8,
+     "night_before": 8.83,
+     "night_after": 8.33,
+     "day_change_pct": -65.89,
+     "night_change_pct": -5.72
+    }
+   },
+   {
+    "area": "east-delta-sharqia",
+    "name": "East Delta (Sharqia)",
+    "season": [
+     8,
+     9,
+     10
+    ],
+    "season_band_pct": [
+     -9.6,
+     11.5
+    ],
+    "reference": {
+     "years": [
+      2005,
+      2017
+     ],
+     "n": 13,
+     "n_converted": 7,
+     "mean": 541.35,
+     "lo": 514.08,
+     "hi": 569.43,
+     "median": 528.35
+    },
+    "recent": {
+     "years": [
+      2018,
+      2026
+     ],
+     "n": 9,
+     "n_converted": 0,
+     "mean": 239.56,
+     "lo": 239.56,
+     "hi": 239.56,
+     "median": 241.0
+    },
+    "change": {
+     "pct": -55.75,
+     "lo_pct": -57.93,
+     "hi_pct": -53.4
+    },
+    "change_median_pct": -54.39,
+    "viirs_only": {
+     "reference": {
+      "years": [
+       2012,
+       2017
+      ],
+      "n": 6,
+      "n_converted": 0,
+      "mean": 600.0,
+      "lo": 600.0,
+      "hi": 600.0,
+      "median": 610.0
+     },
+     "change_pct": -60.07
+    },
+    "without_last_season": {
+     "recent": {
+      "years": [
+       2018,
+       2025
+      ],
+      "n": 8,
+      "n_converted": 0,
+      "mean": 256.42,
+      "lo": 256.42,
+      "hi": 256.42,
+      "median": 246.0
+     },
+     "change": {
+      "pct": -52.63,
+      "lo_pct": -54.97,
+      "hi_pct": -50.12
+     }
+    },
+    "one_season_left_out_pct": [
+     -62.99,
+     -52.49
+    ],
+    "years": [
+     {
+      "year": 2018,
+      "value": 98.5,
+      "change": {
+       "pct": -81.8,
+       "lo_pct": -82.7,
+       "hi_pct": -80.84
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2019,
+      "value": 151.5,
+      "change": {
+       "pct": -72.01,
+       "lo_pct": -73.39,
+       "hi_pct": -70.53
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2020,
+      "value": 241.0,
+      "change": {
+       "pct": -55.48,
+       "lo_pct": -57.68,
+       "hi_pct": -53.12
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2021,
+      "value": 251.0,
+      "change": {
+       "pct": -53.63,
+       "lo_pct": -55.92,
+       "hi_pct": -51.17
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2022,
+      "value": 264.55,
+      "change": {
+       "pct": -51.13,
+       "lo_pct": -53.54,
+       "hi_pct": -48.54
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2023,
+      "value": 553.23,
+      "change": {
+       "pct": 2.19,
+       "lo_pct": -2.85,
+       "hi_pct": 7.62
+      },
+      "below_every_reference_season": false
+     },
+     {
+      "year": 2024,
+      "value": 353.58,
+      "change": {
+       "pct": -34.69,
+       "lo_pct": -37.91,
+       "hi_pct": -31.22
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2025,
+      "value": 138.0,
+      "change": {
+       "pct": -74.51,
+       "lo_pct": -75.77,
+       "hi_pct": -73.16
+      },
+      "below_every_reference_season": true
+     },
+     {
+      "year": 2026,
+      "value": 104.67,
+      "change": {
+       "pct": -80.67,
+       "lo_pct": -81.62,
+       "hi_pct": -79.64
+      },
+      "below_every_reference_season": true
+     }
+    ],
+    "seasons_below_every_reference_season": 8,
+    "last_season_near_real_time_pct": 100.0,
+    "suomi_npp_day_night": {
+     "day_median_local": 13.11,
+     "night_median_local": 1.73,
+     "before_years": [
+      2012,
+      2017
+     ],
+     "after_years": [
+      2018,
+      2026
+     ],
+     "day_before": 566.67,
+     "day_after": 208.83,
+     "night_before": 53.5,
+     "night_after": 32.06,
+     "day_change_pct": -63.15,
+     "night_change_pct": -40.07
+    }
+   }
+  ]
+ },
+ "areas": [
+  {
+   "id": "nile-delta",
+   "name": "Nile Delta",
+   "country": "Egypt",
+   "sentence": "Since 2018 satellites have seen about half as much burning in the Nile Delta in August to October as before: 882 hotspot-days a season against 1,864 in 2005 to 2017, and only 2023 (1,706) came back near the old level.",
+   "numbers": {
+    "unit": "hotspot-days per season",
+    "recent_years": [
+     2018,
+     2026
+    ],
+    "recent_mean": 881.85,
+    "reference_years": [
+     2005,
+     2017
+    ],
+    "reference_mean": 1864.41,
+    "reference_range": [
+     1772.89,
+     1953.5
+    ],
+    "change_pct": -52.7,
+    "change_range_pct": [
+     -54.86,
+     -50.26
+    ],
+    "season_2023": 1706.12
+   },
+   "note": "The 2026 season is near-real-time data, which FIRMS replaces with standard processing later."
+  },
+  {
+   "id": "kafr-el-sheikh-rice-core",
+   "name": "Kafr El Sheikh rice core",
+   "country": "Egypt",
+   "sentence": "In the rice fields of Kafr El Sheikh the last two seasons are the quietest VIIRS has measured: 65 hotspot-days in 2025 and 41.3 in 2026, against 395 a season in 2012 to 2017.",
+   "numbers": {
+    "unit": "hotspot-days per season",
+    "season": [
+     8,
+     9,
+     10
+    ],
+    "season_2025": 65.0,
+    "season_2026": 41.33,
+    "viirs_seasons": 15,
+    "reference_years": [
+     2012,
+     2017
+    ],
+    "reference_mean": 395.0,
+    "next_lowest": {
+     "year": 2019,
+     "value": 114.5
+    }
+   },
+   "note": "The 2026 season is near-real-time data, which FIRMS replaces with standard processing later."
+  },
+  {
+   "id": "east-delta-sharqia",
+   "name": "East Delta (Sharqia)",
+   "country": "Egypt",
+   "sentence": "In Sharqia the fall came in a single year: 535 hotspot-days in the 2017 season and 98.5 in 2018, 82% fewer, both measured by VIIRS with no conversion.",
+   "numbers": {
+    "unit": "hotspot-days per season",
+    "season": [
+     8,
+     9,
+     10
+    ],
+    "season_2017": 535.0,
+    "season_2018": 98.5,
+    "change_pct": -81.59
+   }
+  },
+  {
+   "id": "upper-egypt-sugarcane-belt",
+   "name": "Upper Egypt sugarcane belt",
+   "country": "Egypt",
+   "sentence": "The sugarcane belt of Upper Egypt burns every February to April and shows no fall like the Delta's: 225 hotspot-days a season in 2018 to 2026 against 183 in 2005 to 2017 (+23%, +10% to +31%).",
+   "numbers": {
+    "unit": "hotspot-days per season",
+    "season": [
+     2,
+     3,
+     4
+    ],
+    "recent_years": [
+     2018,
+     2026
+    ],
+    "recent_mean": 225.29,
+    "reference_years": [
+     2005,
+     2017
+    ],
+    "reference_mean": 182.91,
+    "reference_range": [
+     171.94,
+     204.89
+    ],
+    "change_pct": 23.17,
+    "change_range_pct": [
+     9.95,
+     31.03
+    ]
+   }
+  },
+  {
+   "id": "portugal-mainland",
+   "name": "Portugal mainland",
+   "country": "Portugal",
+   "sentence": "Mainland Portugal's August to October burning since 2018 runs at less than 40% of what it was: 339 hotspot-days a season against 875 to 987 in 2001 to 2017, and no season since 2018 has passed 555.",
+   "numbers": {
+    "unit": "hotspot-days per season",
+    "season": [
+     8,
+     9,
+     10
+    ],
+    "recent_years": [
+     2018,
+     2026
+    ],
+    "recent_mean": 338.67,
+    "recent_max": 555.0,
+    "reference_years": [
+     2001,
+     2017
+    ],
+    "reference_mean": 1004.38,
+    "reference_range": [
+     875.43,
+     987.18
+    ],
+    "change_pct": -66.28,
+    "change_range_pct": [
+     -65.69,
+     -61.31
+    ],
+    "reference_seasons_above_recent_max": [
+     12,
+     14
+    ],
+    "reference_seasons": 17
+   },
+   "note": "The conversion runs high in this area (+2% to +22% on season totals), so the converted mean, 1,004, sits above its own range; the sentence uses the range."
+  },
+  {
+   "id": "northern-portugal",
+   "name": "Northern Portugal",
+   "country": "Portugal",
+   "sentence": "Northern Portugal has two burning seasons, not one: a typical March has 91 hotspot-days and a typical August 191, while May, June and November each have 9 to 35.",
+   "numbers": {
+    "unit": "hotspot-days per month, median of 2001 to 2025",
+    "february": 65.0,
+    "march": 91.09,
+    "august": 190.6,
+    "september": 121.4,
+    "may": 34.71,
+    "june": 19.56,
+    "november": 9.22
+   }
+  },
+  {
+   "id": "central-portugal-pinhal",
+   "name": "Central Portugal (Pinhal)",
+   "country": "Portugal",
+   "sentence": "In central Portugal 2017 stands far above every other whole year VIIRS has measured (2013 to 2025): 474 hotspot-days across the year, more than twice the next (197 in 2025), with 182 of them in June and October, outside the usual July to September season.",
+   "numbers": {
+    "unit": "hotspot-days per calendar year",
+    "year_2017": 473.58,
+    "next_highest": {
+     "year": 2025,
+     "value": 197.22
+    },
+    "measured_years": [
+     2013,
+     2025
+    ],
+    "median_year": 147.27,
+    "june_2017": 58.0,
+    "october_2017": 123.86,
+    "season_2017": 218.29,
+    "converted_years_above": {
+     "2003": 475.21,
+     "2005": 618.19
+    }
+   },
+   "note": "Two years converted from MODIS are as high or higher: 2003 and 2005, in converted_years_above."
+  },
+  {
+   "id": "alentejo",
+   "name": "Alentejo",
+   "country": "Portugal",
+   "sentence": "The Alentejo burns most after the summer, not during it: a typical October has 51 hotspot-days and a typical November 33, against 7 to 12 in each month from June to September.",
+   "numbers": {
+    "unit": "hotspot-days per month, median of 2001 to 2025",
+    "october": 50.56,
+    "november": 33.45,
+    "june": 8.16,
+    "july": 12.37,
+    "august": 9.71,
+    "september": 7.29
+   }
+  },
+  {
+   "id": "parana-delta",
+   "name": "Parana Delta",
+   "country": "Argentina",
+   "sentence": "In the Parana Delta four seasons stand far above the rest: 2004, 2006, 2008 and 2020 each had about 3,000 hotspot-days in July to September (2,964 to 3,274), five times the median season of 588.",
+   "numbers": {
+    "unit": "hotspot-days per season",
+    "season": [
+     7,
+     8,
+     9
+    ],
+    "big_seasons": [
+     {
+      "year": 2004,
+      "value": 3018.42,
+      "lo": 2486.34,
+      "hi": 4269.33,
+      "source": "MODIS"
+     },
+     {
+      "year": 2006,
+      "value": 2963.67,
+      "lo": 2441.25,
+      "hi": 4191.9,
+      "source": "MODIS"
+     },
+     {
+      "year": 2008,
+      "value": 3273.83,
+      "lo": 2696.73,
+      "hi": 4630.59,
+      "source": "MODIS"
+     },
+     {
+      "year": 2020,
+      "value": 2986.5,
+      "lo": 2986.5,
+      "hi": 2986.5,
+      "source": "VIIRS"
+     }
+    ],
+    "median_season": 588.36,
+    "highest_other": {
+     "year": 2022,
+     "value": 1576.82
+    }
+   },
+   "note": "2004, 2006 and 2008 are converted from MODIS: their ranges are in big_seasons. 2020 is measured."
+  },
+  {
+   "id": "chilecito",
+   "name": "Chilecito",
+   "country": "Argentina",
+   "sentence": "The fire near Chilecito of 27 July to 1 August 2026 gave about 900 VIIRS detections but burned in only 8 grid cells, so the 2026 season counts 43 hotspot-days, inside the range of other years (19 to 64): this unit counts places and days with fire, not the size of a fire.",
+   "numbers": {
+    "unit": "hotspot-days per season",
+    "season": [
+     7,
+     8,
+     9
+    ],
+    "fire_days": [
+     "2026-07-27",
+     "2026-08-01"
+    ],
+    "viirs_detections": 918,
+    "grid_cells": 8,
+    "days_with_detections": 6,
+    "cell_deg": 0.1,
+    "season_2026": 42.57,
+    "other_seasons_range": [
+     19.0,
+     63.6
+    ]
+   }
+  }
+ ]
+}
