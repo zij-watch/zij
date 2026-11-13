@@ -101,3 +101,32 @@
 .shows-list p { margin: 0; font-size: 17px; line-height: 1.5; }
 .shows .rec-unit a { color: var(--brass); }
 @media (max-width: 760px) { .shows-list li { grid-template-columns: 1fr; } }
+
+/* ---------------------------------------------------------------- the life of the opening (life.js) */
+/* the page's three shooting stars repeat in the same places: life.js throws them at random instead */
+.life .sky > .meteors { display: none; }
+.shower, .passes { position: absolute; inset: 0; pointer-events: none; }
+/* a shooting star: a short streak whose head is its right end (life.js places and moves it) */
+.streak { position: absolute; height: 1.6px; transform-origin: 100% 50%; border-radius: 2px; opacity: 0; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ink) 45%, transparent) 72%, var(--ink)); }
+.streak.bright { height: 2.2px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ink) 40%, transparent) 60%, color-mix(in srgb, var(--ink) 92%, var(--lapis)) 92%, var(--ink)); }
+.streak.bright::after { content: ""; position: absolute; right: -5px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: radial-gradient(closest-side, var(--ink), color-mix(in srgb, var(--ink) 25%, transparent) 45%, transparent); }
+/* a satellite: a steady point, no twinkle; its glint is a moment of sunlight on a panel */
+.pass { position: absolute; left: 0; top: 0; width: 2.2px; height: 2.2px; margin: -1.1px 0 0 -1.1px; border-radius: 50%; opacity: 0; background: color-mix(in srgb, var(--ink) 88%, var(--lapis)); box-shadow: 0 0 3px 0.5px color-mix(in srgb, var(--ink) 30%, transparent); }
+.pass b { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, var(--ink) 0 12%, color-mix(in srgb, var(--ink) 35%, transparent) 30%, transparent); }
+/* the sparks thrown up when the fire is stoked (inside the camp's .fx, 10px to the metre) */
+.ember { position: absolute; left: -0.6px; top: -7px; width: 1.2px; height: 1.2px; border-radius: 50%; opacity: 0; background: color-mix(in srgb, var(--flame) 70%, var(--rubric)); }
+/* the fox: a 0x0 box on the ground, moved by life.js; its drawing hangs from it. --u is px per cm. */
+.fox { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+.fox.away { visibility: hidden; }
+.fox .body { position: absolute; left: 0; top: 0; width: calc(var(--u, 0.4) * 84px); height: calc(var(--u, 0.4) * 50px); overflow: hidden; transform: translate(-42.857%, -96%); }
+.fox.rtl .body { transform: translate(-57.143%, -96%) scaleX(-1); }
+.fox .reel { position: absolute; left: 0; top: 0; width: 800%; height: 100%; animation: fox-trot var(--stride, 0.34s) steps(6) infinite; }
+.fox.stand .reel { animation: none; transform: translateX(-75%); }
+.fox.look .reel { animation: none; transform: translateX(-87.5%); }
+@keyframes fox-trot { to { transform: translateX(-75%); } }
+.fox svg { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; overflow: visible; }
+.fox .fig { fill: color-mix(in srgb, var(--shadow) 55%, var(--ground)); }
+.fox .leg { fill: none; stroke: color-mix(in srgb, var(--shadow) 55%, var(--ground)); stroke-width: 2.7; stroke-linecap: round; stroke-linejoin: round; }
+.fox .rim { fill: none; stroke: color-mix(in srgb, var(--ink) 70%, var(--lapis)); stroke-width: 1; stroke-linecap: round; opacity: 0.5; }
+.fox .eye { fill: color-mix(in srgb, var(--ink) 55%, var(--brass)); }
+.still .shower, .still .passes, .still .fox { display: none; }
