@@ -1,0 +1,219 @@
+{
+ "contract": 1,
+ "method": "M4",
+ "unit": "fire_days",
+ "built_at_utc": "2026-11-13T11:14:35+00:00",
+ "last_full_day": "2026-11-12",
+ "areas": [
+  {
+   "id": "nile-delta",
+   "name": "Nile Delta",
+   "country": "Egypt",
+   "box": [
+    29.8,
+    30.0,
+    32.3,
+    31.6
+   ],
+   "n_cells": 400,
+   "fit": "own",
+   "n_fire_weeks": 404,
+   "season": [
+    8,
+    9,
+    10
+   ],
+   "file": "areas/nile-delta.json",
+   "bytes": 231534
+  },
+  {
+   "id": "kafr-el-sheikh-rice-core",
+   "name": "Kafr El Sheikh rice core",
+   "country": "Egypt",
+   "box": [
+    30.6,
+    31.0,
+    31.3,
+    31.5
+   ],
+   "n_cells": 35,
+   "fit": "own",
+   "n_fire_weeks": 137,
+   "season": [
+    8,
+    9,
+    10
+   ],
+   "file": "areas/kafr-el-sheikh-rice-core.json",
+   "bytes": 223703
+  },
+  {
+   "id": "east-delta-sharqia",
+   "name": "East Delta (Sharqia)",
+   "country": "Egypt",
+   "box": [
+    31.3,
+    30.4,
+    32.0,
+    31.0
+   ],
+   "n_cells": 42,
+   "fit": "own",
+   "n_fire_weeks": 180,
+   "season": [
+    8,
+    9,
+    10
+   ],
+   "file": "areas/east-delta-sharqia.json",
+   "bytes": 224737
+  },
+  {
+   "id": "upper-egypt-sugarcane-belt",
+   "name": "Upper Egypt sugarcane belt",
+   "country": "Egypt",
+   "box": [
+    32.4,
+    24.3,
+    33.1,
+    26.3
+   ],
+   "n_cells": 140,
+   "fit": "own",
+   "n_fire_weeks": 167,
+   "season": [
+    2,
+    3,
+    4
+   ],
+   "file": "areas/upper-egypt-sugarcane-belt.json",
+   "bytes": 224726
+  },
+  {
+   "id": "portugal-mainland",
+   "name": "Portugal mainland",
+   "country": "Portugal",
+   "box": [
+    -9.6,
+    36.9,
+    -6.1,
+    42.2
+   ],
+   "n_cells": 1855,
+   "fit": "own",
+   "n_fire_weeks": 401,
+   "season": [
+    8,
+    9,
+    10
+   ],
+   "file": "areas/portugal-mainland.json",
+   "bytes": 232097
+  },
+  {
+   "id": "northern-portugal",
+   "name": "Northern Portugal",
+   "country": "Portugal",
+   "box": [
+    -8.9,
+    40.8,
+    -6.2,
+    42.2
+   ],
+   "n_cells": 378,
+   "fit": "own",
+   "n_fire_weeks": 315,
+   "season": [
+    8,
+    9,
+    10
+   ],
+   "file": "areas/northern-portugal.json",
+   "bytes": 228705
+  },
+  {
+   "id": "central-portugal-pinhal",
+   "name": "Central Portugal (Pinhal)",
+   "country": "Portugal",
+   "box": [
+    -8.6,
+    39.4,
+    -7.0,
+    40.6
+   ],
+   "n_cells": 192,
+   "fit": "own",
+   "n_fire_weeks": 234,
+   "season": [
+    7,
+    8,
+    9
+   ],
+   "file": "areas/central-portugal-pinhal.json",
+   "bytes": 224461
+  },
+  {
+   "id": "alentejo",
+   "name": "Alentejo",
+   "country": "Portugal",
+   "box": [
+    -8.9,
+    37.3,
+    -6.9,
+    39.0
+   ],
+   "n_cells": 340,
+   "fit": "own",
+   "n_fire_weeks": 279,
+   "season": [
+    10,
+    11,
+    12
+   ],
+   "file": "areas/alentejo.json",
+   "bytes": 224622
+  },
+  {
+   "id": "parana-delta",
+   "name": "Parana Delta",
+   "country": "Argentina",
+   "box": [
+    -60.8,
+    -34.5,
+    -58.2,
+    -32.0
+   ],
+   "n_cells": 650,
+   "fit": "own",
+   "n_fire_weeks": 413,
+   "season": [
+    7,
+    8,
+    9
+   ],
+   "file": "areas/parana-delta.json",
+   "bytes": 233170
+  },
+  {
+   "id": "chilecito",
+   "name": "Chilecito",
+   "country": "Argentina",
+   "box": [
+    -68.0,
+    -29.6,
+    -67.0,
+    -28.7
+   ],
+   "n_cells": 90,
+   "fit": "own",
+   "n_fire_weeks": 145,
+   "season": [
+    8,
+    9,
+    10
+   ],
+   "file": "areas/chilecito.json",
+   "bytes": 222989
+  }
+ ]
+}
