@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+message: "If you use Zij or its harmonized fire record, please cite it as below, and credit NASA FIRMS for the fire detections."
+type: software
+title: "Zij: one fire record from NASA's MODIS and VIIRS, 2000 to now"
+abstract: >-
+  Zij puts NASA's two satellite fire records, MODIS since 2000 and VIIRS since 2012, on one scale.
+  It counts both in one unit, converts MODIS to VIIRS-equivalent values with a model fitted and
+  validated on the years both sensors flew, gives every converted value a band, and lets anyone
+  explore the record for preset areas or for an area they draw.
+authors:
+  - name: "Team Zij"
+    email: info@zij.watch
+    website: "https://zij.watch"
+version: 0.1.0
+date-released: "2026-11-13"
+url: "https://zij.watch"
+repository-code: "https://github.com/zij-watch/zij"
+license: Apache-2.0
+keywords:
+  - NASA Space Apps
+  - NASA FIRMS
+  - MODIS
+  - VIIRS
+  - active fire
+  - wildfire
+  - remote sensing
+  - data harmonization
+  - time series
+references:
+  - type: data
+    title: "Fire Information for Resource Management System (FIRMS): MODIS Collection 6.1 and VIIRS 375 m active fire detections"
+    authors:
+      - name: "NASA Earth Science Data and Information System (ESDIS)"
+    url: "https://earthdata.nasa.gov/firms"
+  - type: data
+    title: "Global Imagery Browse Services (GIBS)"
+    authors:
+      - name: "NASA Earth Science Data and Information System (ESDIS)"
+    url: "https://earthdata.nasa.gov/gibs"
+  - type: data
+    title: "Natural Earth, 1:10m cultural and physical vectors"
+    authors:
+      - name: "Natural Earth"
+    url: "https://www.naturalearthdata.com"

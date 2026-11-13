@@ -350,35 +350,101 @@
     el('path', { class: 'tick', d: d2, 'stroke-width': 0.8, opacity: 0.45 }, s);
   })();
 
-  // An engraved globe in orthographic projection: graticule, Africa and Arabia, the night half hatched
-  // (the terminator seen edge on, so it is a straight line, never a crescent), a fire near Cairo.
+  // An engraved globe in orthographic projection that turns (scripts/build-landing.mjs): graticule,
+  // the continents, the night half hatched (the terminator seen edge on, a straight line), and fires
+  // that come and go on the land.
   (function globe() {
-    const g = $('globe'), R = 36, lon0 = 24 * RAD, lat0 = 14 * RAD;
-    const proj = (lon, lat) => {
-      lon *= RAD; lat *= RAD;
-      const c = Math.sin(lat0) * Math.sin(lat) + Math.cos(lat0) * Math.cos(lat) * Math.cos(lon - lon0);
-      return [R * Math.cos(lat) * Math.sin(lon - lon0), -R * (Math.cos(lat0) * Math.sin(lat) - Math.sin(lat0) * Math.cos(lat) * Math.cos(lon - lon0)), c];
-    };
-    const line = (pairs) => { let d = '', pen = false; for (const [lo, la] of pairs) { const [x, y, c] = proj(lo, la); if (c < 0) { pen = false; continue; } d += (pen ? 'L' : 'M') + n1(x) + ' ' + n1(y); pen = true; } return d; };
-    let grat = '';
-    for (const la of [-60, -30, 0, 30, 60]) { const p = []; for (let lo = -180; lo <= 180; lo += 5) p.push([lo, la]); grat += line(p); }
-    for (let lo = -180; lo < 180; lo += 30) { const p = []; for (let la = -90; la <= 90; la += 5) p.push([lo, la]); grat += line(p); }
-    const africa = [[-17, 21], [-17, 14.7], [-12, 8], [-8, 4.5], [0, 5.5], [9, 4], [9.5, 1], [12, -6], [13.5, -12], [12, -17], [15, -27], [18.5, -34.4], [25, -34], [32, -29], [35, -24], [35, -18], [40.5, -15], [39.5, -6], [42, -1], [48, 5], [51, 11.8], [43.5, 11.5], [39, 15.5], [37.5, 18.5], [35.5, 23.8], [33.5, 27.5], [32.5, 29.9], [32, 31.3], [30, 31.4], [25, 31.6], [20, 32], [15.5, 31.5], [10.5, 34], [10, 37], [3, 36.8], [-2, 35.1], [-6, 35.8], [-9.8, 31], [-13, 27.5], [-17, 21]];
-    const arabia = [[34.6, 29.5], [35, 28], [38.5, 24], [39, 21.5], [42.5, 16.5], [43.4, 12.7], [45, 12.8], [52, 15.5], [57, 18.8], [59.5, 22.5], [56.4, 26.3], [51.5, 24.2], [50, 26.5], [48, 29.9], [44, 33], [40, 34.5], [36, 34], [34.8, 32], [34.6, 29.5]];
-    const europe = [[-9, 37], [-6, 36.5], [-2, 37], [3, 42.5], [9, 44], [12.5, 41.5], [16, 38], [18.5, 40], [15, 44], [13.5, 45.5], [19, 42], [23, 38], [26, 40.5], [29, 41], [36, 36.5], [36, 41], [41, 41.5], [41, 50], [20, 55], [10, 54], [5, 52], [-4, 48], [-1.5, 46], [-9, 43], [-9, 37]];
-    const close = (p) => line(p) + 'Z';
-    const term = 14 * RAD;   // the terminator, turned a little from the axis
-    const tx = Math.sin(term) * R, ty = Math.cos(term) * R;
-    const [cx, cy] = proj(31.2, 30);
+    const g = $('globe'), R = 36, lat0 = 14 * RAD, PERIOD = 160, START = 24;
+    const sinL = Math.sin(lat0), cosL = Math.cos(lat0);
+    const LAND = [
+      [[-17, 21], [-17, 14.7], [-12, 8], [-8, 4.5], [0, 5.5], [9, 4], [9.5, 1], [12, -6], [13.5, -12], [12, -17], [15, -27], [18.5, -34.4], [25, -34], [32, -29], [35, -24], [35, -18], [40.5, -15], [39.5, -6], [42, -1], [48, 5], [51, 11.8], [43.5, 11.5], [39, 15.5], [37.5, 18.5], [35.5, 23.8], [33.5, 27.5], [32.5, 29.9], [32, 31.3], [30, 31.4], [25, 31.6], [20, 32], [15.5, 31.5], [10.5, 34], [10, 37], [3, 36.8], [-2, 35.1], [-6, 35.8], [-9.8, 31], [-13, 27.5], [-17, 21]],
+      [[34.6, 29.5], [35, 28], [38.5, 24], [39, 21.5], [42.5, 16.5], [43.4, 12.7], [45, 12.8], [52, 15.5], [57, 18.8], [59.5, 22.5], [56.4, 26.3], [51.5, 24.2], [50, 26.5], [48, 29.9], [44, 33], [40, 34.5], [36, 34], [34.8, 32], [34.6, 29.5]],
+      [[-9, 37], [-6, 36.5], [-2, 37], [3, 42.5], [9, 44], [12.5, 41.5], [16, 38], [18.5, 40], [15, 44], [13.5, 45.5], [19, 42], [23, 38], [26, 40.5], [29, 41], [36, 36.5], [36, 41], [41, 41.5], [41, 50], [30, 60], [30, 70], [20, 70], [5, 62], [10, 58], [10, 54], [5, 52], [-4, 48], [-1.5, 46], [-9, 43], [-9, 37]],
+      [[-5, 50], [1.5, 51], [1.7, 53], [-3, 56], [-2, 58.5], [-5, 58.5], [-6, 55], [-3, 54], [-5, 52], [-5, 50]],
+      [[44, -25], [47, -25], [50, -15], [49.5, -12], [44, -17], [44, -25]],
+      [[36, 36.5], [36, 41], [41, 41.5], [41, 50], [30, 60], [30, 70], [60, 68], [70, 73], [90, 76], [110, 77], [140, 72], [160, 70], [180, 68], [180, 65], [170, 60], [162, 57], [156, 51], [155, 59], [143, 59], [140, 54], [135, 43], [129, 35], [127, 39.5], [121, 40], [122, 37], [119, 35], [121, 31], [122, 25], [117, 23], [110, 21], [108, 16], [109, 12], [105, 9], [103, 10.5], [100, 13.5], [100, 8], [103, 1.5], [98, 8], [98, 16], [94, 17], [92, 22], [88, 21.5], [86.5, 20], [80, 15], [80, 10], [77, 8], [73, 16], [72.5, 21], [68, 23.5], [61, 25], [57, 26], [54, 27], [50, 30], [48, 30], [44, 33], [40, 34.5], [36, 36.5]],
+      [[130, 31], [135, 34], [140, 36], [141, 41], [142, 45], [139, 40], [136, 36], [132, 34], [130, 31]],
+      [[109, 1], [117, 7], [119, 5], [118, 1], [116, -4], [110, -3], [109, 1]],
+      [[95, 5.5], [104, -2], [106, -6], [101, -3], [95, 5.5]],
+      [[114, -22], [114, -27], [115, -34], [118, -35], [124, -34], [129, -32], [135, -35], [138, -35], [141, -38], [147, -38], [150, -37], [153, -31], [153, -25], [146, -19], [142, -11], [140, -17], [136, -12], [131, -11], [126, -14], [122, -18], [114, -22]],
+      [[-80, 9], [-77, 8.5], [-72, 12], [-63, 10.7], [-60, 8.5], [-52, 5], [-50, 0], [-44, -2.5], [-35, -5.5], [-35, -9], [-39, -15], [-41, -22], [-48, -26], [-53, -34], [-58, -38], [-62, -41], [-65, -45], [-68, -50], [-69, -55], [-74, -52], [-73, -45], [-73, -37], [-71, -30], [-70, -18], [-76, -14], [-81, -5], [-80, -1], [-78, 2], [-77, 7], [-80, 9]],
+      [[-168, 66], [-160, 70], [-140, 70], [-125, 70], [-110, 73], [-95, 72], [-82, 73], [-78, 63], [-94, 59], [-90, 57], [-80, 55], [-77, 62], [-65, 60], [-60, 55], [-56, 52], [-66, 45], [-70, 43], [-74, 40], [-76, 35], [-81, 31], [-80, 25.5], [-82, 27], [-84, 30], [-90, 29.5], [-97, 27], [-97, 22], [-92, 18.5], [-88, 21], [-87, 16], [-83, 15], [-83, 10], [-79, 9], [-80, 7.5], [-85, 10], [-92, 15], [-105, 20], [-110, 23], [-114, 30], [-117, 32.5], [-121, 35], [-124, 40], [-124, 48], [-130, 54], [-140, 60], [-150, 60], [-158, 57], [-165, 60], [-168, 66]],
+      [[-73, 78], [-60, 82], [-30, 83], [-20, 80], [-20, 70], [-35, 65], [-45, 60], [-52, 65], [-55, 70], [-60, 76], [-73, 78]],
+    ];
+    // Places that burn, as the satellites see them, the record's own areas first.
+    const FIRES = [
+      [31.0, 30.8], [32.8, 26.2], [-8.2, 39.6], [-7.9, 38.1], [-67.7, -29.2], [-59.5, -33.5],
+      [-1, 11], [8, 9.5], [20, 9], [15, 6.5], [38, 9.5], [22, -9], [27, -12], [18, -12.5], [31, -15], [46.5, -18.5],
+      [-55, -9], [-62, -11], [-48, -14], [-92, 17], [-82, 32], [-115, 57], [-105, 62],
+      [36, 48], [45, 52], [70, 51], [115, 58], [130, 52], [75.5, 30.5], [80, 22], [102, 18], [97, 20],
+      [133, -14], [125, -17], [145, -18], [113.5, 0.5], [103, -1.5],
+    ];
+    const r = rng(2026);
+    const fires = FIRES.map(([lon, lat]) => ({ lon, lat, period: 8 + r() * 7, phase: r(), on: 0.3 + r() * 0.2 }));
+    const term = 14 * RAD, tx = Math.sin(term) * R, ty = Math.cos(term) * R;
     g.setAttribute('transform', 'rotate(-23.4)');
     g.innerHTML =
       `<line class="axis" x1="0" y1="${-R * 1.32}" x2="0" y2="${R * 1.32}"/>` +
       `<circle class="sea" r="${R}"/>` +
-      `<path class="land" d="${close(africa)}${close(arabia)}${close(europe)}"/>` +
-      `<path class="grat" d="${grat}"/>` +
+      '<path class="land"/><path class="grat"/>' +
       `<path class="night" d="M${n1(-tx)} ${n1(-ty)} A${R} ${R} 0 0 1 ${n1(tx)} ${n1(ty)} Z" transform="rotate(180)"/>` +
-      `<circle class="cairo-glow" cx="${n1(cx)}" cy="${n1(cy)}" r="7"/><circle class="cairo" cx="${n1(cx)}" cy="${n1(cy)}" r="1.5"/>` +
+      '<g class="fires"></g>' +
       `<circle r="${R}" style="fill:none; stroke: var(--brass); stroke-width: 1.3"/>`;
+    const landEl = g.querySelector('.land'), gratEl = g.querySelector('.grat'), fireBox = g.querySelector('.fires');
+    const dots = [{ lon: 31.2, lat: 30, cairo: true }, ...fires].map((f) => {
+      const glow = el('circle', { class: 'cairo-glow', r: 7 }, fireBox), dot = el('circle', { class: 'cairo', r: 1.5 }, fireBox);
+      return { ...f, glow, dot };
+    });
+    const r2 = (v) => Math.round(v * 100) / 100;
+    function draw(lon0deg, t) {
+      const lon0 = lon0deg * RAD;
+      const proj = (lon, lat) => {
+        lon *= RAD; lat *= RAD;
+        const cl = Math.cos(lat), sl = Math.sin(lat), d = lon - lon0, cd = Math.cos(d);
+        return [R * cl * Math.sin(d), -R * (cosL * sl - sinL * cl * cd), sinL * sl + cosL * cl * cd];
+      };
+      // a line on the sphere: lifted where it goes round the back
+      const line = (pairs) => { let d = '', pen = false; for (const [lo, la] of pairs) { const [x, y, c] = proj(lo, la); if (c < 0) { pen = false; continue; } d += (pen ? 'L' : 'M') + r2(x) + ' ' + r2(y); pen = true; } return d; };
+      // a shape on the sphere: what lies behind is laid on the limb, so the fill follows the edge
+      const shape = (pairs) => {
+        const pts = pairs.map(([lo, la]) => proj(lo, la));
+        if (pts.every((p) => p[2] < 0)) return '';
+        return pts.map(([x, y, c], i) => { if (c < 0) { const k = R / (Math.hypot(x, y) || 1); x *= k; y *= k; } return (i ? 'L' : 'M') + r2(x) + ' ' + r2(y); }).join('') + 'Z';
+      };
+      let grat = '';
+      for (const la of [-60, -30, 0, 30, 60]) { const p = []; for (let lo = -180; lo <= 180; lo += 6) p.push([lo, la]); grat += line(p); }
+      for (let lo = -180; lo < 180; lo += 30) { const p = []; for (let la = -90; la <= 90; la += 6) p.push([lo, la]); grat += line(p); }
+      landEl.setAttribute('d', LAND.map(shape).join(''));
+      gratEl.setAttribute('d', grat);
+      for (const f of dots) {
+        const [x, y, c] = proj(f.lon, f.lat);
+        // seen only on the near side, fading out towards the limb
+        const face = Math.min(1, Math.max(0, (c - 0.04) / 0.22));
+        let b;
+        if (f.cairo) b = 0.82 + 0.18 * Math.sin(t * 1.7);
+        else { const u = ((t / f.period + f.phase) % 1) / f.on; b = u < 1 ? Math.pow(Math.sin(Math.PI * u), 1.6) : 0; }
+        const a = b * face;
+        if (a < 0.01) { f.dot.setAttribute('opacity', 0); f.glow.setAttribute('opacity', 0); continue; }
+        f.dot.setAttribute('cx', r2(x)); f.dot.setAttribute('cy', r2(y)); f.dot.setAttribute('r', r2(f.cairo ? 1.5 : 0.8 + 0.6 * b)); f.dot.setAttribute('opacity', r2(a));
+        f.glow.setAttribute('cx', r2(x)); f.glow.setAttribute('cy', r2(y)); f.glow.setAttribute('r', r2(f.cairo ? 7 : 2.4 + 3.6 * b)); f.glow.setAttribute('opacity', r2(a));
+      }
+    }
+    if (still) { draw(START, 0); return; }
+    // turning: only while the opening is in view and the tab is shown
+    // its clock runs only while it is drawn, so it never jumps ahead after a pause
+    let seen = true, raf = 0, last = 0, t = 0;
+    const frame = (now) => {
+      raf = 0;
+      if (!seen || document.hidden) { last = 0; return; }
+      if (last) t += Math.min(now - last, 50) / 1000;
+      last = now;
+      draw(START - (t / PERIOD) * 360, t);
+      raf = requestAnimationFrame(frame);
+    };
+    const kick = () => { if (!raf && seen && !document.hidden) raf = requestAnimationFrame(frame); };
+    new IntersectionObserver((entries) => { seen = entries.some((e) => e.isIntersecting); kick(); }).observe(g.ownerSVGElement || g);
+    document.addEventListener('visibilitychange', kick);
+    draw(START, 0); kick();
   })();
 
   // ================================================================ Fire
@@ -2199,7 +2265,7 @@
   }
 
   // ---- thread between pins on different sheets, and down the line of pins at the end ----
-  const THREADS = [['spool', 'modis1'], ['spool', 'viirs1'], ['modis1', 'map-m'], ['viirs1', 'map-v'], ['map-m', 'map-k'], ['map-v', 'map-k'], ['map-k', 'table-in'], ['table-out', 'l0'], ['l0', 'l1'], ['l1', 'l2'], ['l2', 'l3'], ['l3', 'l4'], ['l4', 'l5']];
+  const THREADS = [['spool', 'rec-in'], ['rec-out', 'shows-in'], ['shows-out', 'modis1'], ['shows-out', 'viirs1'], ['modis1', 'map-m'], ['viirs1', 'map-v'], ['map-m', 'map-k'], ['map-v', 'map-k'], ['map-k', 'table-in'], ['table-out', 'l0'], ['l0', 'l1'], ['l1', 'l2'], ['l2', 'l3'], ['l3', 'l4'], ['l4', 'l5']];
   let threads = [];
   const chapterOf = (n) => chapters.indexOf(n.closest('.chapter')) + 1;
   function layThreads() {
@@ -2237,6 +2303,35 @@
       for (const e of t.els) e.style.setProperty('--len', len);
       if (drawn.has(t.key) || still) { t.drawn = true; for (const e of t.els) e.classList.add('is-drawn'); }
       for (const p of t.pinEls) p.style.opacity = t.drawn ? '1' : '0';
+    });
+  }
+  function threadsOverRecord() {
+    const src = $('desk-threads'), dr = desk.getBoundingClientRect();
+    desk.querySelectorAll(':scope > .record').forEach((sec) => {
+      let svg = sec.querySelector(':scope > .record-threads'), box = sec.querySelector(':scope > .record-pins');
+      if (!svg) {
+        svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'desk-threads record-threads'); svg.setAttribute('aria-hidden', 'true');
+        sec.appendChild(svg);
+        box = document.createElement('div'); box.className = 'desk-pins record-pins'; box.setAttribute('aria-hidden', 'true');
+        sec.appendChild(box);
+      }
+      const r = sec.getBoundingClientRect(), w = sec.offsetWidth, h = sec.offsetHeight, x0 = r.left - dr.left, y0 = r.top - dr.top;
+      svg.setAttribute('width', w); svg.setAttribute('height', h);
+      svg.setAttribute('viewBox', `${n1(x0)} ${n1(y0)} ${n1(w)} ${n1(h)}`);
+      svg.innerHTML = src.innerHTML;
+      const copies = svg.querySelectorAll('.t');
+      threads.forEach((t, i) => { const path = copies[i]; if (path) t.els.push(path.previousElementSibling, path); });
+      (box._watch || []).forEach((o) => o.disconnect());
+      box.innerHTML = ''; box._watch = [];
+      $('desk-pins').querySelectorAll('.pin').forEach((pin) => {
+        const x = parseFloat(pin.style.left) - x0, y = parseFloat(pin.style.top) - y0;
+        if (x < -8 || y < -8 || x > w + 8 || y > h + 8) return;
+        const copy = pin.cloneNode(); copy.style.left = n1(x) + 'px'; copy.style.top = n1(y) + 'px';
+        box.appendChild(copy);
+        const o = new MutationObserver(() => { copy.style.opacity = pin.style.opacity; });
+        o.observe(pin, { attributes: true, attributeFilter: ['style'] }); box._watch.push(o);
+      });
     });
   }
   function drawThread(t) {
@@ -2302,6 +2397,80 @@
     runLine();
   }, { rootMargin: '0px 0px -18% 0px', threshold: 0.6 });
   lineStops.forEach((s) => stopIO.observe(s));
+  const recordIO = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      const sheet = e.target, sec = sheet.closest('.record');
+      recordIO.unobserve(sheet);
+      later(() => inkIn(sheet), still ? 0 : 350);
+      const mine = threads.filter((t) => { const end = desk.querySelector('[data-anchor="' + t.end + '"]'); return end && sec.contains(end); });
+      mine.forEach((t, k) => later(() => drawThread(t), still ? 0 : 350 + (sheet._inkT || 2) * 1000 + 300 + k * 320));
+    }
+  }, { threshold: 0.2 });
+  document.querySelectorAll('.desk > .record [data-ink]').forEach((s) => recordIO.observe(s));
+  (function abjadInk() {
+    if (still) return;
+    // each stroke: points across the letter's ink box (0,0 its top left, 1,1 its bottom right),
+    // the brush's width in ems, how long it takes (0: a dot, set down whole), and its wet tip as a share
+    const DUCTUS = {
+      'أ': [[[[0.5, 0.42], [0.5, 1.06]], 0.26, 0.45, 0.3], [[[0.9, 0], [0.3, 0.06], [0.62, 0.16], [0.2, 0.24]], 0.22, 0.32, 0.4]],
+      'ب': [[[[1.02, 0], [0.98, 0.45], [0.75, 0.62], [0.25, 0.62], [0, 0.5], [-0.02, 0.15]], 0.34, 0.6, 0.16], [[[0.5, 0.78], [0.5, 1]], 0.26, 0, 0]],
+      'ج': [[[[0.92, 0.04], [0.2, 0.1], [0.62, 0.34], [0.12, 0.58], [0.22, 0.92], [0.72, 1], [1, 0.84]], 0.3, 0.8, 0.12], [[[0.6, 0.56], [0.55, 0.68]], 0.22, 0, 0]],
+      'د': [[[[0.4, 0], [0.9, 0.58], [0.7, 0.95], [-0.02, 0.95]], 0.34, 0.5, 0.2]],
+    };
+    const ctx = document.createElement('canvas').getContext('2d');
+    function write(letterEl, k) {
+      const ch = letterEl.textContent.trim(), strokes = DUCTUS[ch];
+      if (!strokes) { letterEl.classList.remove('ab-wait'); return; }
+      const cs = getComputedStyle(letterEl), fs = parseFloat(cs.fontSize);
+      ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${fs}px ${cs.fontFamily}`;
+      const m = ctx.measureText(ch), range = document.createRange();
+      range.selectNodeContents(letterEl);
+      const rr = range.getBoundingClientRect(), er = letterEl.getBoundingClientRect();
+      const left = rr.left - er.left, base = rr.top - er.top + m.fontBoundingBoxAscent;
+      const x0 = left - m.actualBoundingBoxLeft, x1 = left + m.actualBoundingBoxRight;
+      const y0 = base - m.actualBoundingBoxAscent, y1 = base + m.actualBoundingBoxDescent;
+      const pad = 0.14 * fs, iw = x1 - x0, ih = y1 - y0, W = iw + 2 * pad, H = ih + 2 * pad;
+      const P = ([u, v]) => n1(pad + u * iw) + ' ' + n1(pad + v * ih);
+      let t = 0.15, ink = '', wet = '';
+      for (const [pts, w, dur, tip] of strokes) {
+        const d = `M${pts.map(P).join(' L')}`, timing = `--at:${n1(t)}s;--dur:${dur}s;--tip:${tip}`;
+        ink += `<path class="${dur ? 'ab-stroke' : 'ab-dot'}" pathLength="1" d="${d}" stroke-width="${n1(w * fs)}" style="${timing}"/>`;
+        if (dur) wet += `<path class="ab-wet-stroke" pathLength="1" d="${d}" stroke-width="${n1(w * fs)}" style="${timing}"/>`;
+        t += (dur || 0.05) + 0.1;
+      }
+      // the letter, drawn again exactly where it stands, in its own face, for the brush to uncover
+      const glyph = `x="${n1(left - x0 + pad)}" y="${n1(base - y0 + pad)}" style="font: ${cs.fontStyle} ${cs.fontWeight} ${fs}px ${cs.fontFamily.replace(/"/g, "'")}"`;
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'ab-ink'); svg.setAttribute('aria-hidden', 'true');
+      svg.setAttribute('width', n1(W)); svg.setAttribute('height', n1(H)); svg.setAttribute('viewBox', `0 0 ${n1(W)} ${n1(H)}`);
+      svg.style.left = n1(x0 - pad) + 'px'; svg.style.top = n1(y0 - pad) + 'px';
+      const box = `x="0" y="0" width="${n1(W)}" height="${n1(H)}"`;
+      const brush = `<filter id="ab-brush-${k}" filterUnits="userSpaceOnUse" ${box}><feTurbulence type="fractalNoise" baseFrequency="0.35" numOctaves="2" seed="${7 + k}"/><feDisplacementMap in="SourceGraphic" scale="${n1(fs * 0.045)}" xChannelSelector="R" yChannelSelector="G"/></filter>`;
+      svg.innerHTML = `<defs>${brush}` +
+        `<mask id="ab-ink-${k}" maskUnits="userSpaceOnUse" ${box}><g filter="url(#ab-brush-${k})">${ink}</g><rect class="ab-settle" width="100%" height="100%" style="--at:${n1(t)}s"/></mask>` +
+        `<mask id="ab-wet-${k}" maskUnits="userSpaceOnUse" ${box}><g filter="url(#ab-brush-${k})">${wet}</g></mask></defs>` +
+        `<text class="ab-glyph" ${glyph} mask="url(#ab-ink-${k})">${ch}</text><text class="ab-glyph is-wet" ${glyph} mask="url(#ab-wet-${k})">${ch}</text>`;
+      if (getComputedStyle(letterEl).position === 'static') letterEl.style.position = 'relative';
+      letterEl.appendChild(svg);
+      letterEl.classList.remove('ab-wait'); letterEl.classList.add('ab-writing');
+      // once written, the text takes its place again: nothing can be left hidden
+      setTimeout(() => { svg.remove(); letterEl.classList.remove('ab-writing'); }, (t + 0.35 + 0.5) * 1000);
+    }
+    const letters = [...document.querySelectorAll('.chapter-head .abjad')];
+    letters.forEach((l) => l.classList.add('ab-wait'));
+    letters.forEach((letterEl, k) => {
+      let seen = false, begun = false;
+      const sheet = letterEl.closest('[data-ink]');
+      const go = () => {
+        if (begun || !seen || (sheet && !sheet.classList.contains('is-dry'))) return;
+        begun = true;
+        (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => write(letterEl, k)).catch(() => letterEl.classList.remove('ab-wait', 'ab-writing'));
+      };
+      new IntersectionObserver((entries, io) => { if (entries.some((e) => e.isIntersecting)) { seen = true; io.disconnect(); go(); } }, { threshold: 0.6 }).observe(letterEl);
+      if (sheet) new MutationObserver(go).observe(sheet, { attributes: true, attributeFilter: ['class'] });
+    });
+  })();
 
   // paper is painted while the page is idle, one sheet at a time, long before it is needed; a sheet
   // that comes near first is painted then
@@ -2373,6 +2542,7 @@
     desk.querySelectorAll('.sheet').forEach((s) => { if (s._paper) paintPaper(s); });
     desk.querySelectorAll('[data-ink]').forEach(inkLayout);
     layThreads();
+    threadsOverRecord();
     mapDesk();
     if (lamp.mode === 0 && !lamp.moving) { lamp.x = opening.x; lamp.y = opening.y; placeLamp(lamp.x, lamp.y, 0); }
     else if (lamp.mode === 1 && !lamp.moving) { placeLamp(lamp.x, lamp.y, 0); lamp.recheck = true; }

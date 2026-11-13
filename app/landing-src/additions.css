@@ -101,3 +101,105 @@
 .shows-list p { margin: 0; font-size: 17px; line-height: 1.5; }
 .shows .rec-unit a { color: var(--brass); }
 @media (max-width: 760px) { .shows-list li { grid-template-columns: 1fr; } }
+
+/* ---------------------------------------------------------------- the life of the opening (life.js) */
+/* the page's three shooting stars repeat in the same places: life.js throws them at random instead */
+.life .sky > .meteors { display: none; }
+.shower, .passes { position: absolute; inset: 0; pointer-events: none; }
+/* a shooting star: a short streak whose head is its right end (life.js places and moves it) */
+.streak { position: absolute; height: 1.6px; transform-origin: 100% 50%; border-radius: 2px; opacity: 0; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ink) 45%, transparent) 72%, var(--ink)); }
+.streak.bright { height: 2.2px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ink) 40%, transparent) 60%, color-mix(in srgb, var(--ink) 92%, var(--lapis)) 92%, var(--ink)); }
+.streak.bright::after { content: ""; position: absolute; right: -5px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: radial-gradient(closest-side, var(--ink), color-mix(in srgb, var(--ink) 25%, transparent) 45%, transparent); }
+/* a satellite: a steady point, no twinkle; its glint is a moment of sunlight on a panel */
+.pass { position: absolute; left: 0; top: 0; width: 2.2px; height: 2.2px; margin: -1.1px 0 0 -1.1px; border-radius: 50%; opacity: 0; background: color-mix(in srgb, var(--ink) 88%, var(--lapis)); box-shadow: 0 0 3px 0.5px color-mix(in srgb, var(--ink) 30%, transparent); }
+.pass b { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, var(--ink) 0 12%, color-mix(in srgb, var(--ink) 35%, transparent) 30%, transparent); }
+/* the sparks thrown up when the fire is stoked (inside the camp's .fx, 10px to the metre) */
+.ember { position: absolute; left: -0.6px; top: -7px; width: 1.2px; height: 1.2px; border-radius: 50%; opacity: 0; background: color-mix(in srgb, var(--flame) 70%, var(--rubric)); }
+/* the fox: a 0x0 box on the ground, moved by life.js; its drawing hangs from it. --u is px per cm. */
+.fox { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+.fox.away { visibility: hidden; }
+.fox .body { position: absolute; left: 0; top: 0; width: calc(var(--u, 0.4) * 84px); height: calc(var(--u, 0.4) * 50px); overflow: hidden; transform: translate(-42.857%, -96%); }
+.fox.rtl .body { transform: translate(-57.143%, -96%) scaleX(-1); }
+.fox .reel { position: absolute; left: 0; top: 0; width: 800%; height: 100%; animation: fox-trot var(--stride, 0.34s) steps(6) infinite; }
+.fox.stand .reel { animation: none; transform: translateX(-75%); }
+.fox.look .reel { animation: none; transform: translateX(-87.5%); }
+@keyframes fox-trot { to { transform: translateX(-75%); } }
+.fox svg { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; overflow: visible; }
+.fox .fig { fill: color-mix(in srgb, var(--shadow) 55%, var(--ground)); }
+.fox .leg { fill: none; stroke: color-mix(in srgb, var(--shadow) 55%, var(--ground)); stroke-width: 2.7; stroke-linecap: round; stroke-linejoin: round; }
+.fox .rim { fill: none; stroke: color-mix(in srgb, var(--ink) 70%, var(--lapis)); stroke-width: 1; stroke-linecap: round; opacity: 0.5; }
+.fox .eye { fill: color-mix(in srgb, var(--ink) 55%, var(--brass)); }
+.still .shower, .still .passes, .still .fox { display: none; }
+
+/* The thread from the spool, drawn again over the record and its findings (build-landing.mjs):
+   cut to the section's box, over the sheet and its ink, never in the way of a click. */
+.record > .record-threads { overflow: hidden; z-index: 4; }
+
+/* The pins the thread runs to on the record and its findings: in the top and bottom margins, clear
+   of every line of text (the threads themselves are in build-landing.mjs). */
+.record .anchor.pin-in { top: 9px; left: 64%; }
+.record .anchor.pin-out { bottom: 9px; left: 70%; }
+.record.shows .anchor.pin-in { left: 70%; }
+.record.shows .anchor.pin-out { left: 64%; }
+.record > .record-pins { z-index: 5; }
+
+/* The opening line is longer than the reference's: it may wrap where the screen is narrow. */
+@media (max-width: 900px) { #hero .line { white-space: normal; text-wrap: balance; } }
+
+/* The seal of the opening: written in with a brush, then it breathes a warm glow, the light of the
+   lamp held behind it. Opacity and transform only for the glow (cheap to
+   animate); the seal's own soft halo is a drop-shadow that swells and fades over five seconds. */
+.hero h1 { position: relative; }
+.hero h1::before {
+  content: ""; position: absolute; z-index: -1; pointer-events: none;
+  left: calc(var(--seal) * -0.32); top: -32%; width: calc(var(--seal) * 1.85); height: 164%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--flame) 14%, transparent), color-mix(in srgb, var(--brass) 5%, transparent) 58%, transparent);
+  animation: seal-breathe 5s ease-in-out 2.4s infinite alternate both;
+}
+/* The seal is written in, stroke by stroke and right to left, as زيج, with an old reed brush
+   (build-landing.mjs draws the strokes); each stroke rests fully drawn, the animation only brings
+   it from nothing. Then it glows. */
+.hero h1 .seal-written { display: block; height: var(--seal); width: auto; aspect-ratio: 287 / 246; overflow: visible; animation: seal-light 5s ease-in-out 2.6s infinite alternate; }
+.seal-written .seal-ink { fill: var(--ink); }
+.seal-written .seal-stroke { stroke-dasharray: 1; stroke-dashoffset: 0; animation: seal-write var(--dur, 0.4s) cubic-bezier(0.3, 0.1, 0.25, 1) var(--at, 0s) both; }
+@keyframes seal-write { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+/* a dot is set down whole, in one touch: no stroke across it, no wet tip, no second step */
+.seal-written .seal-dot, .ab-ink .ab-dot { fill: none; stroke: white; stroke-linecap: round; stroke-linejoin: round; animation: seal-dot 0.08s linear var(--at, 0s) both; }
+@keyframes seal-dot { from { opacity: 0; } }
+/* the wet tip: a short stretch of each stroke in warm, still-wet ink, running with the stroke's head
+   (same timing, so they stay together), drying a moment after the stroke ends */
+.seal-written .seal-wet { fill: color-mix(in srgb, var(--flame) 62%, var(--ink)); }
+.seal-written .seal-wet-stroke {
+  stroke-dasharray: var(--tip, 0.1) 2; stroke-dashoffset: calc(var(--tip, 0.1) - 1); opacity: 0;
+  animation: seal-tip var(--dur, 0.4s) cubic-bezier(0.3, 0.1, 0.25, 1) var(--at, 0s) both, seal-dry calc(var(--dur, 0.4s) + 0.3s) linear var(--at, 0s) both;
+}
+@keyframes seal-tip { from { stroke-dashoffset: var(--tip, 0.1); } to { stroke-dashoffset: calc(var(--tip, 0.1) - 1); } }
+@keyframes seal-dry { 0% { opacity: 0; } 8% { opacity: 1; } 62% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes seal-light {
+  from { filter: drop-shadow(0 0 1px color-mix(in srgb, var(--flame) 12%, transparent)); }
+  to { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--flame) 28%, transparent)); }
+}
+@keyframes seal-breathe { from { opacity: 0.2; transform: scale(0.96); } to { opacity: 0.5; transform: scale(1.03); } }
+.still .hero h1 .seal-written, .still .seal-written .seal-stroke, .still .seal-written .seal-dot, .still .seal-written .seal-wet-stroke, .still .hero h1::before { animation: none; }
+.still .hero h1::before { opacity: 0.35; }
+@media (prefers-reduced-motion: reduce) { .hero h1 .seal-written, .seal-written .seal-stroke, .seal-written .seal-dot, .seal-written .seal-wet-stroke, .hero h1::before { animation: none; } .hero h1::before { opacity: 0.35; } }
+
+/* The opening line's "1,000" in lining figures: the face's old-style 1 reads as a small capital I. */
+#hero .line { font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1, "onum" 0; }
+
+/* The chapters' letters, written in with a brush when they come into view (build-landing.mjs): hidden
+   until their turn; while written, the text gives way to a drawing of the letter that a mask of
+   brush strokes uncovers, a wet tip of warm ink at the head of each stroke; then the text is back. */
+.chapter-head .abjad.ab-wait { opacity: 0; }
+.chapter-head .abjad.ab-writing { color: transparent; }
+.chapter-head .abjad > .ab-ink { position: absolute; overflow: visible; pointer-events: none; }
+.ab-ink .ab-glyph { fill: var(--brass); }
+.ab-ink .ab-glyph.is-wet { fill: color-mix(in srgb, var(--flame) 70%, var(--brass)); }
+.ab-ink .ab-stroke { fill: none; stroke: white; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: seal-write var(--dur, 0.5s) cubic-bezier(0.45, 0.05, 0.4, 1) var(--at, 0s) forwards; }
+.ab-ink .ab-wet-stroke {
+  fill: none; stroke: white; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: var(--tip, 0.15) 2; stroke-dashoffset: calc(var(--tip, 0.15) - 1); opacity: 0;
+  animation: seal-tip var(--dur, 0.5s) cubic-bezier(0.45, 0.05, 0.4, 1) var(--at, 0s) both, seal-dry calc(var(--dur, 0.5s) + 0.4s) linear var(--at, 0s) both;
+}
+.ab-ink .ab-settle { fill: white; opacity: 0; animation: ab-settle 0.35s ease-out var(--at, 1s) forwards; }
+@keyframes ab-settle { to { opacity: 1; } }
