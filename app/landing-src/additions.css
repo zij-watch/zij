@@ -124,16 +124,16 @@
 .hero h1::before {
   content: ""; position: absolute; z-index: -1; pointer-events: none;
   left: calc(var(--seal) * -0.32); top: -32%; width: calc(var(--seal) * 1.85); height: 164%;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--flame) 26%, transparent), color-mix(in srgb, var(--brass) 9%, transparent) 58%, transparent);
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--flame) 14%, transparent), color-mix(in srgb, var(--brass) 5%, transparent) 58%, transparent);
   animation: seal-breathe 5s ease-in-out 1.6s infinite alternate both;
 }
 .hero h1 img { animation: seal-in 1.8s cubic-bezier(0.2, 0.7, 0.2, 1) 0.2s both, seal-light 5s ease-in-out 2s infinite alternate; }
 @keyframes seal-in { from { opacity: 0; transform: translateY(10px) scale(0.97); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
 @keyframes seal-light {
-  from { filter: drop-shadow(0 0 2px color-mix(in srgb, var(--flame) 22%, transparent)); }
-  to { filter: drop-shadow(0 0 12px color-mix(in srgb, var(--flame) 52%, transparent)); }
+  from { filter: drop-shadow(0 0 1px color-mix(in srgb, var(--flame) 12%, transparent)); }
+  to { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--flame) 28%, transparent)); }
 }
-@keyframes seal-breathe { from { opacity: 0.3; transform: scale(0.94); } to { opacity: 0.85; transform: scale(1.05); } }
+@keyframes seal-breathe { from { opacity: 0.2; transform: scale(0.96); } to { opacity: 0.5; transform: scale(1.03); } }
 .still .hero h1 img, .still .hero h1::before { animation: none; }
-.still .hero h1::before { opacity: 0.6; }
-@media (prefers-reduced-motion: reduce) { .hero h1 img, .hero h1::before { animation: none; } .hero h1::before { opacity: 0.6; } }
+.still .hero h1::before { opacity: 0.35; }
+@media (prefers-reduced-motion: reduce) { .hero h1 img, .hero h1::before { animation: none; } .hero h1::before { opacity: 0.35; } }
