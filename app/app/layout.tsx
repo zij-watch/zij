@@ -24,6 +24,16 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
   },
   manifest: "/manifest.webmanifest",
+  // What a link to any page unfurls with: the landing's opening, drawn by scripts/og.mjs.
+  metadataBase: new URL("https://zij.watch"),
+  openGraph: {
+    type: "website",
+    siteName: "Zij",
+    title: "Zij: 26 years of fire on one scale",
+    description: "Satellite fire detections from MODIS and VIIRS, 2000 to today, harmonized into one record per area.",
+    images: [{ url: "/og.jpg", width: 1200, height: 630, alt: "The Zij seal over a desert night sky: Satellites do the watching. We make the tables." }],
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#f6edd8" };
