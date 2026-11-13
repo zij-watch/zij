@@ -21,6 +21,7 @@ import type { Shape } from "@/lib/fit/cells";
 import { monthSpan } from "@/lib/format";
 import type { DayHotspot } from "@/lib/hotspots/day";
 import { BASEMAPS, satelliteThumb } from "@/lib/map/style";
+import { TOUR, tourState } from "@/lib/tour";
 import { useAppState } from "@/lib/url";
 import DayPanel from "./DayPanel";
 import type { DrawMode } from "./MapView";
@@ -180,6 +181,7 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
   const [goTo, setGoTo] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [pickOpen, setPickOpen] = useState(false);
+  const [helpMenu, setHelpMenu] = useState(false);
   const cursorEl = useRef<HTMLSpanElement>(null);
   const layersEl = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
@@ -200,6 +202,33 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
     loadNotes().then(setNotes);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The tour. A link may carry only the step (?tour=1): the step's own state is then put in place.
+  const tourStep = state.tour ? TOUR[state.tour - 1] : null;
+  const tourApplied = useRef<number | null>(null);
+  useEffect(() => {
+    if (!state.tour || tourApplied.current === state.tour) return;
+    tourApplied.current = state.tour;
+    setDrawMode(null);
+    update(tourState(state.tour));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.tour]);
+  // Bring what the caption talks about into view in the panel: the month's weeks, or the chart.
+  const tourAreaReady = Boolean(area || drawn);
+  useEffect(() => {
+    if (!state.tour || !tourAreaReady) return;
+    const timer = setTimeout(() => {
+      const target = document.querySelector(state.tour === 1 ? ".sheet .detail-head" : ".sheet .tabs");
+      if (state.tour! <= 3) target?.scrollIntoView({ block: "start", behavior: "smooth" });
+      else document.querySelector(".sheet-body")?.scrollTo({ top: 0, behavior: "smooth" });
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [state.tour, tourAreaReady]);
+  const goTour = (step: number | null) => {
+    tourApplied.current = step;
+    setDrawMode(null);
+    update(step ? tourState(step) : { tour: null });
+  };
 
   // Presets.
   const shapeKey = state.shape ? JSON.stringify(state.shape) : "";
@@ -501,7 +530,7 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
 
   return (
     <TooltipProvider delayDuration={350}>
-    <div className={`explore panel-${state.panel}${state.timeline && tlRange ? " has-timeline" : ""}${state.basemap === "satellite" ? " is-satellite" : ""}`}>
+    <div className={`explore panel-${state.panel}${state.timeline && tlRange ? " has-timeline" : ""}${state.basemap === "satellite" ? " is-satellite" : ""}${state.tour ? " has-tour" : ""}`}>
       <header className="strip paper">
         <a className="brand" href="/"><Seal /><h1 className="sr-only">Zij: fire on one scale</h1></a>
         <p className="readout">
@@ -545,6 +574,20 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
           {drawMode === "box" ? "Click one corner, move, and click the opposite corner." : "Click each corner; click the first point again to close the shape."}
           {" "}The panel follows as you draw. <button type="button" className="link" onClick={() => setDrawMode(null)}>Stop drawing</button>
         </p>
+      )}
+      {tourStep && state.tour && (
+        <section className="tour paper" aria-label="Tour" aria-live="polite">
+          <p className="tour-count">Tour, step {state.tour} of {TOUR.length}</p>
+          <h2>{tourStep.title}</h2>
+          <p>{tourStep.text}</p>
+          <div className="tour-acts">
+            <button type="button" disabled={state.tour === 1} onClick={() => goTour(state.tour! - 1)}>Back</button>
+            {state.tour < TOUR.length
+              ? <button type="button" className="is-active" onClick={() => goTour(state.tour! + 1)}>Next</button>
+              : tourStep.link && <Link className="button-link is-active" href={tourStep.link.href}>{tourStep.link.label}</Link>}
+            <button type="button" className="link" onClick={() => goTour(null)}>{state.tour < TOUR.length ? "Skip the tour" : "End the tour"}</button>
+          </div>
+        </section>
       )}
       {progress && <p className="map-progress paper" role="status">{progress}</p>}
       {toast && <p className="toast paper" role="status">{toast}</p>}
@@ -666,7 +709,13 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
             </button>
           </Tip>
         ))}
-        <Tip label="How it works: the method and the numbers"><Link href={`/how-it-works${q}`} aria-label="Help: how it works"><Icon name="help" /><span>Help</span></Link></Tip>
+        <Pop open={helpMenu} onOpenChange={setHelpMenu} side="top" align="center" label="Help"
+          trigger={<button type="button" className={helpMenu ? "is-active" : ""} aria-label="Help: the tour, and how it works"><Icon name="help" /><span>Help</span></button>}>
+          <div className="menu">
+            <button type="button" onClick={() => { setHelpMenu(false); goTour(1); }}>Take the 60-second tour</button>
+            <Link className="menu-link" href={`/how-it-works${q}`}>How it works: the method and the numbers</Link>
+          </div>
+        </Pop>
       </nav>
 
       <p className="map-credit">Fire data: NASA FIRMS. Imagery: NASA GIBS. Map: Natural Earth. Not affiliated with or endorsed by NASA.</p>

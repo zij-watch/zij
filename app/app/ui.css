@@ -296,3 +296,24 @@ details.choice ul.plain li { min-height: var(--hit); display: flex; align-items:
   .map-progress, .has-timeline .map-progress { bottom: calc(var(--dock) + var(--sheet-h) + 72px); }
   .sheet-tab { bottom: calc(var(--dock) + 8px); }
 }
+
+/* ---------------------------------------------------------------- the tour: a caption card */
+.tour { position: absolute; z-index: 6; left: calc(var(--edge) + 52px); top: calc(var(--strip) + var(--edge)); width: min(420px, calc(100% - var(--free-right) - 76px)); padding: var(--s-4); }
+.tour-count { margin: 0 0 var(--s-1); font: 600 13px/16px var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass); }
+.tour h2 { font-size: 28px; line-height: 32px; margin-bottom: var(--s-2); }
+.tour p { margin: 0 0 var(--s-3); font-size: 17px; line-height: 26px; }
+.tour-acts { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s-2); }
+.tour-acts button:not(.link), .button-link { min-width: 88px; }
+.tour-acts .link { margin-left: auto; color: var(--brass); text-decoration: underline; }
+.button-link, .menu-link { display: inline-flex; align-items: center; justify-content: center; min-height: var(--hit); padding: 0 var(--s-3); border: 1px solid var(--rule); border-radius: var(--r-2); background: var(--ground-raised); color: var(--ink); text-decoration: none; }
+.button-link.is-active { background: var(--brass); border-color: var(--brass); color: var(--ground-raised); }
+.menu-link { justify-content: flex-start; }
+.menu-link:hover { background: var(--hover); }
+.has-tour .map-hint { top: auto; bottom: calc(var(--edge) + var(--credit) + var(--dock) + 12px); }
+@media (max-width: 760px) {
+  .tour { left: var(--edge); right: var(--edge); top: calc(var(--top) + var(--edge)); width: auto; padding: var(--s-3); max-height: calc(100dvh - var(--top) - var(--dock) - var(--sheet-h) - 24px); overflow-y: auto; }
+  .tour h2 { font-size: 22px; line-height: 26px; }
+  .tour p { font-size: 15px; line-height: 22px; margin-bottom: var(--s-2); }
+  .has-tour .left-tools, .has-tour .basemap-tile { display: none; }
+  .has-tour .map-hint { bottom: calc(var(--dock) + var(--sheet-h) + 8px); }
+}
