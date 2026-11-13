@@ -345,6 +345,52 @@ js = swap(js, "  function drawThread(t) {", `  function threadsOverRecord() {
   }
   function drawThread(t) {`, "drawThread");
 
+// ---- the seal of the opening, written with a brush -------------------------------------------
+// The same eight shapes as logo/zij-seal-night.svg, inline, so they can be written in: a mask of
+// brush strokes, each along the line a reed brush would take through its shape, uncovers the seal
+// in the order it is written. The Z in one stroke (along, down the diagonal, along), its crossbar,
+// the i and its ring, the j with its hook, then a dab for each dot. A little turbulence gives each
+// stroke a brush's ragged edge. The strokes rest fully drawn (additions.css animates them only
+// from nothing), so with reduced motion the seal is simply there.
+const SEAL_STROKES = [
+  // [d, width, start s, duration s]
+  ["M46 214 L198 214 L66 376 L198 376", 46, 0.3, 1.15],
+  ["M162 286 L214 286", 34, 1.55, 0.22],
+  ["M243 194 L243 306", 46, 1.85, 0.34],
+  ["M243 149.25 A11.75 11.75 0 1 0 243 172.75 A11.75 11.75 0 1 0 243 149.25", 14, 2.25, 0.38],
+  ["M316 194 L316 340 L292 376 L254 376", 46, 2.7, 0.62],
+  ["M316 141 L316 181", 40, 3.4, 0.16],
+  ["M145 313 L145 349", 34, 3.62, 0.14],
+  ["M226 311 L226 346", 34, 3.8, 0.14],
+  ["M260 311 L260 346", 34, 3.96, 0.14],
+];
+const SEAL_SHAPES = [
+  "M46,200L198,200L198,228L86.35,362L198,362L198,390L46,390L46,362L157.65,228L46,228Z",
+  "M179.56,272L212,272L212,300L156.23,300Z",
+  "M226,200L260,200L260,300L226,300Z",
+  "M299,200L333,200L333,349.22L299.02,390L258,390L258,362L282,362L299,341.6Z",
+  "M227,161a16,16 0 1,0 32,0a16,16 0 1,0 -32,0ZM235.5,161a7.5,7.5 0 1,1 15,0a7.5,7.5 0 1,1 -15,0Z",
+  "M316,144L333,161L316,178L299,161Z",
+  "M145,316.5L159.5,331L145,345.5L130.5,331Z",
+  "M226,314L240.5,328.5L226,343L211.5,328.5ZM260,314L274.5,328.5L260,343L245.5,328.5Z",
+];
+const SEAL_WRITTEN = `<svg class="seal-written" viewBox="46 144 287 246" width="287" height="246" role="img" aria-label="Zij · زيج">
+        <defs>
+          <filter id="seal-brush" filterUnits="userSpaceOnUse" x="20" y="120" width="340" height="300">
+            <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="7"/>
+            <feDisplacementMap in="SourceGraphic" scale="7" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+          <mask id="seal-ink" maskUnits="userSpaceOnUse" x="20" y="120" width="340" height="300">
+            <g filter="url(#seal-brush)" fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round">
+${SEAL_STROKES.map(([d, w, at, dur]) => `              <path class="seal-stroke" pathLength="1" d="${d}" stroke-width="${w}" style="--at:${at}s;--dur:${dur}s"/>`).join("\n")}
+            </g>
+          </mask>
+        </defs>
+        <g class="seal-ink" mask="url(#seal-ink)">
+${SEAL_SHAPES.map((d) => `          <path d="${d}"/>`).join("\n")}
+        </g>
+      </svg>`;
+
 // ---- the page ---------------------------------------------------------------------------------
 const head0 = html.indexOf('<link rel="preconnect" href="https://fonts.googleapis.com">');
 const head1 = html.indexOf('<link rel="stylesheet" href="../tokens.css">');
@@ -358,6 +404,7 @@ const edits = [
   ['<link rel="stylesheet" href="materials.css">', '<link rel="stylesheet" href="/landing/reference/materials.css">\n<link rel="stylesheet" href="/landing/additions.css">', "materials.css"],
   ['<script src="landing.js"></script>', `<script>window.ZIJ_TABLE = ${JSON.stringify(table)};</script>\n<script src="/landing/reference/landing.js"></script>`, "the script"],
   ['<p class="line">Satellites do the watching.<br>We make the tables.</p>', '<p class="line">1,000 years ago, a zij charted the sky.<br>Ours charts a safer Earth.</p>', "the hero's line"],
+  ['<h1><img src="../logo/zij-seal-night.svg" alt="Zij · زيج" width="287" height="246"></h1>', `<h1>${SEAL_WRITTEN}</h1>`, "the hero's seal"],
   ["from 25 years of NASA satellite records.", `from ${years} years of NASA satellite records.`, "the dek"],
   ['<a class="catchword begin" id="begin" href="#ch-1">Begin reading</a>', '<a class="catchword enter" href="/explore">Open the map</a>\n      <a class="scroll-cue" id="begin" href="#record" aria-label="Scroll down to the record"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v15M5 13l7 7 7-7"/></svg></a>', "the hero's link"],
   ["Over the Nile Delta, VIIRS sees 11 to 20 times more fire pixels than MODIS, and the gap changes from year to year.", `Over the Nile Delta in autumn, VIIRS on Suomi NPP records ${Math.round(usual[0])} to ${Math.round(usual[usual.length - 1])} times more fire pixels than MODIS on Aqua in most years, and ${Math.round(peak.ratio)} times in ${peak.year}. The gap changes from year to year.`, "the pixel ratio"],
