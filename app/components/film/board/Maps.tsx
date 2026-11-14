@@ -50,7 +50,7 @@ function fitFree(box: Box, pad: number, kept: number): View {
   return { zoom: view.zoom, center: [view.center[0] + (360 * kept) / (2 * 512 * 2 ** view.zoom), view.center[1]] };
 }
 /** A paint value of the app's layer at a zoom: a number, or a linear interpolation over zoom. */
-function atZoom(value: unknown, zoom: number): number {
+export function atZoom(value: unknown, zoom: number): number {
   if (typeof value === "number") return value;
   if (!Array.isArray(value) || value[0] !== "interpolate") return 0;
   const stops = value.slice(3) as number[];
@@ -60,7 +60,7 @@ function atZoom(value: unknown, zoom: number): number {
 }
 
 /** The map has drawn all it was asked for: tiles, the atlas's detail cells, the fade of its labels. */
-function useIdle() {
+export function useIdle() {
   const { warn } = useFilm();
   const loading = useLoading();
   const busy = useRef(false);
@@ -94,7 +94,7 @@ function useIdle() {
   }), [warn]);
 }
 
-const mapProps = { sky: true, onSelect: noop, drawMode: null, onDraft: noop, onDrawn: noop, chrome: false, interactive: false, follow: false } as const;
+export const mapProps = { sky: true, onSelect: noop, drawMode: null, onDraft: noop, onDrawn: noop, chrome: false, interactive: false, follow: false } as const;
 
 function closeOf(shape: Polygon): number {
   const B = BEATS.area;

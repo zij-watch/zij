@@ -24,7 +24,7 @@ import { PaperTitle } from "./Title";
 
 const noop = () => {};
 const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-const mixHex = (a: string, b: string, k: number) => {
+export const mixHex = (a: string, b: string, k: number) => {
   const x = rgb(a), y = rgb(b);
   return `rgb(${x.map((v, i) => Math.round(lerp(v, y[i], k))).join(",")})`;
 };
@@ -35,15 +35,15 @@ const median = (values: number[]) => {
 };
 type AxisModel = { axis: { scale: { getExtent: () => [number, number] } } };
 /** The top of the value axis as the chart has just drawn it. */
-const axisTop = (chart: echarts.ECharts) =>
+export const axisTop = (chart: echarts.ECharts) =>
   (chart as unknown as { getModel: () => { getComponent: (type: string, index: number) => AxisModel } }).getModel().getComponent("yAxis", 0).axis.scale.getExtent()[1];
-const chartIn = (holder: HTMLElement | null) => {
+export const chartIn = (holder: HTMLElement | null) => {
   const element = holder?.querySelector<HTMLElement>(".chart");
   return element ? echarts.getInstanceByDom(element) : undefined;
 };
 
 /** The Nile Delta's seasons, as the chart reads them. */
-function useSeasons(area: Area) {
+export function useSeasons(area: Area) {
   return useMemo(() => {
     const s = area.seasons;
     const [b0, b1] = area.climatology.baseline_years;

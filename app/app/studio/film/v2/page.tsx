@@ -17,7 +17,7 @@ export const metadata: Metadata = { title: "Zij: studio film, the board", robots
 // The same three files the first version reads, from the repository the app runs in.
 const text = (path: string) => readFile(path, "utf-8").catch(() => "");
 const APP = process.cwd();
-const CAPTIONS = join(/* turbopackIgnore: true */ APP, "..", "docs", "event", "zij-demo30.en.srt");
+const CAPTIONS = join(/* turbopackIgnore: true */ APP, "..", "docs", "event", "zij-demo30-v2.en.srt");
 const VALIDATION = join(/* turbopackIgnore: true */ APP, "..", "docs", "assets", "validation-light.svg");
 const LANDING = join(/* turbopackIgnore: true */ APP, "public", "landing.html");
 

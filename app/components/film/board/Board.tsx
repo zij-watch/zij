@@ -38,7 +38,7 @@ const DESK_F = 0.965, PIN_F = 1.012;
 const DESK = { x: -800, y: -1200, w: 9200, h: 5200 };
 
 /** The desk: the landing page's wood in the Night colours, darkened to a desk at night, painted once. */
-function Desk() {
+export function Desk() {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [painted, setPainted] = useState(false);
   useEffect(() => {

@@ -1,0 +1,42 @@
+1
+00:00:00,350 --> 00:00:03,150
+In 2012, the world's fire record jumped.
+
+2
+00:00:03,200 --> 00:00:05,950
+The fires didn't change,
+the satellites did.
+
+3
+00:00:06,420 --> 00:00:10,550
+Zij links MODIS to VIIRS
+and makes the records one.
+
+4
+00:00:10,620 --> 00:00:13,970
+It maps fire in any area you choose,
+month by month.
+
+5
+00:00:14,020 --> 00:00:18,380
+It shows any day's fires,
+from MODIS and VIIRS,
+
+6
+00:00:18,420 --> 00:00:22,180
+side by side, and it gives you
+clean, final data
+
+7
+00:00:22,220 --> 00:00:24,480
+to plan, warn,
+and respond to fires.
+
+8
+00:00:25,020 --> 00:00:27,350
+1,000 years ago,
+a zij charted the sky.
+
+9
+00:00:27,380 --> 00:00:29,300
+Ours charts a safer Earth.

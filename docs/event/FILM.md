@@ -1,21 +1,26 @@
 # The demo film
 
-A 29.5 second film, 1920 x 1080, 30 frames a second, drawn from the real app one frame at a time. Nothing in it is a screen recording. There are two versions of it, telling the same story to the same times:
+A 29.5 second film, 1920 x 1080, 30 frames a second, drawn from the real app one frame at a time. Nothing in it is a screen recording. There are three versions of it:
 
-- **v1**, `/studio/film`: seven scenes, one sheet after another, joined by cuts, the ink rule and the paper slide.
+- **v3**, `/studio/film/v3`: the newest cut. Three surfaces only, in close shots, joined by two short camera glides; no wide view of the desk (see [The third version: three surfaces](#the-third-version-three-surfaces)).
 - **v2**, `/studio/film/v2`: one continuous camera take across a board, with no cuts and no fades (see [The second version: the board](#the-second-version-the-board)).
+- **v1**, `/studio/film`: seven scenes, one sheet after another, joined by cuts, the ink rule and the paper slide.
+
+v1 and v2 tell the same story to the same times; v3 tells a shorter one, to its own script.
 
 | File | What it is |
 |---|---|
-| `app/film/film-v2-final.mp4` | **The film to upload**: v2 with music, effects and the ambience bed, no voice. |
-| `app/film/film-v2-final-voice.mp4` | The same with the voice-over. |
-| `app/film/film-final.mp4`, `film-final-voice.mp4` | v1, the same two ways, in case v2 is not used. |
-| `app/film/film-silent.mp4`, `film-v2-silent.mp4` | The picture with no sound, as rendered. The sound is put on these (see [Sound](#sound)). |
-| `app/film/film.mp4`, `film-v2.mp4` | The renderer's own output: the silent picture, or with `app/film/music.mp3` if that exists. |
-| `app/film/audio/` | The voice-over (`voiceover.wav`), its cleaned and placed copy, and the four masters. |
-| `app/film/thumbnail.jpg`, `thumbnail-v2.jpg` | One frame of the film, 1280 x 720. |
-| `app/film/stills/`, `stills-v2/` | Still frames at full size, for looking at before a whole render. |
-| `app/film/zij-demo30.en.srt`, `.vtt`, `.ass` | The captions, as a separate track (see [Captions](#captions)). |
+| `app/film/film-v3-final.mp4` | **The newest cut**: v3 with music and effects, no voice. |
+| `app/film/film-v3-final-voice.mp4` | The same with a voice-over, once one is recorded for v3 (`app/film/audio/voiceover-v3.*`). |
+| `app/film/film-v2-final.mp4`, `film-v2-final-voice.mp4` | v2, without and with the second cut's voice-over. |
+| `app/film/film-final.mp4`, `film-final-voice.mp4` | v1, the same two ways. |
+| `app/film/film-silent.mp4`, `film-v2-silent.mp4`, `film-v3-silent.mp4` | The picture with no sound, as rendered. The sound is put on these (see [Sound](#sound)). |
+| `app/film/film.mp4`, `film-v2.mp4`, `film-v3.mp4` | The renderer's own output: the silent picture, or with `app/film/music.mp3` if that exists. |
+| `app/film/audio/` | The voice-over of the second cut (`voiceover.wav`), its cleaned and placed copy, and the masters. |
+| `app/film/thumbnail.jpg`, `thumbnail-v2.jpg`, `thumbnail-v3.jpg` | One frame of each film, 1280 x 720. |
+| `app/film/stills/`, `stills-v2/`, `stills-v3/` | Still frames at full size, for looking at before a whole render. |
+| `app/film/zij-demo30.en.srt`, `.vtt`, `.ass` | v3's captions, as a separate track (see [Captions](#captions)). |
+| `app/film/v2-captions/zij-demo30.en.*` | v1's and v2's captions: the second cut's voice-over. |
 
 The renderer's output stays out of git (`app/film/.gitignore`): render it again from the steps below.
 
@@ -23,7 +28,9 @@ The renderer's output stays out of git (`app/film/.gitignore`): render it again 
 
 The captions go to YouTube as a separate track. They are not burned into the picture: v1 has no caption strip, and v2 has none either.
 
-Their one source is `docs/event/zij-demo30.en.srt`. It holds the voice-over's words and timings, transcribed locally with whisper.cpp (large-v3-turbo). Each sentence starts as he says it. Where a sentence crosses a scene boundary, it is held to the next scene's start or split there, so that every caption lies inside one scene. That makes nine captions. Four of them start 0.15 to 0.9 s after his words: captions 3, 4, 6 and 8. Every run of the renderer writes three files from it to `app/film/`, with the same times, the same lines and the same line breaks:
+**v3.** Its source is `docs/event/zij-demo30.en.srt`: the v3 script, six captions, each inside its scene, each long one on two lines. The renderer writes the three files from it into `app/film/`. If a voice-over is recorded for v3, the captions move to its timing (still inside their scenes).
+
+**v1 and v2.** Their source is `docs/event/zij-demo30-v2.en.srt` (until v3 it was `zij-demo30.en.srt`), and the renderer writes their three files into `app/film/v2-captions/`. It holds the second cut's voice-over words and timings, transcribed locally with whisper.cpp (large-v3-turbo). Each sentence starts as he says it. Where a sentence crosses a scene boundary, it is held to the next scene's start or split there, so that every caption lies inside one scene. That makes nine captions. Four of them start 0.15 to 0.9 s after his words: captions 3, 4, 6 and 8. Every run of the renderer writes three files from a film's source, with the same times, the same lines and the same line breaks:
 
 - `zij-demo30.en.srt`: plain, the source byte for byte (the renderer checks this).
 - `zij-demo30.en.vtt`: WebVTT, each cue at `line:92%,end align:center`, so its bottom sits 8% above the bottom of the frame.
@@ -42,6 +49,7 @@ Placed this low, the box covers no paper's heading and none of the map's key are
 - On v2, paper 1's legend is at the top of its chart, so the box never reaches it.
 - On v2's paper 4 the box overlaps the bottom of Results' "This month so far" figure.
 - On v2's paper 6 it overlaps the lower rows of the brief's calendar.
+- v3 keeps everything that matters out of the bottom 220 px of the frame: the record sheet's chart, the trials and the Nile Delta's error, the verdict, and the Seal card's lines all sit above the box (checked by burning the `.ass` onto v3's frames).
 
 ## How it is made
 
@@ -55,8 +63,8 @@ Placed this low, the box covers no paper's heading and none of the map's key are
 Before any frame is taken, the renderer checks the words against the film and the data, and stops if one fails:
 
 - every caption lies inside one scene;
-- a caption that quotes the error ("N% to M%") gives the numbers `method.json` holds: the season error of raw MODIS and of M4, each leaving one year out, rounded (76.51% and 14.15%). The captions follow the voice-over, which does not quote it, so today none does;
-- the counter on screen runs between the same two numbers.
+- a caption that quotes the error ("N% to M%") gives the numbers `method.json` holds: the season error of raw MODIS and of M4, each leaving one year out, rounded (76.51% and 14.15%). v3's caption 3 quotes it ("Error fell from 77% to 14%"); v1's and v2's captions follow the second cut's voice-over, which does not;
+- the counter on screen (v1, v2), or the first and last of v3's trials, run between the same two numbers.
 
 `app/scripts/film/render.mjs` opens the page in headless Chrome over the DevTools protocol. It steps `t` by 1/30 s and takes a JPEG screenshot of every frame at quality 92. Frames are photographed at twice the size (3840 x 2160) and scaled to 1920 x 1080 with Lanczos, so charts and maps are sharp. Chrome runs with `--run-all-compositor-stages-before-draw`, so a screenshot never shows a tile that has not been rastered yet. Then ffmpeg:
 
@@ -78,6 +86,9 @@ From `app/`, with Node 22 or later, Chrome, ffmpeg and ffprobe:
     node scripts/film/render.mjs --film v2 --stills 0.3,6.2,18.2,2.6,8.6,16.2,19.6,29.0
     node scripts/film/render.mjs --film v2 --thumb 16.9
     npx tsx scripts/film/sound.mjs --story D:/Zij/zij-story
+    node scripts/film/render.mjs --film v3 --stills 2,6,10,13,16,20,23,28
+    node scripts/film/render.mjs --film v3 --thumb 13.5
+    npx tsx scripts/film/sound.mjs --films v3 --story D:/Zij/zij-story
 
 Other options:
 
@@ -88,7 +99,7 @@ Other options:
 
 Scene 5 needs the network: its satellite picture comes from NASA GIBS.
 
-To look at it by hand, open `/studio/film?t=12.3` or `/studio/film/v2?t=12.3`. The arrow keys step one frame, with Shift one second.
+To look at it by hand, open `/studio/film?t=12.3`, `/studio/film/v2?t=12.3` or `/studio/film/v3?t=12.3`. The arrow keys step one frame, with Shift one second.
 
 ### The address
 
@@ -161,6 +172,32 @@ The titles are set in Cormorant Garamond 600 at 56 px on screen when the paper i
 
 **Rendering.** v2 is encoded in six pieces of about five seconds each and joined, with the same settings as v1. There is no held last second: the camera rests from 29.2 s, but every frame is photographed. The hotspots' ink blots have no blend mode on the board, unlike v1. In v2 the blend mode forced a render surface the size of the papers' layer, larger than the GPU takes, and Chrome dropped the layers above it from the frame.
 
+## The third version: three surfaces
+
+v3 (`/studio/film/v3`) is a shorter cut on the same desk, the same lamp and the same render pipeline. Three surfaces only, each in a close shot that nearly fills the frame. There is no wide view of the desk at the start or the end. Everything is a function of `t` (`app/lib/film/v3.ts`).
+
+| | Seconds | What happens |
+|---|---|---|
+| A | 0.0 to 17.5 | **The record sheet**, one paper that changes in place. |
+| | 0.0 | The Nile Delta's seasons as recorded: the MODIS years (2001 to 2011) are inked in, then the bars leap at 2012 (VIIRS, 2012 to 2026). A small line in the corner: "Team Zij · Harmonization of MODIS and VIIRS Hot Spots". |
+| | 4.5 | An ink circle is drawn round 2012, and the two sensors are named beside it: "MODIS, 1 km", "VIIRS, 375 m". |
+| | 8.0 | The trials are written in beside the chart, under "Error of a season total, tested on years the model never saw": Raw MODIS 77%, One factor 24%, M1 19%, M3 17%, M4 14%. Each row's error ticks in turn, from the row above's down to its own, with a bar for each. M4 is underlined. |
+| | 14.5 | The lever goes to "On one scale" and the bars become the harmonized record, with each converted year's likely range and the median. The circle stays, faint; the sensors' names fade. Then: "Nile Delta error: 7%". |
+| B | 17.5 to 24.5 | A glide of 1 s to **the map sheet**. A box is drawn over the northern Nile Delta corner to corner, as the app's right-drag draws one. Results come in, the verdict's badge is set down and its sentence is inked. Then 20 October 2023 is set and that day's VIIRS dots and MODIS rings drop in, in the order the satellites saw them. |
+| C | 24.5 to 29.5 | A glide of 1 s to **the Seal card**: the Seal written with the brush, "Zij · zij.watch", the credit line "Data: NASA FIRMS · Imagery: NASA GIBS · Map: Natural Earth". Still from 29.0 s. |
+
+**Camera.** On each surface the camera holds, with a slow push-in (1.000 to 1.025 on the record sheet, 1.000 to 1.018 on the map, 1.30 to 1.33 on the Seal card, which ends at 29.0 s). Each glide takes 1.0 s on a quintic smootherstep (no speed and no acceleration at either end) and zooms out by up to 12% on the way. Depth, the lamp, the shadows and the softening of the surface not in focus are the board's.
+
+**Motion blur** is the board's (12 subframes over 1/60 s, each smeared on the GPU along its own slice of the motion), and only on the two glides: on frames that move more than 2 px. The push-ins move under 0.1 px a frame. 60 of the 885 frames have it; the render took 27.8 min.
+
+**The last half-second.** From 29.0 s nothing moves: the renderer photographs that frame once, repeats it, and checks the page's very last frame against it.
+
+**The numbers.** The trials and the Nile Delta's error are read from `method.json` on the server (`app/app/studio/film/v3/page.tsx`): each model's season error leaving one year out (raw 76.51%, M0 24.06%, M1 19.14%, M3 16.57%, M4 14.15%), and the Nile Delta's own M4 error leaving one year out (6.94%), rounded. "One factor" is M0. M2 (19.57%) is left out, as the script asks.
+
+**The box.** The map draws a box from 30.55 E, 31.38 N to 31.75 E, 30.65 N, so v3's address is `/studio/film/v3?poly=30.55,31.38;31.75,31.38;31.75,30.65;30.55,30.65&day=2023-10-20`. Results, the verdict and the day's hotspots are the box's own, fitted in the browser as Explore does. The verdict is the app's: it speaks of the month so far (November 2026), as Explore would today.
+
+**Nothing in the caption box.** Everything that carries the story sits above the bottom 220 px of the frame, where YouTube puts the captions.
+
 ## Sound
 
 `app/scripts/film/sound.mjs` puts the sound on the rendered silent films. It runs with tsx because it reads the films' own timelines, which are TypeScript:
@@ -176,6 +213,7 @@ It follows the registration film's sound (`zij-story/narration/DIRECTION.md`): a
   - In v1 the times come from `lib/film/timeline.ts` (`T`): the same kinds of sound at its own beats.
   - Sources: recordings from the registration film's folder (CC0), plus two sounds synthesised with ffmpeg (the thread, the tick).
 - **Voice.** Only in the `-voice` files: the voice-over, cleaned lightly (a high-pass at 80 Hz, a gentle de-noise), played 3% faster with `atempo` (no change of pitch). It is placed at 0.15 s, so his last word ends at 29.03 s. He speaks for 29.75 s, longer than the 28.5 s asked for, so the 3% (under the 5% allowed) is what fits it; nothing is cut. The music sits 13 dB under him and comes back up for its final note as he finishes.
+- **v3.** The music is a background bed, not a feature, and the effects are 6 dB quieter against it than in v1 and v2. The effects come from `lib/film/v3.ts`: air on the two glides; a quill for the corner line, the two halves' names, the sensors' names, the trials' line, each trial's row, the Nile Delta's error, the verdict, and the Seal card's two lines; the ink circle, the underline and the box drawn; a tick for the lever; a slide for Results and for the day's slip; a stamp for the verdict's badge; the Seal's brush (`app/film/work/sound/events-v3.txt`). Without a voice there is nothing for the music to sit under, so at -14 LUFS it is the loudest thing in the mix. With a voice (`app/film/audio/voiceover-v3.*`), the voice is set to -16 LUFS, the music 18 dB under it, and a side-chain compressor keyed by the voice ducks the music a further 6 dB or so while it speaks.
 - **Master.** Each mix is set to -14 LUFS and limited below -1 dBTP, then checked again after AAC encoding (320 kbps, 48 kHz). The picture is copied (`-c:v copy`), and every file is checked with ffprobe for 29.5 s, never over 29.9.
 
 ## Sources
@@ -201,6 +239,7 @@ Every chart, map and number is a real component fed the exported data. Nothing w
 | The paper | `components/Paper.tsx` |
 | The captions | `docs/event/zij-demo30.en.srt`, parsed by `app/lib/film/srt.ts`: the words and the times are the file's. Eight captions, each inside its scene. Since the voice-over, they are its words and timings, transcribed locally (whisper.cpp). A separate track for both versions. |
 | "error falls from 77% to 14%" | The caption file's words, checked against `method.json` before every render |
+| v3's trials (77%, 24%, 19%, 17%, 14%) and "Nile Delta error: 7%" | `app/public/data/method.json`, read on the server: each model's season error leaving one year out, and the Nile Delta's own M4 error, rounded. The numbers a row passes while it ticks are not data. |
 | "Data: NASA FIRMS · Imagery: NASA GIBS · Map: Natural Earth" | The credits the app gives on its map (`components/Explore.tsx`, `lib/capture.ts`), as text |
 | Type | Cormorant Garamond and Amiri, bundled with the app |
 | Fire data | NASA FIRMS active fire detections, MODIS Collection 6.1 and VIIRS 375 m |
@@ -215,6 +254,7 @@ What the film adds that is not in the app:
 - the line "Team Zij · Harmonization of MODIS and VIIRS Hot Spots";
 - the end card's credit line;
 - in v2, the board's pins and thread, and the papers' titles;
+- in v3, the ink circle and the sensors' names, the trials written as a column, and the line "Nile Delta error: 7%";
 - the sound (see [Sound](#sound)).
 
 ## What is not in it
@@ -236,6 +276,10 @@ No faces, names or voices of people. No NASA logos: NASA is named in words only,
 | `app/components/film/board/Board.tsx` | v2: the clock, `seek(t)`, the desk, the layers, the pins and thread, the lamp |
 | `app/components/film/board/Charts.tsx`, `Maps.tsx`, `Cards.tsx`, `Title.tsx` | v2: papers 1 to 3, 4 and 5, 6 and 7; a paper's title |
 | `app/lib/film/board.ts` | v2: the papers' places, the camera and its time, focus, the lamp, the thread, each paper's beats |
+| `app/app/studio/film/v3/page.tsx`, `v3.css` | v3: the page (the captions, the Seal, and every number from `method.json`) and its styles |
+| `app/components/film/v3/Cut.tsx` | v3: the clock, `seek(t)`, the three surfaces, the pins, the lamp |
+| `app/components/film/v3/RecordSheet.tsx`, `MapSheet.tsx` | v3: the record sheet and the map sheet (the Seal card is v2's, with v3's times and line) |
+| `app/lib/film/v3.ts` | v3: the scenes, the surfaces, the camera and its two glides, focus, the lamp, every beat's time, the box |
 | `app/scripts/film/render.mjs` | The renderer, the checks and the caption files |
 | `app/scripts/film/sound.mjs` | The sound: music, bed, effects, voice, the masters and the final files |
 

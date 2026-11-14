@@ -12,6 +12,7 @@
 //   npx tsx scripts/film/sound.mjs                    both films, if their silent files exist
 //   npx tsx scripts/film/sound.mjs --films v2         the board only
 //   npx tsx scripts/film/sound.mjs --story D:/Zij/zij-story
+//   npx tsx scripts/film/sound.mjs --films v3         the third film (see "The third film" below)
 //
 // Writes app/film/film-final.mp4, film-final-voice.mp4, film-v2-final.mp4, film-v2-final-voice.mp4:
 // the picture copied (-c:v copy), AAC 48 kHz, 29.5 s, mastered to -14 LUFS and at most -1 dBTP.
@@ -22,6 +23,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { BEATS, STORY, THREAD, threadDrawn, TITLE_INK, TRAVELS } from "../../lib/film/board.ts";
 import { DURATION, FILM_QUERY, T } from "../../lib/film/timeline.ts";
+import { GLIDES, TRIALS, V3 } from "../../lib/film/v3.ts";
 
 const APP = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const argv = process.argv.slice(2);
@@ -36,6 +38,7 @@ const AUDIO = join(OUT, "audio");
 const SFX = join(STORY_DIR, "assets", "sfx");
 const MUSIC = join(STORY_DIR, "assets", "music", "pixabay-kulakovka-arabic-295885.mp3");
 const VOICE = readdirSync(AUDIO).filter((f) => /^voiceover\./.test(f)).map((f) => join(AUDIO, f))[0];
+const VOICE_V3 = readdirSync(AUDIO).filter((f) => /^voiceover-v3\./.test(f)).map((f) => join(AUDIO, f))[0];
 const RATE = 48000;
 const LOUDNESS = -14, TRUE_PEAK = -1;
 
@@ -164,6 +167,29 @@ function firstEvents() {
   ];
 }
 
+/** The third film (lib/film/v3.ts): the two glides, the record sheet's ink, the box, the verdict, the Seal. */
+function v3Events() {
+  const B = V3, out = [];
+  GLIDES.forEach(([a, b], i) => out.push({ kind: "air", at: a - 0.12, dur: b - a + 0.5, seed: i + 1 }));
+  out.push({ kind: "ink", at: B.corner, dur: 0.4, seed: 1, gain: -5 }); // the corner line
+  out.push({ kind: "ink", at: B.modisLabel, dur: 0.25, seed: 2, gain: -4 }, { kind: "ink", at: B.viirsLabel, dur: 0.25, seed: 3, gain: -4 });
+  out.push({ kind: "draw", at: B.circle, dur: B.circleFor + 0.1 }); // the ink circle round 2012
+  out.push({ kind: "ink", at: B.modisSensor, dur: B.sensorFor, seed: 4, gain: -3 }, { kind: "ink", at: B.viirsSensor, dur: B.sensorFor, seed: 5, gain: -3 });
+  out.push({ kind: "ink", at: B.trials, dur: 0.45, seed: 6, gain: -4 }); // the trials' line
+  TRIALS.forEach((_, k) => out.push({ kind: "ink", at: B.row + k * B.rowEvery, dur: B.rowInk, seed: k, gain: -4 })); // each row written
+  out.push({ kind: "draw", at: B.underline, dur: B.underlineFor + 0.1, gain: -2 }); // M4 underlined
+  out.push({ kind: "pin", at: B.lever }); // the lever
+  out.push({ kind: "ink", at: B.areaError, dur: 0.4, seed: 7, gain: -3 }); // the Nile Delta's error
+  out.push({ kind: "draw", at: B.press, dur: B.dragFor }); // the box
+  out.push({ kind: "slide", at: B.results }); // Results
+  out.push({ kind: "stamp", at: B.badge, gain: -3 }); // the verdict's badge
+  out.push({ kind: "ink", at: B.verdict, dur: B.verdictFor, seed: 8, gain: -3 }); // the verdict
+  out.push({ kind: "slide", at: B.slip, gain: -4 }); // the day's slip
+  out.push({ kind: "brush", at: B.seal, dur: 1.6 }); // the Seal
+  out.push({ kind: "ink", at: B.team, dur: 0.3, seed: 9 }, { kind: "ink", at: B.credit, dur: 0.3, seed: 10, gain: -3 });
+  return out;
+}
+
 // ---------------------------------------------------------------- stems
 
 /** Many short sounds, each at its moment, summed into one 29.5 s stem. */
@@ -176,7 +202,7 @@ function place(out, events, tag) {
   return out;
 }
 
-function stems() {
+function stems(withVoice = true) {
   // The music: the end of the track, faded in over a second; its last note dies away before 29.5 s.
   const music = join(WORK, "music.wav");
   ff(["-ss", String(MUSIC_OFFSET), "-t", String(DURATION), "-i", MUSIC, "-af",
@@ -185,6 +211,7 @@ function stems() {
   const bed = join(WORK, "bed.wav");
   ff(["-ss", "6", "-t", String(DURATION), "-i", join(SFX, "lamp-flame-fs680474.mp3"), "-af",
     `highpass=f=120,lowpass=f=5000,${FORMAT},afade=t=in:d=0.8,afade=t=out:st=${DURATION - 0.6}:d=0.55,apad,atrim=0:${DURATION}`, "-c:a", "pcm_f32le", bed]);
+  if (!withVoice) return { music, bed, voice: null };
   // The voice: cleaned lightly (a high-pass, a gentle de-noise), one channel to both, 3% faster, placed.
   const voice = join(AUDIO, "voiceover-clean.wav");
   const delay = Math.round((VOICE_AT - VOICE_FROM / VOICE_TEMPO) * RATE);
@@ -227,12 +254,14 @@ function mux(picture, audio, out) {
 // ---------------------------------------------------------------- the run
 
 mkdirSync(WORK, { recursive: true });
-if (!VOICE) throw new Error(`No voice-over in ${AUDIO} (voiceover.*)`);
 const films = option("films", "v1,v2").split(",");
-const { music, bed, voice } = stems();
-const voiceLevel = level(voice, -16, join(WORK, "voice-16.wav"));
+const older = films.filter((f) => f !== "v3");
+if (older.length && !VOICE) throw new Error(`No voice-over in ${AUDIO} (voiceover.*)`);
+const { music, bed, voice } = stems(older.length > 0);
+const voiceLevel = voice ? level(voice, -16, join(WORK, "voice-16.wav")) : null;
 const report = [];
-for (const film of films) {
+if (films.includes("v3")) third();
+for (const film of older) {
   const name = film === "v1" ? "film" : "film-v2";
   const picture = join(OUT, `${name}-silent.mp4`);
   if (!existsSync(picture)) {
@@ -263,3 +292,47 @@ for (const film of films) {
   }
 }
 console.log(report.join("\n"));
+
+// ---------------------------------------------------------------- the third film
+//
+// The music is a background bed, not a feature, and the effects are quieter than in the first two
+// films (6 dB lower against the music). Without a voice the music is still what carries the
+// loudness: mastered to -14 LUFS it is the loudest thing there is. With a voice (a file at
+// film/audio/voiceover-v3.*, transcribed and placed beforehand: --voice-at, --voice-from,
+// --voice-tempo) the voice is set to -16 LUFS, the music 18 dB under it (-34 LUFS), and ducked a
+// further 6 dB or so while the voice speaks (a side-chain compressor keyed by the voice).
+function third() {
+  const picture = join(OUT, "film-v3-silent.mp4");
+  if (!existsSync(picture)) {
+    console.log("  film-v3: no film-v3-silent.mp4 yet, skipped");
+    return;
+  }
+  const events = v3Events();
+  writeFileSync(join(WORK, "events-v3.txt"), events.map((e) => `${e.at.toFixed(3)}\t${e.kind}${e.dur ? `\t${e.dur.toFixed(2)} s` : ""}`).join("\n") + "\n");
+  const fx = place(join(WORK, "fx-v3.wav"), events, "v3");
+  const fxPeak = measure(fx).peak - 6;
+  const plain = join(WORK, "mix-v3.wav");
+  ff(["-i", level(music, -16, join(WORK, "music-16.wav")), "-i", level(bed, -37, join(WORK, "bed-37.wav")), "-i", fx, "-filter_complex",
+    "[2]volume=-6dB[x];[0][1][x]amix=inputs=3:normalize=0[out]", "-map", "[out]", "-c:a", "pcm_f32le", plain]);
+  const mixes = [[plain, ""]];
+  if (VOICE_V3) {
+    const tempo = Number(option("voice-tempo", "1")), from = Number(option("voice-from", "0")), at = Number(option("voice-at", "0"));
+    if (!(tempo >= 1 && tempo <= 1.05)) throw new Error("--voice-tempo must be from 1 to 1.05 (at most 5% faster)");
+    const clean = join(AUDIO, "voiceover-v3-clean.wav");
+    const delay = Math.max(0, Math.round((at - from / tempo) * RATE));
+    ff(["-i", VOICE_V3, "-af", `pan=mono|c0=c0,highpass=f=80:poles=2,afftdn=nr=6:nf=-50${tempo !== 1 ? `,atempo=${tempo}` : ""},${FORMAT},adelay=${delay}S:all=1,apad,atrim=0:${DURATION}`, "-c:a", "pcm_f32le", clean]);
+    const spoken = level(clean, -16, join(WORK, "voice-v3-16.wav"));
+    const voiced = join(WORK, "mix-v3-voice.wav");
+    ff(["-i", spoken, "-i", level(music, -34, join(WORK, "music-34.wav")), "-i", level(bed, -40, join(WORK, "bed-40.wav")), "-i", fx, "-filter_complex",
+      "[0]asplit=2[v][key];[1][key]sidechaincompress=threshold=0.015:ratio=6:attack=40:release=450:makeup=1[m];[3]volume=-8dB[x];[v][m][2][x]amix=inputs=4:normalize=0[out]",
+      "-map", "[out]", "-c:a", "pcm_f32le", voiced]);
+    mixes.push([voiced, "-voice"]);
+  } else console.log("  film-v3: no film/audio/voiceover-v3.* yet, so no voice version");
+  for (const [mix, suffix] of mixes) {
+    const mastered = join(AUDIO, `film-v3-final${suffix}.wav`);
+    const m = master(mix, mastered);
+    const file = join(OUT, `film-v3-final${suffix}.mp4`);
+    const checked = mux(picture, mastered, file);
+    console.log(`  film-v3-final${suffix}.mp4: ${checked.duration.toFixed(3)} s, ${checked.streams}; ${checked.lufs} LUFS, true peak ${checked.tp} dBTP (master ${m.lufs} LUFS, ${m.tp} dBTP); effects peak ${fxPeak.toFixed(1)} dBFS in the mix, before mastering`);
+  }
+}

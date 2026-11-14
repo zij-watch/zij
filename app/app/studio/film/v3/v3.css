@@ -1,0 +1,34 @@
+/* The third film (/studio/film/v3): three surfaces in close shots. Loaded after film.css and the
+   board's stylesheet, whose desk, papers, pins and lamp it shares. Nothing that matters is drawn
+   in the bottom 220 px of the frame, where YouTube's caption box sits. */
+
+/* A. The record sheet. */
+.v3-record { width: 100%; height: 100%; }
+.v3-corner { position: absolute; left: 40px; top: 22px; margin: 0; width: max-content; font: 600 25px/32px var(--font-display); letter-spacing: 0.05em; color: var(--ink-muted); }
+.v3-seasons .result .chart { height: 300px; }
+.v3-ring { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.v3-ring path { fill: none; stroke: var(--ink); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.v3-sensors { position: absolute; transform: translateX(-100%); text-align: right; }
+.v3-sensors p { margin: 0 0 4px; width: max-content; margin-left: auto; font: 600 23px/30px var(--font-display); letter-spacing: 0.04em; }
+.v3-sensors .is-modis { color: var(--lapis); }
+.v3-sensors .is-viirs { color: var(--rubric); }
+
+.v3-trials { position: absolute; left: 1290px; top: 96px; width: 470px; color: var(--ink); }
+.v3-trials-note { margin: 0 0 22px; font: italic 400 26px/34px var(--font-text); color: var(--ink-muted); }
+.v3-trial { position: relative; height: 100px; }
+.v3-trial-label { position: absolute; left: 0; top: 6px; font: 600 40px/48px var(--font-display); letter-spacing: 0.02em; }
+.v3-trial-value { position: absolute; right: 0; top: 0; font: 600 54px/56px var(--font-display); font-variant-numeric: lining-nums tabular-nums; font-feature-settings: "lnum" 1, "tnum" 1; }
+.v3-trial-value i { display: inline-block; width: 0.5em; font-style: normal; text-align: center; }
+.v3-trial-bar { position: absolute; left: 0; top: 64px; height: 12px; border-radius: 2px; background: color-mix(in srgb, var(--rubric) 78%, var(--ink)); }
+.v3-trial:first-of-type .v3-trial-bar { background: var(--lapis); }
+.v3-underline { position: absolute; left: 0; top: 86px; height: 3px; border-radius: 2px; background: var(--ink); }
+.v3-area-error { position: absolute; left: 1290px; top: 730px; margin: 0; width: max-content; font: 600 38px/46px var(--font-display); color: var(--ink); font-variant-numeric: lining-nums; }
+
+/* B. The map sheet: the map nearly to its edges. */
+.v3-mapsheet .film-map { inset: 14px; }
+.v3 .film-day { transform-origin: 0 100%; left: 36px; bottom: 150px; }
+
+/* C. The Seal card, set higher than on the board so its credit line is clear of the caption box. */
+.v3 .board-sealcard .board-seal.film-seal { top: 60px; }
+.v3 .board-sealcard .board-team { top: 446px; }
+.v3 .board-sealcard .board-credit { top: 530px; }

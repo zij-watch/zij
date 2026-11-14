@@ -18,6 +18,7 @@
 //   node scripts/film/render.mjs --parts 4,5              those pieces again, then the joins
 //   node scripts/film/render.mjs --captions               the checks and the caption files only
 //   node scripts/film/render.mjs --film v2 ...            the same for the board (/studio/film/v2)
+//   node scripts/film/render.mjs --film v3 ...            the same for the three surfaces (/studio/film/v3)
 //
 // Options: --url (the page), --out (default film/), --scale (device pixels per CSS pixel while
 // photographing, default 2: frames are taken at 3840x2160 and scaled to 1920x1080 by ffmpeg),
@@ -40,8 +41,11 @@ const option = (name, fallback) => {
 const flag = (name) => args.includes(`--${name}`);
 
 const FILMS = {
-  v1: { path: "/studio/film", name: "film", stills: "stills", work: "work", thumb: "thumbnail.jpg" },
-  v2: { path: "/studio/film/v2", name: "film-v2", stills: "stills-v2", work: join("work", "v2"), thumb: "thumbnail-v2.jpg" },
+  // v1 and v2 read the voice-over's captions of the second cut (zij-demo30-v2.en.srt) and write theirs
+  // into film/v2-captions/; v3 reads zij-demo30.en.srt and writes into film/.
+  v1: { path: "/studio/film", name: "film", stills: "stills", work: "work", thumb: "thumbnail.jpg", source: "zij-demo30-v2.en.srt", captions: "v2-captions" },
+  v2: { path: "/studio/film/v2", name: "film-v2", stills: "stills-v2", work: join("work", "v2"), thumb: "thumbnail-v2.jpg", source: "zij-demo30-v2.en.srt", captions: "v2-captions" },
+  v3: { path: "/studio/film/v3", name: "film-v3", stills: "stills-v3", work: join("work", "v3"), thumb: "thumbnail-v3.jpg", source: "zij-demo30.en.srt", captions: "" },
 };
 const FILM = FILMS[option("film", "v1")];
 if (!FILM) throw new Error(`--film must be one of ${Object.keys(FILMS).join(", ")}`);
@@ -378,10 +382,12 @@ function writeCaptions(cues, { w, h }) {
     "",
   ].join("\n");
   const files = { srt, vtt, ass };
-  for (const [ext, text] of Object.entries(files)) writeFileSync(join(OUT, `${CAPTIONS}.${ext}`), text);
-  const source = readFileSync(join(APP, "..", "docs", "event", `${CAPTIONS}.srt`), "utf8").replace(/^﻿/, "").replace(/\r/g, "").trim();
+  const dir = join(OUT, FILM.captions);
+  mkdirSync(dir, { recursive: true });
+  for (const [ext, text] of Object.entries(files)) writeFileSync(join(dir, `${CAPTIONS}.${ext}`), text);
+  const source = readFileSync(join(APP, "..", "docs", "event", FILM.source), "utf8").replace(/^﻿/, "").replace(/\r/g, "").trim();
   const same = source === srt.trim();
-  console.log(`  captions: ${Object.keys(files).map((ext) => `${CAPTIONS}.${ext}`).join(", ")} in ${OUT}${same ? "; the .srt is the source, byte for byte" : "; NOTE: the .srt differs from the source in its layout"}`);
+  console.log(`  captions: ${Object.keys(files).map((ext) => `${CAPTIONS}.${ext}`).join(", ")} in ${dir}${same ? "; the .srt is the source, byte for byte" : "; NOTE: the .srt differs from the source in its layout"}`);
 }
 
 // ---------------------------------------------------------------- the run

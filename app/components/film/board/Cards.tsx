@@ -138,9 +138,10 @@ function brush(x: number): number {
 }
 const seconds = (element: Element, name: string) => parseFloat((element as SVGElement).style.getPropertyValue(name)) || 0;
 
-export function SealCard({ seal }: { seal: string }) {
+/** The Seal card. The third film (v3) gives its own times, absolute, and its own line for the team. */
+export function SealCard({ seal, at, team = "Team Zij · zij.watch" }: { seal: string; at?: { seal: number; team: number; credit: number }; team?: string }) {
   const t = useT();
-  const s = STORY[7], B = BEATS.seal;
+  const s = at ? 0 : STORY[7], B = at ?? BEATS.seal;
   const holder = useRef<HTMLDivElement>(null);
 
   // The landing page's keyframes (seal-write, seal-dot, seal-tip, seal-dry), worked out for the frame's time.
@@ -167,7 +168,7 @@ export function SealCard({ seal }: { seal: string }) {
   return (
     <Paper as="div" kind="card" seed="board-seal" className="board-sealcard">
       <div ref={holder} className="film-seal board-seal" dangerouslySetInnerHTML={{ __html: seal }} />
-      <p className="board-team" style={inked(t, s + B.team)}>Team Zij · zij.watch</p>
+      <p className="board-team" style={inked(t, s + B.team)}>{team}</p>
       <p className="board-credit" style={inked(t, s + B.credit)}>Data: NASA FIRMS · Imagery: NASA GIBS · Map: Natural Earth</p>
     </Paper>
   );
