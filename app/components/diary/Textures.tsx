@@ -4,6 +4,7 @@
 // night sky, the Delta's fields from above, and the desk's wood. Never painted in a frame.
 
 import { useEffect, useRef } from "react";
+import { paintLand } from "@/lib/diary/land";
 import { paintFields, paintSky, paintWood, whenIdle, type SkyOptions } from "@/lib/diary/paint";
 
 function usePainted(paint: (cv: HTMLCanvasElement) => void) {
@@ -36,6 +37,12 @@ export function SkyCanvas({ className = "" }: { className?: string }) {
 const paintTheFields = (cv: HTMLCanvasElement) => { paintFields(cv, 2004); };
 export function FieldsCanvas({ className = "" }: { className?: string }) {
   return <canvas ref={usePainted(paintTheFields)} className={`tex-fields ${className}`} aria-hidden="true" />;
+}
+
+/** The Delta at night, side on: fields to the horizon, the canal, the village and its palms. */
+const paintTheLand = (cv: HTMLCanvasElement) => { paintLand(cv, 1977); };
+export function LandCanvas({ className = "" }: { className?: string }) {
+  return <canvas ref={usePainted(paintTheLand)} className={`tex-land ${className}`} aria-hidden="true" />;
 }
 
 const paintTheWood = (cv: HTMLCanvasElement) => {

@@ -8,12 +8,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ComponentType } from "react";
 import type { GameData } from "@/lib/diary/game";
 import { useRemembered } from "@/lib/remember";
+import { veilReady } from "@/lib/veil";
 import { clearProgress, fresh, loadProgress, saveProgress, starsFor, type Progress, type SealId } from "@/lib/diary/progress";
 import Hudhud from "./art/Hudhud";
 import { GameContext, type GameApi, type Pose, type Who } from "./engine/context";
 import { DragProvider } from "./engine/Drag";
 import { LevelEnd, Note } from "./engine/Parts";
-import { RunningHead, Stage, type Scene } from "./engine/Stage";
+import { PaperBack } from "@/components/Paper";
+import { ABJAD, RunningHead, Stage, Star8, type Scene } from "./engine/Stage";
 
 export type ChapterDef = {
   /** 0 the opening, 1 to 5 the levels, 6 the ending: which word of the running head is current */
@@ -49,14 +51,26 @@ export default function Game({ data, chapters, keep = true, startAt = 0 }: { dat
   const [mistakes, setMistakes] = useState(0);
   const [note, setNote] = useState<{ id: string; who: Who; text: string }[]>([]);
   const [pose, setPose] = useState<Pose>({ crest: false, tilt: false, fly: false, stone: false });
+  // At the very start Roro is not yet there: the opening flies him in. Until then his corner is empty.
+  const [landed, setLanded] = useState(startAt !== 0);
   const [stepKey, setStepKey] = useState(0);
   const [dark, setDark] = useState(false);
   // The turning page between chapters: a sheet crosses the scene with the next chapter's name.
-  const [turning, setTurning] = useState<{ eyebrow: string; word: string; key: number } | null>(null);
+  const [turning, setTurning] = useState<{ eyebrow: string; word: string; letter: string; key: number } | null>(null);
   const [noteKey, setNoteKey] = useState(0);
   const timers = useRef<number[]>([]);
   useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
   const later = useCallback((fn: () => void, ms: number) => { timers.current.push(window.setTimeout(fn, ms)); }, []);
+
+  // The veil the page opened under (app/veil.css) lifts once the scene has had a moment to be painted,
+  // and the first level waits for the light: nothing is said in the dark.
+  const [lit, setLit] = useState(false);
+  useEffect(() => {
+    const veiled = document.documentElement.classList.contains("is-arriving");
+    const a = window.setTimeout(veilReady, 420);
+    const b = window.setTimeout(() => setLit(true), veiled ? 1300 : 0);
+    return () => { window.clearTimeout(a); window.clearTimeout(b); };
+  }, []);
 
   const def = chapters[Math.min(chapter, chapters.length - 1)];
   const resume = keep && !started && saved != null && saved.chapter > 0 && saved.chapter < chapters.length;
@@ -79,7 +93,7 @@ export default function Game({ data, chapters, keep = true, startAt = 0 }: { dat
     // between the sky and the desk the camera tilts as well. With reduced motion, simply the next chapter.
     if (still || !from || !to) { swap(); return; }
     const word = to.level >= 1 && to.level <= 5 ? data.runningHead[to.level - 1] : to.level === 6 ? L["ui.ch6"] : "";
-    setTurning({ eyebrow: to.level >= 1 && to.level <= 5 ? L[`ui.ch${to.level}`] : "", word, key: Date.now() });
+    setTurning({ eyebrow: to.level >= 1 && to.level <= 5 ? L[`ui.ch${to.level}`] : "", word, letter: to.level >= 1 && to.level <= 5 ? ABJAD[to.level - 1] : "", key: Date.now() });
     setDark(false);
     later(swap, 900);
     later(() => setTurning(null), 2300);
@@ -112,7 +126,7 @@ export default function Game({ data, chapters, keep = true, startAt = 0 }: { dat
       setStepKey((k) => k + 1);
       later(() => setPose((p) => ({ ...p, crest: false })), 1600);
     },
-    pose: (p) => setPose((q) => ({ ...q, ...p })),
+    pose: (p) => { setPose((q) => ({ ...q, ...p })); if (p.fly === false) setLanded(true); },
     finish: () => {
       if (def.level >= 1 && def.level <= 5) setPhase("end");
       else if (chapter < chapters.length - 1) goTo(chapter + 1, progress);
@@ -138,22 +152,32 @@ export default function Game({ data, chapters, keep = true, startAt = 0 }: { dat
     <GameContext.Provider value={api}>
       <DragProvider hint={L["ui.keys"]}>
         <div className={`dd${still ? " is-still" : ""}`} data-theme="night">
-          <RunningHead words={data.runningHead} current={level} sealAlt="Zij" />
+          <RunningHead words={data.runningHead} current={level} sealAlt="Zij" kept={progress.stars.reduce((a, b) => a + b, 0)} keptLabel={L["ui.kept"]} />
           <Stage scene={def.scene} still={still} dark={dark} guide={
-            <div className="dd-guide">
+            <div className={`dd-guide${resume ? " is-away" : ""}${level === 0 ? " is-opening" : ""}${level === 0 && !landed && !pose.fly ? " is-waiting" : ""}`}>
               <Hudhud key={`hh-${stepKey}`} className={stepKey ? "is-step" : ""} crest={pose.crest} tilt={pose.tilt} fly={pose.fly} stone={pose.stone} label={L["ui.hudhud"]} />
               <Note key={`note-${noteKey}`} lines={note} still={still} names={{ modis: L["ui.modis"], viirs: L["ui.viirs"], mona: L["ui.mona"] }} />
             </div>
           }>
             {resume && saved ? (
-              <div className="dd-resume slip" data-theme="folio">
-                <button type="button" className="stamp" onClick={() => { setStarted(true); setProgress(saved); setChapter(saved.chapter); }}>{L["ui.carry"]}</button>
-                <button type="button" className="catchword" onClick={() => { setStarted(true); clearProgress(); setProgress(fresh()); setChapter(0); }}>{L["ui.again"]}</button>
+              <div className="dd-cover paper is-sheet" data-theme="folio">
+                <PaperBack kind="sheet" seed="diary-cover" />
+                <span className="jadwal" aria-hidden="true" />
+                <p className="t-eyebrow">{L[`ui.ch${Math.min(5, Math.max(1, saved.chapter))}`]} · {data.runningHead[Math.min(5, Math.max(1, saved.chapter)) - 1]}</p>
+                <h1 className="dd-cover-title">{L["ui.diary"]}</h1>
+                <Hudhud crest label={L["ui.hudhud"]} />
+                <div className="dd-cover-stars" aria-label={`${L["ui.kept"]}: ${saved.stars.reduce((a, b) => a + b, 0)}`}>
+                  {saved.stars.map((n, i) => <Star8 key={i} dim={n === 0} />)}
+                </div>
+                <div className="dd-cover-acts">
+                  <button type="button" className="stamp" onClick={() => { setStarted(true); setProgress(saved); setChapter(saved.chapter); }}>{L["ui.carry"]}</button>
+                  <button type="button" className="catchword" onClick={() => { setStarted(true); clearProgress(); setProgress(fresh()); setChapter(0); }}>{L["ui.again"]}</button>
+                </div>
               </div>
             ) : (
               <>
                 <div className="dd-level" key={chapter}>
-                  {client && <Level />}
+                  {client && lit && <Level />}
                 </div>
                 {phase === "end" && (
                   <LevelEnd
@@ -174,10 +198,13 @@ export default function Game({ data, chapters, keep = true, startAt = 0 }: { dat
           </Stage>
           {turning && (
             <div className="dd-turn" key={turning.key} aria-hidden="true">
-              <div className="dd-turn-sheet" data-theme="folio">
+              <div className="dd-turn-sheet paper is-sheet" data-theme="folio">
+                <PaperBack kind="sheet" seed="diary-turn" />
                 <span className="jadwal" />
+                {turning.letter && <span className="dd-turn-letter abjad">{turning.letter}</span>}
                 {turning.eyebrow && <span className="dd-turn-eyebrow">{turning.eyebrow}</span>}
                 <span className="dd-turn-word">{turning.word}</span>
+                <i className="dd-turn-rule" />
               </div>
             </div>
           )}

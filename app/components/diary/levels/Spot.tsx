@@ -38,8 +38,9 @@ function Photo({ cam, active, seen, onFire, caption, tally }: { cam: Cam; active
   const { L } = useGame();
   const [cols, rows] = GRID[cam];
   return (
-    <figure className={`lv-photo is-${cam}${active ? " is-active" : ""}`}>
-      <div className="lv-photo-pic">
+    <figure className={`lv-photo slip is-${cam}${active ? " is-active" : ""}`} data-theme="folio">
+      <i className="pin lv-photo-pin" aria-hidden="true" />
+      <div className="lv-photo-pic" data-theme="night">
         <FieldsCanvas className="lv-photo-fields" />
         {FIRES.map((f, i) => (
           <button key={i} type="button" className={`plain lv-photo-fire${f.tiny ? " is-tiny" : ""}${active && !seen[i] ? " is-next" : ""}`}

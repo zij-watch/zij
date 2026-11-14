@@ -27,7 +27,7 @@ function Eye({ open }: { open: boolean }) {
 
 function Week({ looking, marks, label }: { looking: boolean[]; marks: (Mark | null)[]; label: (day: number) => string }) {
   return (
-    <ol className="lv-week">
+    <ol className="lv-week slip" data-theme="folio">
       {looking.map((on, d) => (
         <li key={d} className="lv-day">
           <span className={`lv-above${on ? " is-on" : ""}`}><Eye open={on} /></span>
@@ -102,7 +102,7 @@ export default function Count() {
       </div>
       <div className="lv-realrow is-other" aria-hidden="true">
         <p className="lv-who">{g.L["count.real.on"]}</p>
-        <ol className="lv-week">{on.map((_, d) => <li key={d} className="lv-day"><span className="lv-above is-on"><Eye open /></span><span className="lv-box is-seen" /></li>)}</ol>
+        <ol className="lv-week slip" data-theme="folio">{on.map((_, d) => <li key={d} className="lv-day"><span className="lv-above is-on"><Eye open /></span><span className="lv-box is-seen" /></li>)}</ol>
       </div>
       {!real.some(Boolean) && tokens}
     </div>

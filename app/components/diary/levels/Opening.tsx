@@ -17,8 +17,9 @@ export default function Opening() {
 
   useEffect(() => {
     let live = true;
+    // he flies in from over the fields and lands on his diary (game.css, .is-opening .hh.is-fly)
     g.pose({ fly: true });
-    g.wait(900).then(() => {
+    g.wait(1600).then(() => {
       if (!live) return;
       g.pose({ fly: false });
       g.say(["open.hello", "open.straw"]);

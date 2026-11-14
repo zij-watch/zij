@@ -1,8 +1,10 @@
-/* Hudhud's Fire Diary: the game's frame, stage and instruments of play. The drawings are in
-   diary.css. Tokens only; transform and opacity only; everything rests in its last frame. */
+/* Roro's Fire Diary: the game's frame, stage and instruments of play. The drawings are in
+   diary.css. Tokens only; transform and opacity only; everything rests in its last frame.
+   The scene is Night and runs edge to edge; everything the player reads or presses is Folio paper
+   lying on it (the materials of app/materials.css: sheet, slip, jadwal, stamp, catchword, abjad). */
 
-/* ================================================================ the frame and the running head */
-.dd { flex: 1; display: flex; flex-direction: column; min-height: 100dvh; background: var(--ground); color: var(--ink); -webkit-font-smoothing: antialiased; }
+/* ================================================================ the frame */
+.dd { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 100dvh; background: var(--sky); color: var(--ink); -webkit-font-smoothing: antialiased; overflow: hidden; }
 .dd :is(a, button, summary, [tabindex]):focus-visible { outline: 5px double var(--brass); outline-offset: 3px; }
 .dd button.drag, .dd button.tap-sat, .dd button.seal-button, .dd button.plain {
   -webkit-appearance: none; appearance: none; border: 0; background: none; padding: var(--space-1); min-height: 44px; min-width: 44px; color: inherit; font: inherit; cursor: pointer; border-radius: 0;
@@ -10,55 +12,108 @@
 .dd button.drag:hover:not(:disabled), .dd button.tap-sat:hover:not(:disabled), .dd button.seal-button:hover:not(:disabled), .dd button.plain:hover:not(:disabled) { background: none; }
 .dd button:disabled { opacity: 1; cursor: default; }
 .dd :is(.catchword, .stamp) { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; }
-.dd-head { position: relative; z-index: 5; display: flex; align-items: center; gap: var(--space-4); height: 56px; padding: 0 var(--space-4); background: var(--ground-raised); border-bottom: var(--stroke-hair) solid var(--rule); flex: none; }
-.dd-seal { display: flex; align-items: center; min-height: 44px; min-width: 44px; }
+.dd .slip { position: relative; }
+
+/* ================================================================ the running head
+   No bar: the Seal, the five chapters on a brass thread and the stars kept, lying on the sky itself. */
+.dd-head {
+  position: absolute; z-index: 9; left: 0; right: 0; top: 0; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--space-4);
+  height: var(--head-h); padding: 0 var(--space-6); pointer-events: none;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--shadow) 78%, transparent), color-mix(in srgb, var(--shadow) 40%, transparent) 60%, transparent);
+}
+.dd-head > * { pointer-events: auto; }
+.dd-seal { justify-self: start; display: flex; align-items: center; min-height: 44px; min-width: 44px; transition: opacity var(--dur-touch) var(--ease-ink); }
+.dd-seal:hover { opacity: 0.8; }
 .dd-seal img { display: block; height: 30px; width: auto; }
-.dd-chapters { display: flex; flex-wrap: nowrap; gap: var(--space-6); margin: 0 0 0 auto; padding: 0; list-style: none; font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); font-feature-settings: var(--features-eyebrow); text-transform: lowercase; }
-.dd-chapters li { position: relative; color: var(--ink-muted); padding: var(--space-1) 0; }
-.dd-chapters li.is-done, .dd-chapters li.is-now { color: var(--ink); }
-.dd-rule { position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--brass); transform-origin: 0 50%; transform: scaleX(0); }
-.dd-chapters li.is-now .dd-rule { transform: scaleX(1); animation: dd-rule var(--dur-ink) var(--ease-ink) both; }
-@keyframes dd-rule { from { transform: scaleX(0); } }
+.dd-chapters { position: relative; display: flex; flex-wrap: nowrap; align-items: center; gap: var(--space-8); margin: 0; padding: 0; list-style: none; }
+/* the thread the chapters hang on, and how far along it the player has come */
+.dd-chapters::before, .dd-chapters::after { content: ""; position: absolute; left: 13px; right: 13px; top: 13px; height: 1px; background: var(--rule); transform-origin: 0 50%; }
+.dd-chapters::after { background: var(--brass); transform: scaleX(var(--done, 0)); transition: transform var(--dur-scene) var(--ease-ink); }
+.dd-chapters li { position: relative; z-index: 1; display: grid; justify-items: center; gap: 2px; color: var(--ink-muted); }
+.dd-chapters .abjad {
+  display: grid; place-items: center; width: 26px; height: 26px; transform: rotate(45deg);
+  background: var(--sky); box-shadow: inset 0 0 0 1px var(--rule); color: var(--ink-muted); font-size: 15px; line-height: 1;
+  transition: background-color var(--dur-ink) var(--ease-ink), color var(--dur-ink) var(--ease-ink), box-shadow var(--dur-ink) var(--ease-ink);
+}
+.dd-chapters .abjad > span { display: block; transform: rotate(-45deg) translateY(-2px); }
+.dd-chapters li > span { font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); font-feature-settings: var(--features-eyebrow); text-transform: lowercase; font-size: 14px; line-height: 18px; }
+.dd-chapters li.is-done { color: var(--ink); }
+.dd-chapters li.is-done .abjad { background: var(--brass); color: var(--sky); box-shadow: none; }
+.dd-chapters li.is-now { color: var(--flame); }
+.dd-chapters li.is-now .abjad { background: var(--sky); color: var(--flame); box-shadow: inset 0 0 0 1px var(--flame), 0 0 0 3px var(--sky), 0 0 0 4px var(--brass), 0 0 18px color-mix(in srgb, var(--flame) 45%, transparent); animation: dd-now var(--dur-sheet) var(--ease-ink) both; }
+@keyframes dd-now { from { transform: rotate(45deg) scale(0.6); opacity: 0; } }
+.dd-kept { justify-self: end; display: inline-flex; align-items: center; gap: var(--space-2); margin: 0; color: var(--ink); font: var(--type-figure); font-size: 20px; font-feature-settings: "lnum" 1, "tnum" 1; }
+.dd-kept .star8 { width: 18px; height: 18px; }
+.dd-kept[data-n="0"] { opacity: 0; }
+
+/* the eight-pointed star: two squares, the mark the Seal dots its letters with */
+.star8 { display: block; width: 28px; height: 28px; overflow: visible; }
+.star8 path { fill: var(--flame); stroke: var(--brass); stroke-width: 1; stroke-linejoin: round; }
+.star8.is-dim path { fill: none; stroke: var(--rule); }
 
 /* ================================================================ the stage: sky, land, desk */
-.dd-stage { position: relative; flex: 1; min-height: calc(100dvh - 56px); overflow: hidden; isolation: isolate; }
+.dd { --head-h: 68px; }
+.dd-stage { position: relative; flex: 1; min-height: 100dvh; overflow: hidden; isolation: isolate; --guide-h: 196px; }
 .dd-camera, .dd-layer { position: absolute; inset: 0; }
 .dd-layer[data-on="false"] { opacity: 0; visibility: hidden; }
 .dd-layer.is-sky { background: var(--sky); }
 .dd-sky { position: absolute; left: 0; top: 0; width: 100%; height: 62%; }
-/* the land begins where the levels place it: 54% down the play area, which ends above the guide band */
-.dd-land { position: absolute; left: 0; right: 0; bottom: 0; top: calc((100% - var(--guide-h)) * 0.54); -webkit-mask-image: linear-gradient(180deg, transparent 0, black 16%); mask-image: linear-gradient(180deg, transparent 0, black 16%); }
-.dd-fields { width: 100%; height: 100%; display: block; }
-.dd-palm { position: absolute; left: 1%; bottom: 26%; height: 44%; width: auto; fill: color-mix(in srgb, var(--shadow) 75%, var(--sky)); }
-.dd-palm .dd-palm-ring { fill: none; stroke: color-mix(in srgb, var(--brass) 25%, var(--sky)); stroke-width: 1; }
+/* the land is one canvas over the whole scene, clear above its horizon (lib/diary/land.ts) */
+.dd-land { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.dd-farfires { position: absolute; inset: 0; pointer-events: none; }
+.dd-farfire { position: absolute; display: flex; align-items: flex-end; transform: translate(-50%, -92%); }
+.dd-farfire .flame + .flame { margin-left: -2px; }
+/* a shooting star now and then, as on the landing page */
+.dd-meteor { position: absolute; left: 62%; top: 12%; width: 150px; height: 1px; background: linear-gradient(90deg, transparent, var(--ink)); transform: rotate(-24deg); opacity: 0; animation: dd-meteor 17s linear 5s infinite; pointer-events: none; }
+.dd-meteor + .dd-meteor { left: 22%; top: 20%; width: 110px; transform: rotate(-12deg); animation-delay: 13s; animation-duration: 23s; }
+@keyframes dd-meteor { 0%, 94% { opacity: 0; translate: 0 0; } 95% { opacity: 0.9; } 100% { opacity: 0; translate: -260px 110px; } }
+/* the play area is read against the scene: the scene sinks a little behind it */
+.dd-shade { position: absolute; inset: 0; pointer-events: none; background:
+  radial-gradient(ellipse 58% 50% at 50% 42%, color-mix(in srgb, var(--shadow) 30%, transparent), transparent 100%),
+  linear-gradient(0deg, color-mix(in srgb, var(--shadow) 55%, transparent), transparent 26%); }
 .dd-layer.is-desk { background: var(--ground); }
-.dd-wood { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* the desk by lamplight: the wood sinks into the dark away from the lamp */
+.dd-wood { position: absolute; inset: 0; width: 100%; height: 100%; filter: brightness(0.7) saturate(0.85); }
 .dd-pool { position: absolute; inset: 0; background:
-  radial-gradient(ellipse 70% 60% at 30% 24%, color-mix(in srgb, var(--flame) 26%, transparent), transparent 70%),
-  radial-gradient(ellipse 120% 100% at 30% 28%, transparent 45%, color-mix(in srgb, var(--ground) 72%, transparent) 100%); }
+  radial-gradient(ellipse 62% 54% at 50% 40%, color-mix(in srgb, var(--flame) 30%, transparent), transparent 72%),
+  radial-gradient(ellipse 120% 100% at 50% 40%, transparent 40%, color-mix(in srgb, var(--shadow) 82%, transparent) 100%);
+  animation: dd-lamp 5.2s ease-in-out infinite alternate; }
+@keyframes dd-lamp { from { opacity: 0.9; } 37% { opacity: 1; } 61% { opacity: 0.93; } to { opacity: 1; } }
 .dd-dark { position: absolute; inset: 0; z-index: 8; background: var(--ground); opacity: 0; pointer-events: none; transition: opacity var(--dur-scene) var(--ease-lamp); }
 .dd-dark.is-out { opacity: 1; }
 
-/* the play area, and the guide in the lower left */
-/* The guide has a band of its own along the bottom; the play area ends above it, so nothing hides behind Hudhud. */
-.dd-stage { --guide-h: 168px; }
-.dd-play { position: absolute; inset: 0 0 var(--guide-h) 0; z-index: 2; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; }
-.dd-play:has(.dd-resume) { display: grid; place-items: center; }
-.dd-level { min-height: 100%; display: grid; place-items: center; padding: var(--space-6) var(--space-4); }
-.dd-guide { position: absolute; left: var(--space-3); right: var(--space-3); bottom: var(--space-2); height: calc(var(--guide-h) - var(--space-2)); z-index: 6; display: flex; align-items: flex-end; gap: var(--space-3); pointer-events: none; }
-.dd-guide .hh { --hh: 156px; }
-.note-slip { position: relative; max-width: 420px; padding: var(--space-3) var(--space-4); margin-bottom: var(--space-12); opacity: 0; pointer-events: auto; transform: rotate(-0.6deg); }
-.note-slip.is-open { opacity: 1; }
-.note-slip::after { content: ""; position: absolute; left: calc(var(--space-6) * -1); bottom: var(--space-6); width: var(--space-6); height: 1px; background: var(--brass); }
-.note-line { margin: 0; font: var(--type-marginal); font-size: 19px; line-height: 28px; color: var(--ink); animation: dd-rise var(--dur-ink) var(--ease-ink) both; }
+/* ================================================================ the play area, and Roro's corner
+   The guide has a band of its own along the foot; the play area ends above it, so nothing hides behind Roro. */
+.dd-play { position: absolute; inset: var(--head-h) 0 var(--guide-h) 0; z-index: 2; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; }
+.dd-play:has(.dd-cover) { display: grid; place-items: center; inset: var(--head-h) 0 0 0; }
+.dd-level { min-height: 100%; display: grid; place-items: center; padding: var(--space-4) var(--space-4) var(--space-6); animation: dd-level var(--dur-sheet) var(--ease-paper) both; }
+@keyframes dd-level { from { opacity: 0; transform: translateY(12px); } }
+.dd-guide { position: absolute; left: var(--space-6); right: var(--space-6); bottom: var(--space-3); height: calc(var(--guide-h) - var(--space-3)); z-index: 6; display: flex; align-items: flex-end; gap: var(--space-2); pointer-events: none; }
+.dd-guide .hh { --hh: 184px; margin-bottom: calc(var(--space-2) * -1); }
+.dd-guide.is-away .hh { opacity: 0; }
+
+/* what Roro says: a slip of paper held out from him, ruled in brass, each line written in */
+.note-slip { position: relative; max-width: 500px; padding: var(--space-4) var(--space-6) var(--space-4) var(--space-8); margin-bottom: var(--space-10); opacity: 0; pointer-events: auto; transform: rotate(-0.6deg); transform-origin: 0 100%; box-shadow: var(--shadow-held); }
+.note-slip.is-open { opacity: 1; animation: dd-note var(--dur-sheet) var(--ease-paper) both; }
+@keyframes dd-note { from { opacity: 0; transform: translate(-18px, 8px) rotate(-2deg) scale(0.96); } to { opacity: 1; transform: rotate(-0.6deg); } }
+/* the double rule down its margin, and the fold that points back at the bird */
+.note-slip::after { content: ""; position: absolute; left: var(--space-3); top: var(--space-3); bottom: var(--space-3); width: 4px; border-left: 1px solid var(--brass); border-right: 1px solid var(--rule); }
+.note-tail { position: absolute; left: -13px; bottom: 22px; width: 14px; height: 18px; background: var(--ground-raised); clip-path: polygon(100% 0, 0 62%, 100% 100%); }
+.note-line { margin: 0; font: var(--type-marginal); font-size: 21px; line-height: 30px; color: var(--ink); animation: dd-rise var(--dur-ink) var(--ease-ink) both; }
 .note-line + .note-line { margin-top: var(--space-1); }
 @keyframes dd-rise { from { opacity: 0; transform: translateY(10px); } }
-.note-who { display: block; font: var(--type-label); letter-spacing: var(--tracking-label); font-style: normal; }
+.note-who { display: block; font: var(--type-label); letter-spacing: var(--tracking-label); font-style: normal; text-transform: uppercase; }
 .note-line.is-modis .note-who { color: var(--lapis); }
-.note-slip .note-line { font-size: 20px; line-height: 29px; }
 .note-line.is-viirs .note-who { color: var(--rubric); }
-.dd .slip { position: relative; }
-.dd-resume { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-6); padding: var(--space-6) var(--space-8); }
+.note-line.is-mona .note-who { color: var(--brass); }
+
+/* ================================================================ the cover: coming back to a game in progress */
+.dd-cover { display: grid; justify-items: center; gap: var(--space-4); width: min(calc(100vw - 32px), 460px); padding: var(--space-10) var(--space-8) var(--space-8); text-align: center; animation: dd-slide var(--dur-sheet) var(--ease-paper) both; }
+.dd-cover .jadwal { --jadwal-inset: 12px; }
+.dd-cover .hh { --hh: 168px; margin: calc(var(--space-4) * -1) 0 calc(var(--space-2) * -1); }
+.dd-cover-title { margin: 0; font: var(--type-display-l); font-size: clamp(34px, 7vw, 46px); line-height: 1.05; color: var(--ink); }
+.dd-cover-stars { display: flex; gap: var(--space-2); }
+.dd-cover-acts { display: grid; justify-items: center; gap: var(--space-2); margin-top: var(--space-2); }
 
 /* ================================================================ the instruments of play */
 .lv { width: 100%; max-width: 1100px; display: grid; justify-items: center; align-content: center; gap: var(--space-6); }
@@ -69,13 +124,33 @@
 .zone { position: relative; }
 .zone.is-open { outline: 1px dashed var(--brass); outline-offset: 6px; cursor: pointer; }
 .zone.is-target { outline: 5px double var(--brass); outline-offset: 6px; }
-.choice { display: grid; gap: var(--space-2); padding: var(--space-4) var(--space-6); width: min(100%, 440px); }
-.choice-q { margin: 0 0 var(--space-1); font: var(--type-display-m); font-size: 26px; line-height: 32px; color: var(--ink); }
-.choice-list { display: grid; gap: var(--space-1); justify-items: start; }
-.dd button.choice-a { min-height: 44px; text-align: left; }
-.choice-a.is-struck { text-decoration: line-through; text-decoration-color: var(--ink); color: var(--ink-muted); }
-.choice-a.is-chosen { font-weight: 700; }
-.folded { padding: var(--space-2) var(--space-4); max-width: 380px; }
+
+/* your turn: the task, on a plate of paper pinned over the scene */
+.task { display: inline-grid; grid-template-columns: auto 1fr; align-items: center; column-gap: var(--space-4); max-width: min(100%, 520px); padding: var(--space-3) var(--space-6) var(--space-3) var(--space-4); box-shadow: var(--shadow-held); color: var(--ink); animation: dd-task var(--dur-sheet) var(--ease-paper) both; }
+@keyframes dd-task { from { opacity: 0; transform: translateY(-14px) rotate(-1deg); } }
+.task::after { content: ""; position: absolute; inset: 4px; border: 1px solid var(--rule); pointer-events: none; }
+.task-mark { grid-row: 1 / 3; width: 14px; height: 14px; margin: 0 var(--space-1); transform: rotate(45deg); background: var(--rubric); box-shadow: 0 0 0 3px var(--ground-raised), 0 0 0 4px var(--brass); animation: dd-beat 2.4s ease-in-out infinite alternate; }
+@keyframes dd-beat { from { opacity: 1; } to { opacity: 0.55; } }
+.task-turn { font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); font-feature-settings: var(--features-eyebrow); font-variant-caps: all-small-caps; color: var(--brass); line-height: 18px; }
+.task-text { font: var(--type-ui); font-size: 20px; line-height: 27px; }
+
+/* answers: a question on a slip, each answer a strip of paper ruled in brass at its left */
+.choice { display: grid; gap: var(--space-3); padding: var(--space-6) var(--space-6) var(--space-6); width: min(100%, 460px); box-shadow: var(--shadow-held); animation: dd-slide var(--dur-sheet) var(--ease-paper) both; }
+.choice::after { content: ""; position: absolute; inset: 5px; border: 1px solid var(--rule); pointer-events: none; }
+.choice-q { margin: 0 0 var(--space-1); font: var(--type-display-m); font-size: 27px; line-height: 32px; color: var(--ink); }
+.dd .choice-list { display: grid; gap: var(--space-2); justify-items: stretch; counter-reset: answer; }
+.dd button.choice-a {
+  counter-increment: answer; position: relative; z-index: 1; justify-content: flex-start; gap: var(--space-3); min-height: 48px; padding: var(--space-2) var(--space-4); text-align: left;
+  background: var(--ground); color: var(--ink); box-shadow: inset 3px 0 0 var(--brass), var(--shadow-token); font: var(--type-ui); font-size: 19px; text-decoration: none;
+}
+.dd button.choice-a::before { content: counter(answer, lower-roman); flex: none; min-width: 1.4em; font: var(--type-eyebrow); font-variant-caps: all-small-caps; letter-spacing: var(--tracking-eyebrow); color: var(--brass); }
+.dd button.choice-a:hover:not(:disabled) { background: var(--ground); transform: translateX(4px); box-shadow: inset 6px 0 0 var(--brass), var(--shadow-card); }
+.dd button.choice-a:active:not(:disabled) { transform: translateX(1px); box-shadow: inset 3px 0 0 var(--brass), var(--shadow-pressed); }
+.dd button.choice-a.is-struck { color: var(--ink-muted); text-decoration: line-through; text-decoration-color: var(--ink); box-shadow: inset 3px 0 0 var(--rule); background: color-mix(in srgb, var(--ground) 60%, var(--ground-raised)); }
+.dd button.choice-a.is-chosen { font-weight: 700; background: color-mix(in srgb, var(--flame) 28%, var(--ground-raised)); box-shadow: inset 6px 0 0 var(--brass), 0 0 0 1px var(--brass), var(--shadow-card); }
+
+.folded { padding: var(--space-2) var(--space-4); max-width: 400px; background: color-mix(in srgb, var(--ground) 70%, var(--ground-raised)); box-shadow: inset 0 0 0 1px var(--rule); }
+.folded::before { content: none; }
 .folded > summary { list-style: none; cursor: pointer; min-height: 44px; display: inline-flex; align-items: center; }
 .folded > summary::-webkit-details-marker { display: none; }
 .folded-text { margin: var(--space-2) 0 var(--space-1); font: var(--type-marginal); color: var(--ink); text-align: left; }
@@ -85,54 +160,36 @@
 .is-pressing-wrap { display: block; animation: dd-press var(--dur-sheet) var(--ease-paper) both; }
 .seal-word { font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); font-feature-settings: var(--features-eyebrow); color: var(--ink); }
 .tap-sat { position: relative; }
-.level-end { position: absolute; inset: 0; z-index: 7; display: grid; place-items: center; padding: var(--space-4); }
-.level-end-sheet { display: grid; justify-items: center; gap: var(--space-4); width: min(100%, 400px); padding: var(--space-6); text-align: center; animation: dd-slide var(--dur-sheet) var(--ease-paper) both; }
-@keyframes dd-slide { from { opacity: 0; transform: translateY(16px) rotate(-0.6deg); } }
+
+/* ================================================================ the end of a level
+   The scene dims, a sheet is laid over it: the chapter's word, the stars it kept, the constellation. */
+.level-end { position: absolute; inset: 0; z-index: 7; display: grid; place-items: center; padding: var(--space-4); overflow-y: auto; }
+/* the whole scene dims, not only the play area; Roro and the running head stay lit */
+.level-end::before { content: ""; position: fixed; inset: 0; z-index: -1; background: color-mix(in srgb, var(--shadow) 62%, transparent); animation: dd-dim var(--dur-sheet) var(--ease-lamp) both; }
+@keyframes dd-dim { from { opacity: 0; } }
+.level-end-sheet { display: grid; justify-items: center; gap: var(--space-4); width: min(100%, 440px); padding: var(--space-10) var(--space-8) var(--space-8); text-align: center; animation: dd-slide var(--dur-sheet) var(--ease-paper) both; }
+@keyframes dd-slide { from { opacity: 0; transform: translateY(22px) rotate(-0.8deg); } }
+.level-end-sheet .jadwal { --jadwal-inset: 12px; }
 .level-end-sheet > .t-eyebrow { margin: 0; color: var(--brass); }
-.level-end-sky { position: relative; width: 100%; padding: var(--space-4); background: var(--sky); overflow: hidden; display: grid; place-items: center; --const-w: 200px; }
-.shooting { position: absolute; left: 6%; top: 18%; width: 110px; height: 1px; background: linear-gradient(90deg, transparent, var(--ink)); transform: rotate(14deg); opacity: 0; animation: dd-shoot 1.4s var(--ease-ink) 0.3s both; }
+.level-end-word { margin: calc(var(--space-2) * -1) 0 0; font: var(--type-display-l); font-size: 44px; line-height: 1; text-transform: capitalize; color: var(--ink); }
+.level-end-stars { display: flex; gap: var(--space-3); }
+.level-end-stars .star8 { width: 40px; height: 40px; animation: dd-star var(--dur-sheet) var(--ease-paper) both; }
+.level-end-stars .star8:nth-child(2) { animation-delay: 220ms; }
+.level-end-stars .star8:nth-child(3) { animation-delay: 440ms; }
+@keyframes dd-star { from { opacity: 0; transform: scale(0.3) rotate(-45deg); } }
+.level-end-sky { position: relative; width: 100%; padding: var(--space-4); background: var(--sky); box-shadow: inset 0 0 0 1px var(--rule), inset 0 0 28px var(--shadow); overflow: hidden; display: grid; place-items: center; --const-w: 210px; }
+.shooting { position: absolute; left: 6%; top: 18%; width: 110px; height: 1px; background: linear-gradient(90deg, transparent, var(--ink)); transform: rotate(14deg); opacity: 0; animation: dd-shoot 1.4s var(--ease-ink) 0.5s both; }
 @keyframes dd-shoot { 0% { opacity: 0; transform: rotate(14deg) translateX(0); } 30% { opacity: 1; } 100% { opacity: 0; transform: rotate(14deg) translateX(240px); } }
-
-@media (max-width: 760px) {
-  .dd-chapters { gap: var(--space-3); letter-spacing: 0.06em; }
-}
-@media (max-width: 640px) {
-  .dd-chapters { gap: var(--space-2); letter-spacing: 0.04em; font-size: 14px; }
-  .dd-seal img { height: 24px; }
-  .dd-head { gap: var(--space-2); padding: 0 var(--space-3); }
-  .dd-stage { --guide-h: 128px; }
-  .dd-guide .hh { --hh: 96px; }
-  .note-slip { margin-bottom: var(--space-6); max-width: calc(100vw - 130px); padding: var(--space-2) var(--space-3); }
-  .note-slip .note-line { font-size: 17px; line-height: 24px; }
-  .note-line { font-size: 17px; line-height: 24px; }
-  .dd-palm { height: 34%; }
-}
-
-/* ================================================================ your turn: the task slip */
-.task { display: inline-grid; gap: 2px; justify-items: start; max-width: min(100%, 460px); padding: var(--space-2) var(--space-4) var(--space-2) var(--space-6); box-shadow: inset 4px 0 0 var(--brass), var(--shadow-card); color: var(--ink); animation: dd-rise var(--dur-sheet) var(--ease-paper) both; }
-.task-turn { font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); font-feature-settings: var(--features-eyebrow); color: var(--brass); }
-.task-text { font: var(--type-ui); font-size: 19px; line-height: 27px; }
-
-/* the note slides in afresh with each new line, from the bird */
-.note-slip.is-open { animation: dd-note var(--dur-sheet) var(--ease-paper) both; }
-@keyframes dd-note { from { opacity: 0; transform: translate(-14px, 6px) rotate(-1.4deg); } to { opacity: 1; transform: rotate(-0.6deg); } }
 
 /* ================================================================ instruments that answer the hand */
 .dd .stamp, .dd .catchword, .dd .choice-a, .dd .lv-yeartoken, .dd .lv-brtoken { transition: transform var(--dur-touch) var(--ease-ink), box-shadow var(--dur-touch) var(--ease-ink), background-color var(--dur-touch) var(--ease-ink); }
-.dd .stamp { padding: var(--space-3) var(--space-6); box-shadow: inset 0 0 0 2px var(--rubric), inset 0 0 0 3px color-mix(in srgb, var(--on-rubric) 40%, transparent), var(--shadow-token); }
-.dd .stamp:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 2px var(--rubric), inset 0 0 0 3px color-mix(in srgb, var(--on-rubric) 40%, transparent), var(--shadow-card); }
-.dd .stamp:active { transform: translateY(1px); box-shadow: inset 0 0 0 2px var(--rubric), var(--shadow-pressed); }
+.dd .stamp { padding: var(--space-3) var(--space-8); font-size: 20px; }
+.dd .stamp:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 3px var(--rubric), inset 0 0 0 4px color-mix(in srgb, var(--on-rubric) 45%, transparent), var(--shadow-card); }
+.dd .stamp:active { transform: translateY(1px); }
 /* a catchword in the game is a small paper tab: ink on paper, a brass rule under it that doubles on hover */
 .dd button.catchword, .dd a.catchword { padding: var(--space-2) var(--space-4); background: var(--ground-raised); color: var(--ink); text-decoration: none; box-shadow: inset 0 -2px 0 var(--brass), var(--shadow-token); font: var(--type-ui); font-size: 18px; }
 .dd button.catchword:hover:not(:disabled), .dd a.catchword:hover { background: var(--ground-raised); transform: translateY(-2px); box-shadow: inset 0 -4px 0 -1px var(--brass), inset 0 -1px 0 var(--brass), var(--shadow-card); }
 .dd button.catchword:active:not(:disabled), .dd a.catchword:active { transform: translateY(1px); box-shadow: inset 0 -2px 0 var(--brass), var(--shadow-pressed); }
-/* answers: each a strip of paper on the slip, ruled in brass at its left */
-.dd .choice-list { gap: var(--space-2); justify-items: stretch; }
-.dd button.choice-a { justify-content: flex-start; padding: var(--space-2) var(--space-4); background: var(--ground); color: var(--ink); box-shadow: inset 3px 0 0 var(--brass), var(--shadow-token); font: var(--type-ui); font-size: 18px; text-decoration: none; }
-.dd button.choice-a:hover:not(:disabled) { background: var(--ground); transform: translateX(3px); box-shadow: inset 6px 0 0 var(--brass), var(--shadow-card); }
-.dd button.choice-a:active:not(:disabled) { transform: translateX(1px); box-shadow: inset 3px 0 0 var(--brass), var(--shadow-pressed); }
-.dd button.choice-a.is-struck { color: var(--ink-muted); text-decoration: line-through; text-decoration-color: var(--ink); box-shadow: inset 3px 0 0 var(--rule); }
-.dd button.choice-a.is-chosen { font-weight: 700; box-shadow: inset 6px 0 0 var(--brass), 0 0 0 1px var(--brass), var(--shadow-card); }
 .dd .drag:hover:not(:disabled) > * { transform: translateY(-3px); }
 .dd .drag > * { transition: transform var(--dur-touch) var(--ease-ink); }
 .dd .tap-sat { transition: transform var(--dur-touch) var(--ease-ink); }
@@ -152,14 +209,58 @@
 .dd:has(:focus-visible) .lv-keys { visibility: visible; }
 
 /* ================================================================ the page turning between chapters */
-.dd-turn { position: fixed; inset: 56px 0 0; z-index: 20; display: grid; place-items: center; pointer-events: none; overflow: hidden; }
-.dd-turn-sheet { position: relative; display: grid; justify-items: center; align-content: center; gap: var(--space-2); width: min(92vw, 640px); height: min(70vh, 420px); background: var(--ground-raised); box-shadow: var(--shadow-held); color: var(--ink); animation: dd-turn 2.3s var(--ease-paper) both; }
-.dd-turn-sheet .jadwal { --jadwal-inset: 14px; }
+.dd-turn { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; pointer-events: none; overflow: hidden; background: color-mix(in srgb, var(--shadow) 70%, transparent); animation: dd-turn-dim 2.3s var(--ease-lamp) both; }
+@keyframes dd-turn-dim { 0%, 100% { background-color: transparent; } 28%, 72% { background-color: color-mix(in srgb, var(--shadow) 70%, transparent); } }
+.dd-turn-sheet { position: relative; display: grid; justify-items: center; align-content: center; gap: var(--space-3); width: min(92vw, 640px); height: min(70vh, 420px); color: var(--ink); animation: dd-turn 2.3s var(--ease-paper) both; }
+.dd-turn-sheet .jadwal { --jadwal-inset: 16px; }
+.dd-turn-letter { font-size: 44px; line-height: 1; animation: dd-rise var(--dur-ink) var(--ease-ink) 0.4s both; }
 .dd-turn-eyebrow { font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); font-feature-settings: var(--features-eyebrow); color: var(--brass); text-transform: lowercase; animation: dd-rise var(--dur-ink) var(--ease-ink) 0.5s both; }
-.dd-turn-word { font: var(--type-display-xl); font-size: clamp(56px, 12vw, 104px); line-height: 1; letter-spacing: var(--tracking-display-xl); animation: dd-rise var(--dur-ink) var(--ease-ink) 0.65s both; }
+.dd-turn-word { font: var(--type-display-xl); font-size: clamp(56px, 12vw, 104px); line-height: 1; letter-spacing: var(--tracking-display-xl); text-transform: capitalize; animation: dd-rise var(--dur-ink) var(--ease-ink) 0.65s both; }
+.dd-turn-rule { width: 120px; height: 1px; background: var(--brass); transform-origin: 50% 50%; animation: dd-turn-rule var(--dur-sheet) var(--ease-ink) 0.8s both; }
+@keyframes dd-turn-rule { from { transform: scaleX(0); } }
 @keyframes dd-turn {
   0% { transform: translateX(110vw) rotate(4deg); }
   28% { transform: translateX(0) rotate(-0.8deg); }
   72% { transform: translateX(0) rotate(-0.8deg); opacity: 1; }
   100% { transform: translateX(-110vw) rotate(-5deg); opacity: 1; }
+}
+
+/* ================================================================ Roro arrives
+   At the start of the game he flies in from over the fields, across the sky to his corner, and
+   lands on his diary: never a flight on the spot. Until the opening sends him, the corner is empty. */
+.dd-guide.is-waiting .hh { opacity: 0; }
+.dd-guide.is-opening .hh.is-fly { animation: hh-arrive 1600ms cubic-bezier(0.3, 0.1, 0.25, 1) both; transform-origin: 50% 70%; }
+@keyframes hh-arrive {
+  0% { opacity: 0; transform: translate(min(70vw, 900px), -62vh) scale(0.42) rotate(-8deg); }
+  12% { opacity: 1; }
+  55% { transform: translate(min(30vw, 380px), -34vh) scale(0.7) rotate(-4deg); }
+  88% { transform: translate(14px, -18px) scale(0.98) rotate(4deg); }
+  100% { opacity: 1; transform: none; }
+}
+/* the note waits for him to land */
+.dd-guide.is-opening:has(.hh.is-fly) .note-slip, .dd-guide.is-waiting .note-slip { opacity: 0; }
+
+@media (max-width: 900px) {
+  .dd-chapters { gap: var(--space-4); }
+  .dd-chapters li > span { display: none; }
+  .dd-chapters li.is-now > span { display: block; position: absolute; top: 30px; white-space: nowrap; }
+}
+@media (max-width: 640px) {
+  .dd { --head-h: 60px; }
+  .dd-head { gap: var(--space-2); padding: 0 var(--space-3); }
+  .dd-seal img { height: 24px; }
+  .dd-chapters { gap: var(--space-3); }
+  .dd-chapters::before, .dd-chapters::after { left: 11px; right: 11px; top: 11px; }
+  .dd-chapters .abjad { width: 22px; height: 22px; font-size: 13px; }
+  .dd-chapters li.is-now > span { top: 26px; }
+  .dd-kept { font-size: 17px; }
+  .dd-stage { --guide-h: 138px; }
+  .dd-guide { left: var(--space-2); right: var(--space-2); gap: 0; }
+  .dd-guide .hh { --hh: 112px; }
+  .note-slip { margin-bottom: var(--space-6); max-width: calc(100vw - 132px); padding: var(--space-2) var(--space-3) var(--space-2) var(--space-6); }
+  .note-slip::after { left: var(--space-2); top: var(--space-2); bottom: var(--space-2); }
+  .note-line { font-size: 17px; line-height: 24px; }
+  .task { padding: var(--space-2) var(--space-4) var(--space-2) var(--space-3); column-gap: var(--space-3); }
+  .task-text { font-size: 18px; line-height: 24px; }
+  .level-end-sheet { padding: var(--space-8) var(--space-6) var(--space-6); }
 }
