@@ -1,0 +1,103 @@
+/* Hudhud's Fire Diary: the game's frame, stage and instruments of play. The drawings are in
+   diary.css. Tokens only; transform and opacity only; everything rests in its last frame. */
+
+/* ================================================================ the frame and the running head */
+.dd { flex: 1; display: flex; flex-direction: column; min-height: 100dvh; background: var(--ground); color: var(--ink); -webkit-font-smoothing: antialiased; }
+.dd :is(a, button, summary, [tabindex]):focus-visible { outline: 5px double var(--brass); outline-offset: 3px; }
+.dd button.drag, .dd button.tap-sat, .dd button.seal-button, .dd button.plain {
+  -webkit-appearance: none; appearance: none; border: 0; background: none; padding: var(--space-1); min-height: 44px; min-width: 44px; color: inherit; font: inherit; cursor: pointer; border-radius: 0;
+}
+.dd button.drag:hover:not(:disabled), .dd button.tap-sat:hover:not(:disabled), .dd button.seal-button:hover:not(:disabled), .dd button.plain:hover:not(:disabled) { background: none; }
+.dd button:disabled { opacity: 1; cursor: default; }
+.dd-head { position: relative; z-index: 5; display: flex; align-items: center; gap: var(--space-4); height: 56px; padding: 0 var(--space-4); background: var(--ground-raised); border-bottom: var(--stroke-hair) solid var(--rule); flex: none; }
+.dd-seal { display: flex; align-items: center; min-height: 44px; min-width: 44px; }
+.dd-seal img { display: block; height: 30px; width: auto; }
+.dd-chapters { display: flex; flex-wrap: nowrap; gap: var(--space-6); margin: 0 0 0 auto; padding: 0; list-style: none; font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); font-feature-settings: var(--features-eyebrow); text-transform: lowercase; }
+.dd-chapters li { position: relative; color: var(--ink-muted); padding: var(--space-1) 0; }
+.dd-chapters li.is-done, .dd-chapters li.is-now { color: var(--ink); }
+.dd-rule { position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--brass); transform-origin: 0 50%; transform: scaleX(0); }
+.dd-chapters li.is-now .dd-rule { transform: scaleX(1); animation: dd-rule var(--dur-ink) var(--ease-ink) both; }
+@keyframes dd-rule { from { transform: scaleX(0); } }
+
+/* ================================================================ the stage: sky, land, desk */
+.dd-stage { position: relative; flex: 1; min-height: calc(100dvh - 56px); overflow: hidden; isolation: isolate; }
+.dd-camera, .dd-layer { position: absolute; inset: 0; }
+.dd-layer[data-on="false"] { opacity: 0; visibility: hidden; }
+.dd-layer.is-sky { background: var(--sky); }
+.dd-sky { position: absolute; left: 0; top: 0; width: 100%; height: 62%; }
+.dd-land { position: absolute; left: 0; right: 0; bottom: 0; height: 46%; -webkit-mask-image: linear-gradient(180deg, transparent 0, black 16%); mask-image: linear-gradient(180deg, transparent 0, black 16%); }
+.dd-fields { width: 100%; height: 100%; display: block; }
+.dd-palm { position: absolute; left: 1%; bottom: 26%; height: 44%; width: auto; fill: color-mix(in srgb, var(--shadow) 75%, var(--sky)); }
+.dd-palm .dd-palm-ring { fill: none; stroke: color-mix(in srgb, var(--brass) 25%, var(--sky)); stroke-width: 1; }
+.dd-layer.is-desk { background: var(--ground); }
+.dd-wood { position: absolute; inset: 0; width: 100%; height: 100%; }
+.dd-pool { position: absolute; inset: 0; background:
+  radial-gradient(ellipse 70% 60% at 30% 24%, color-mix(in srgb, var(--flame) 26%, transparent), transparent 70%),
+  radial-gradient(ellipse 120% 100% at 30% 28%, transparent 45%, color-mix(in srgb, var(--ground) 72%, transparent) 100%); }
+.dd-dark { position: absolute; inset: 0; z-index: 8; background: var(--ground); opacity: 0; pointer-events: none; transition: opacity var(--dur-scene) var(--ease-lamp); }
+.dd-dark.is-out { opacity: 1; }
+
+/* the play area, and the guide in the lower left */
+.dd-play { position: absolute; inset: 0; z-index: 2; overflow-y: auto; overflow-x: hidden; }
+.dd-play:has(.dd-resume) { display: grid; place-items: center; }
+.dd-level { min-height: 100%; display: grid; place-items: center; padding: var(--space-6) var(--space-4) 190px; }
+.dd-guide { position: absolute; left: var(--space-3); bottom: var(--space-3); z-index: 6; display: flex; align-items: flex-end; gap: var(--space-3); max-width: calc(100% - var(--space-6)); pointer-events: none; }
+.dd-guide .hh { --hh: 128px; }
+.note-slip { position: relative; max-width: 360px; padding: var(--space-3) var(--space-4); margin-bottom: var(--space-10); opacity: 0; pointer-events: auto; }
+.note-slip.is-open { opacity: 1; }
+.note-slip::before { content: ""; position: absolute; left: calc(var(--space-3) * -1); bottom: var(--space-6); width: var(--space-3); height: 1px; background: var(--rule); }
+.note-line { margin: 0; font: var(--type-marginal); font-size: 19px; line-height: 28px; color: var(--ink); animation: dd-rise var(--dur-ink) var(--ease-ink) both; }
+.note-line + .note-line { margin-top: var(--space-1); }
+@keyframes dd-rise { from { opacity: 0; transform: translateY(10px); } }
+.note-who { display: block; font: var(--type-label); letter-spacing: var(--tracking-label); font-style: normal; }
+.note-line.is-modis .note-who { color: var(--lapis); }
+.note-line.is-viirs .note-who { color: var(--rubric); }
+.dd .slip { position: relative; }
+.dd-resume { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-6); padding: var(--space-6) var(--space-8); }
+
+/* ================================================================ the instruments of play */
+.lv { width: 100%; max-width: 1100px; display: grid; justify-items: center; align-content: center; gap: var(--space-6); }
+.lv-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: center; gap: var(--space-6); }
+.drag { position: relative; cursor: grab; touch-action: none; }
+.drag.is-dragging { z-index: 20; cursor: grabbing; filter: drop-shadow(8px 14px 10px color-mix(in srgb, var(--shadow) 45%, transparent)); }
+.drag.is-held { outline: 5px double var(--brass); outline-offset: 3px; }
+.zone { position: relative; }
+.zone.is-open { outline: 1px dashed var(--brass); outline-offset: 6px; cursor: pointer; }
+.zone.is-target { outline: 5px double var(--brass); outline-offset: 6px; }
+.choice { display: grid; gap: var(--space-2); padding: var(--space-4) var(--space-6); width: min(100%, 440px); }
+.choice-q { margin: 0 0 var(--space-1); font: var(--type-display-m); font-size: 26px; line-height: 32px; color: var(--ink); }
+.choice-list { display: grid; gap: var(--space-1); justify-items: start; }
+.dd button.choice-a { min-height: 44px; text-align: left; }
+.choice-a.is-struck { text-decoration: line-through; text-decoration-color: var(--ink); color: var(--ink-muted); }
+.choice-a.is-chosen { font-weight: 700; }
+.folded { padding: var(--space-2) var(--space-4); max-width: 380px; }
+.folded > summary { list-style: none; cursor: pointer; min-height: 44px; display: inline-flex; align-items: center; }
+.folded > summary::-webkit-details-marker { display: none; }
+.folded-text { margin: var(--space-2) 0 var(--space-1); font: var(--type-marginal); color: var(--ink); text-align: left; }
+.seal-press { display: grid; justify-items: center; gap: var(--space-2); }
+.seal-hover { display: block; transition: transform var(--dur-touch) var(--ease-ink); }
+.seal-button:hover .seal-hover, .seal-button:focus-visible .seal-hover { transform: translateY(-4px); }
+.is-pressing-wrap { display: block; animation: dd-press var(--dur-sheet) var(--ease-paper) both; }
+.seal-word { font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); font-feature-settings: var(--features-eyebrow); color: var(--ink); }
+.tap-sat { position: relative; }
+.level-end { position: absolute; inset: 0; z-index: 7; display: grid; place-items: center; padding: var(--space-4); }
+.level-end-sheet { display: grid; justify-items: center; gap: var(--space-4); width: min(100%, 400px); padding: var(--space-6); text-align: center; animation: dd-slide var(--dur-sheet) var(--ease-paper) both; }
+@keyframes dd-slide { from { opacity: 0; transform: translateY(16px) rotate(-0.6deg); } }
+.level-end-sheet > .t-eyebrow { margin: 0; color: var(--brass); }
+.level-end-sky { position: relative; width: 100%; padding: var(--space-4); background: var(--sky); overflow: hidden; display: grid; place-items: center; --const-w: 200px; }
+.shooting { position: absolute; left: 6%; top: 18%; width: 110px; height: 1px; background: linear-gradient(90deg, transparent, var(--ink)); transform: rotate(14deg); opacity: 0; animation: dd-shoot 1.4s var(--ease-ink) 0.3s both; }
+@keyframes dd-shoot { 0% { opacity: 0; transform: rotate(14deg) translateX(0); } 30% { opacity: 1; } 100% { opacity: 0; transform: rotate(14deg) translateX(240px); } }
+
+@media (max-width: 760px) {
+  .dd-chapters { gap: var(--space-3); letter-spacing: 0.06em; }
+}
+@media (max-width: 640px) {
+  .dd-chapters { gap: var(--space-2); letter-spacing: 0.04em; font-size: 14px; }
+  .dd-seal img { height: 24px; }
+  .dd-head { gap: var(--space-2); padding: 0 var(--space-3); }
+  .dd-guide .hh { --hh: 84px; }
+  .note-slip { margin-bottom: var(--space-4); max-width: calc(100vw - 120px); padding: var(--space-2) var(--space-3); }
+  .note-line { font-size: 17px; line-height: 24px; }
+  .dd-level { padding-bottom: 170px; }
+  .dd-palm { height: 34%; }
+}

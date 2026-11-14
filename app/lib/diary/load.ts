@@ -95,7 +95,7 @@ export async function readDiaryData(): Promise<GameData> {
   // The game never runs on words the checker would refuse.
   const report = checkScript({ chapters: SCRIPT, runningHead: RUNNING_HEAD, ui: UI_LABELS }, ph, pk, claims(n));
   if (report.issues.length) throw new Error(`Hudhud's script fails its check:\n${report.issues.join("\n")}`);
-  const { lines, notes } = resolveLines({ chapters: SCRIPT, ui: UI_LABELS }, ph, pk);
+  const { lines, notes, speakers } = resolveLines({ chapters: SCRIPT, ui: UI_LABELS }, ph, pk);
 
   const seasons = seasonsOf(files.delta as unknown as SeasonFile);
   const [t0, t1] = n.trainYears;
@@ -121,6 +121,7 @@ export async function readDiaryData(): Promise<GameData> {
   return {
     lines,
     notes,
+    speakers,
     runningHead: RUNNING_HEAD,
     seasons,
     jump: { modisYear: n.jump.modisYear, viirsYear: n.jump.viirsYear },

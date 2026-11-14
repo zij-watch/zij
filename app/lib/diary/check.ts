@@ -171,8 +171,9 @@ export function resolveLines(
   script: { chapters: Chapter[]; ui: { id: string; label: string }[] },
   ph: Record<string, Fill>,
   picks: Record<string, string>,
-): { lines: Record<string, string>; notes: Record<string, string> } {
+): { lines: Record<string, string>; notes: Record<string, string>; speakers: Record<string, "hudhud" | "modis" | "viirs"> } {
   const lines: Record<string, string> = {}, notes: Record<string, string> = {};
+  const speakers: Record<string, "hudhud" | "modis" | "viirs"> = {};
   const pick = (t: Text) => (typeof t === "string" ? t : t.options[picks[t.pick]] ?? Object.values(t.options)[0]);
   for (const ch of script.chapters) {
     if (ch.note) notes[ch.id] = fill(ch.note.text, ph).plain;
@@ -180,8 +181,9 @@ export function resolveLines(
       for (const b of part.beats) {
         const s = shown(b);
         if (s && "id" in b) lines[b.id] = fill(pick(s.text), ph).plain;
+        if ("say" in b) speakers[b.id] = b.say;
       }
   }
   for (const u of script.ui) lines[u.id] = fill(u.label, ph).plain;
-  return { lines, notes };
+  return { lines, notes, speakers };
 }

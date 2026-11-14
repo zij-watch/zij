@@ -6,6 +6,8 @@ export type Season = { year: number; value: number; lo: number; hi: number; modi
 export type GameData = {
   lines: Record<string, string>;
   notes: Record<string, string>;
+  /** who says each spoken line */
+  speakers: Record<string, "hudhud" | "modis" | "viirs">;
   runningHead: string[];
   seasons: Season[];
   jump: { modisYear: number; viirsYear: number };
