@@ -107,7 +107,7 @@ export default function AreaMenu({ map, shape, insets, docked, chips, day, lastD
       <Paper as="div" kind="slip" seed="area-menu" className="area-menu-sheet">
         <div className="area-menu-row chips" role="group" aria-label="When">
           {chips.map((chip) => (
-            <button key={chip.label} type="button" className={`chip${chip.on ? " is-active" : ""}`} aria-pressed={chip.on} disabled={Boolean(chip.off)} title={chip.off} onClick={chip.go}>{chip.label}</button>
+            <button key={chip.label} type="button" data-chip={chip.label} className={`chip${chip.on ? " is-active" : ""}`} aria-pressed={chip.on} disabled={Boolean(chip.off)} title={chip.off} onClick={chip.go}>{chip.label}</button>
           ))}
         </div>
         <div className="area-menu-row">

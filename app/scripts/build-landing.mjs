@@ -504,7 +504,7 @@ const edits = [
   ['<span class="t-label modis">MODIS · 1 km pixels</span><span class="t-eyebrow">illustration</span>', '<span class="t-label modis">MODIS · 1 km pixels</span><span class="plate-mark jadwal-box">illustration · not data</span>', "the MODIS grid's tag"],
   ['<span class="t-label viirs">VIIRS · 375 m pixels</span><span class="t-eyebrow">illustration</span>', '<span class="t-label viirs">VIIRS · 375 m pixels</span><span class="plate-mark jadwal-box">illustration · not data</span>', "the VIIRS grid's tag"],
   ['<span class="ramp"><span class="sw-nd"></span> no satellite yet</span>', '<span class="ramp"><span class="sw-nd"></span> no data</span>', "the legend's last key"],
-  ['<a class="stamp" href="#top">Open the tables</a>', '<a class="stamp" href="/explore">Open the map</a>\n        <a class="catchword" href="/explore?area=nile-delta&amp;tour=1">Take the 60-second tour</a>', "the closing button"],
+  ['<a class="stamp" href="#top">Open the tables</a>', '<a class="stamp" href="/explore">Open the map</a>\n        <a class="catchword" href="/explore?area=nile-delta&amp;tour=1">Take the tour</a>', "the closing button"],
   ['<a class="catchword" href="#ch-2">How it works</a>', '<a class="catchword" href="/how-it-works">How it works</a>\n        <a class="catchword" href="/downloads">Download the numbers</a>', "the closing link"],
   ['<div class="acts">', `<div class="numbers">
         <div><p class="fig">${Math.round(loyo("raw"))}% <span aria-hidden="true">→</span><span class="sr-only">to</span> ${Math.round(loyo("M4"))}%</p><p>Typical error of a season total across ${method.models.research_areas} test areas: raw MODIS read as VIIRS, then after Zij. Each year was predicted without being used to fit.</p></div>
