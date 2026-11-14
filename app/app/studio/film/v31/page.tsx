@@ -8,7 +8,8 @@ import type { Findings } from "@/components/film/v3/Finale";
 import type { Trials } from "@/components/film/v3/Machine";
 import { parseSrt } from "@/lib/film/srt";
 import { PRESET } from "@/lib/film/timeline";
-import { V3_QUERY, type Timing } from "@/lib/film/v3";
+import type { Timing } from "@/lib/film/v3";
+import { V31_QUERY } from "@/lib/film/v31";
 import { readMethod } from "@/lib/serverData";
 import "../film.css";
 import "../v2/board.css";
@@ -48,7 +49,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   const params = await searchParams;
   if (!params.poly || !params.day) {
     const rest = Object.entries(params).filter(([key, value]) => key !== "poly" && key !== "day" && typeof value === "string").map(([key, value]) => `&${key}=${encodeURIComponent(value as string)}`);
-    redirect(`/studio/film/v31?${V3_QUERY}${rest.join("")}`);
+    redirect(`/studio/film/v31?${V31_QUERY}${rest.join("")}`);
   }
   // The captions and the words' times are read at every request, so a new voice needs no new build.
   const [srt, timing, landing, read] = await Promise.all([text(join(DOCS, "zij-demo30-v3.1.en.srt")), text(join(DOCS, "zij-demo30-v3.1-timing.json")), text(LANDING), numbers()]);

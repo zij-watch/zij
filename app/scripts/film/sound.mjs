@@ -379,7 +379,7 @@ function third31() {
     const clean = join(AUDIO, "v31-voice-clean.wav");
     ff(["-i", placed, "-af", `highpass=f=80:poles=2,afftdn=nr=6:nf=-50,${FORMAT},apad,atrim=0:${D}`, "-c:a", "pcm_f32le", clean]);
     const voiced = join(WORK, "mix-v3.1-voice.wav");
-    ff(["-i", level(clean, -16, join(WORK, "voice-v3.1-16.wav")), "-i", level(music, -34, join(WORK, "music-v3.1-34.wav")), "-i", level(bed, -42, join(WORK, "bed-v3.1-42.wav")), "-i", fx, "-filter_complex",
+    ff(["-i", level(clean, -16, join(WORK, "voice-v3.1-16.wav")), "-i", level(music, -42, join(WORK, "music-v3.1-42.wav")), "-i", level(bed, -46, join(WORK, "bed-v3.1-46.wav")), "-i", fx, "-filter_complex",
       "[0]asplit=2[v][key];[1][key]sidechaincompress=threshold=0.015:ratio=6:attack=40:release=450:makeup=1[m];[3]volume=-8dB[x];[v][m][2][x]amix=inputs=4:normalize=0[out]",
       "-map", "[out]", "-c:a", "pcm_f32le", voiced]);
     mixes.push([voiced, ""]);

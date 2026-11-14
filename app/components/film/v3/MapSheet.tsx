@@ -46,7 +46,7 @@ const rect = (a: [number, number], b: [number, number]): [number, number][] => [
 
 interface Marks { viirs: { r: number; opacity: number; stroke: number }; modis: { r: number; stroke: number; opacity: number; halo: number } }
 
-export function MapSheet({ area, country, shape, day, dayResult, b, fitMs, tagText = "fitted in your browser", coverageAt }: { area: Area; country: string; shape: Polygon; day: string; dayResult: DayResult; b: Beats; fitMs: number; tagText?: string; coverageAt?: number }) {
+export function MapSheet({ area, country, shape, day, dayResult, b, fitMs, tagText = "fitted in your browser", coverageAt, lasso }: { area: Area; country: string; shape: Polygon; day: string; dayResult: DayResult; b: Beats; fitMs: number; tagText?: string; coverageAt?: number; lasso?: [number, number][] }) {
   const t = useT();
   const { warn } = useFilm();
   const idle = useIdle();
@@ -61,13 +61,29 @@ export function MapSheet({ area, country, shape, day, dayResult, b, fitMs, tagTe
   const closeAt = B.press + B.dragFor;
 
   // The box: pressed at one corner, dragged to the other.
+  // A freehand loop is traced point by point at an even pace; a box is dragged corner to corner.
+  const trace = useMemo(() => {
+    if (!lasso) return null;
+    const path = [...lasso, lasso[0]];
+    const at = [0];
+    for (let i = 1; i < path.length; i++) at.push(at[i - 1] + Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]));
+    return { path, at };
+  }, [lasso]);
   const penAt = useCallback((time: number): { at: [number, number]; ring: [number, number][] | null } => {
-    if (time < B.press) return { at: BOX[0], ring: null };
-    if (time >= closeAt) return { at: BOX[1], ring: null };
+    const start: [number, number] = trace ? trace.path[0] : BOX[0];
+    if (time < B.press) return { at: start, ring: null };
+    if (time >= closeAt) return { at: trace ? start : BOX[1], ring: null };
+    if (trace) {
+      const d = ease(clamp((time - B.press) / B.dragFor)) * trace.at[trace.at.length - 1];
+      const i = Math.max(0, trace.at.findIndex((v) => v > d) - 1);
+      const f = (d - trace.at[i]) / Math.max(1e-9, trace.at[i + 1] - trace.at[i]);
+      const at: [number, number] = [lerp(trace.path[i][0], trace.path[i + 1][0], f), lerp(trace.path[i][1], trace.path[i + 1][1], f)];
+      return { at, ring: [...trace.path.slice(0, i + 1), at] };
+    }
     const k = ease(clamp((time - B.press) / B.dragFor));
     const at: [number, number] = [lerp(BOX[0][0], BOX[1][0], k), lerp(BOX[0][1], BOX[1][1], k)];
     return { at, ring: rect(BOX[0], at) };
-  }, [closeAt, B.press, B.dragFor]);
+  }, [closeAt, B.press, B.dragFor, trace]);
 
   // The day's hotspots in the order the satellites saw them, then west to east; each has its moment.
   const drops = useMemo(() => {
@@ -122,6 +138,7 @@ export function MapSheet({ area, country, shape, day, dayResult, b, fitMs, tagTe
     for (const more of [...verdict!.children].slice(2) as HTMLElement[]) more.style.visibility = q < lines ? "hidden" : "";
   });
 
+  const tagAt: [number, number] = lasso ? [Math.min(...lasso.map((p) => p[0])), Math.max(...lasso.map((p) => p[1]))] : BOX[0];
   const closed = t >= closeAt;
   const pen = penAt(t);
   const [penX, penY] = project(view, pen.at[0], pen.at[1]);
@@ -143,7 +160,7 @@ export function MapSheet({ area, country, shape, day, dayResult, b, fitMs, tagTe
         <p className="v3-coverage" style={{ opacity: Math.min(1, move(t, coverageAt ?? B.cursor - 0.3, 0.3)) }}>Today: Egypt, Portugal, Argentina</p>
 
         {/* Fitted in the browser: the time the page took to fit the box, measured as it loaded. */}
-        <p className="v3-fit-tag" style={{ ...shown(t, b.tag), left: project(view, BOX[0][0], BOX[0][1])[0] + 4, top: project(view, BOX[0][0], BOX[0][1])[1] - 58, opacity: Math.min(1, arrive(t, b.tag) * 4), transform: `scale(${(1 + 0.12 * (1 - arrive(t, b.tag))).toFixed(4)})` }}>
+        <p className="v3-fit-tag" style={{ ...shown(t, b.tag), left: project(view, ...tagAt)[0] + 4, top: project(view, ...tagAt)[1] - 58, opacity: Math.min(1, arrive(t, b.tag) * 4), transform: `scale(${(1 + 0.12 * (1 - arrive(t, b.tag))).toFixed(4)})` }}>
           {tagText} · {(fitMs / 1000).toFixed(fitMs < 1000 ? 2 : 1)} s
         </p>
 

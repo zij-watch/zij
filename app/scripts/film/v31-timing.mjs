@@ -13,7 +13,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { CAPTIONS31, captions31, makeCut31, SCRIPT31 } from "../../lib/film/v31.ts";
+import { CAPTIONS31, captions31, captionsFromWords, makeCut31, SCRIPT31 } from "../../lib/film/v31.ts";
 
 const APP = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const DOCS = join(APP, "..", "docs", "event");
@@ -50,7 +50,7 @@ if (argv.includes("--planned")) {
   let j = 0;
   const missed = [];
   timing = {
-    source: "voice: whisper.cpp word times on the placed voice (no change of speed or pitch)",
+    source: "voice: whisper.cpp word times on the placed voice (pauses shortened, 2.9% faster, pitch unchanged)",
     tempo: 1,
     lines: SCRIPT31.map((line) => line.split(" ").map((w) => {
       const want = bare(w);
@@ -79,11 +79,12 @@ if (argv.includes("--planned")) {
 } else throw new Error("--planned or --whisper <file>");
 
 const cut = makeCut31(timing);
+const timed = argv.includes("--planned") ? cues : captionsFromWords(timing, cut.beats.shots);
 writeFileSync(join(DOCS, "zij-demo30-v3.1-timing.json"), JSON.stringify(timing, null, 1) + "\n");
 const stamp = (s) => {
   const ms = Math.round(s * 1000), p = (n, w = 2) => String(n).padStart(w, "0");
   return `${p(Math.floor(ms / 3600000))}:${p(Math.floor(ms / 60000) % 60)}:${p(Math.floor(ms / 1000) % 60)},${p(ms % 1000, 3)}`;
 };
-writeFileSync(join(DOCS, "zij-demo30-v3.1.en.srt"), cues.map((c, i) => `${i + 1}\n${stamp(c.from)} --> ${stamp(c.to)}\n${c.lines.join("\n")}\n`).join("\n"));
+writeFileSync(join(DOCS, "zij-demo30-v3.1.en.srt"), timed.map((c, i) => `${i + 1}\n${stamp(c.from)} --> ${stamp(c.to)}\n${c.lines.join("\n")}\n`).join("\n"));
 console.log(`  ${timing.source}`);
 console.log(`  shots: ${cut.beats.shots.join(", ")}; last word ends ${cut.beats.end} s; ${CAPTIONS31.length} captions`);

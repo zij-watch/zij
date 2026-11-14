@@ -17,12 +17,13 @@ export interface Findings { ban: number; banYear: number; since: number; sinceYe
 
 const F = 712;
 const Y = (v: number) => F - v * 0.2;
-const X0 = 120, X1 = 1220;
+const X0 = 120;
 
 export function Finale({ area, b, findings, seal }: { area: Area; b: Beats; findings: Findings; seal: string | null }) {
   const t = useT();
   const holder = useRef<HTMLDivElement>(null);
   const s = area.seasons;
+  const X1 = seal === null ? 1690 : 1220;
   const n = s.year.length, step = (X1 - X0) / n;
   const X = (k: number) => X0 + step * (k + 0.5);
   const at = (year: number) => s.year.indexOf(year);

@@ -14,25 +14,26 @@ export const FRAMES31 = Math.round(DURATION31 * FPS);
 export const STILL31 = 29.5;
 export const CHUNKS31 = Array.from({ length: Math.ceil(DURATION31 / 5) }, (_, i) => ({ n: i + 1, name: `chunk ${i + 1}`, from: i * 5, to: Math.min((i + 1) * 5, DURATION31) }));
 
-/** His captions: the take's own times (before the gaps are shortened), his words exactly; "/" is a line break. */
+/** His captions (zij-demo30-en.final.srt), his words exactly; "/" is his line break. The times are
+ * his file's, kept only for planning: the film's captions are timed to the placed voice's words. */
 export const CAPTIONS31: { from: number; to: number; text: string }[] = [
-  { from: 0.1, to: 3.4, text: "In 2012, NASA's fire record jumps tenfold." },
-  { from: 3.75, to: 5.8, text: "The fires didn't change. The satellite did." },
-  { from: 6.15, to: 9.65, text: "So we built a model that learns how both satellites see, area by area." },
-  { from: 10.0, to: 14.15, text: "On unseen years, error drops / from 77 to 14%," },
-  { from: 14.35, to: 16.4, text: "and every value shows its margin." },
-  { from: 16.75, to: 19.1, text: "Draw any area: / Zij fits it live," },
-  { from: 19.25, to: 21.8, text: "and tells responders / if this season's normal." },
-  { from: 22.15, to: 23.8, text: "And it reveals what the split record hid:" },
-  { from: 24.0, to: 27.0, text: "in the Delta, detected burning rose after the 2004 ban," },
-  { from: 27.15, to: 29.35, text: "and has halved since 2018." },
+  { from: 0.0, to: 3.767, text: "In 2012, NASA's fire record jumps tenfold." },
+  { from: 3.917, to: 6.617, text: "The fires didn't change, / but the satellites did." },
+  { from: 6.7, to: 11.583, text: "So we built a model that learns / how both satellites see, area by area." },
+  { from: 11.84, to: 15.67, text: "On unseen years, error drops / from 77 to 14%," },
+  { from: 15.783, to: 17.983, text: "and every value shows its margin." },
+  { from: 18.067, to: 20.733, text: "Draw any area: / Zij fits it live," },
+  { from: 20.817, to: 23.583, text: "and it tells responders / if this season is normal." },
+  { from: 24.023, to: 26.583, text: "Using Zij, we revealed / what the split record hid." },
+  { from: 26.823, to: 31.017, text: "For example, in the Delta, detected / burning rose after the 2004 ban," },
+  { from: 31.1, to: 32.73, text: "and it has halved since 2018." },
 ];
 /** The voice is placed so its first word starts at about 0.5 s, and each gap between lines loses 0.1 s. */
 export const VOICE31 = { at: 0.5, cut: 0.1 };
 /** A time of the take, on the film's clock: the gaps before it shortened, the whole moved to start at VOICE31.at. */
 export function shifted(t: number): number {
-  const before = CAPTIONS31.filter((c, k) => k > 0 && c.from <= t + 1e-6).length;
-  return Math.round((t + (VOICE31.at - CAPTIONS31[0].from) - VOICE31.cut * before) * 1000) / 1000;
+  const a = CAPTIONS31[0].from, b = CAPTIONS31[CAPTIONS31.length - 1].to;
+  return Math.round((0.3 + ((t - a) * (29.05 - 0.3)) / (b - a)) * 1000) / 1000;
 }
 /** The captions on the film's clock, one per cue, lines split at "/" and at 42 characters. */
 export function captions31(): { from: number; to: number; lines: string[] }[] {
@@ -48,6 +49,18 @@ export function captions31(): { from: number; to: number; lines: string[] }[] {
   };
   return CAPTIONS31.map((c) => ({ from: shifted(c.from), to: shifted(c.to), lines: c.text.split(" / ").flatMap(split) }));
 }
+/** The captions timed to the words: each cue from its first word (a shot's first cue from the shot's
+ * start) to the next cue's start, with no gaps; the last to its last word plus 0.4 s. */
+export function captionsFromWords(timing: Timing, shots: number[]): { from: number; to: number; lines: string[] }[] {
+  const shotStarts = new Set([1, 2, 5, 7]); // cues 2, 3, 6 and 8 open shots
+  const out = timing.lines.map((words, k) => ({
+    from: k === 0 ? Math.max(0.1, words[0].from - 0.05) : shotStarts.has(k) ? shots[[1, 2, 5, 7].indexOf(k) + 1] : Math.round((words[0].from - 0.05) * 1000) / 1000,
+    to: 0,
+    lines: CAPTIONS31[k].text.split(" / "),
+  }));
+  out.forEach((c, k) => (c.to = k + 1 < out.length ? out[k + 1].from : Math.round((timing.lines[k][timing.lines[k].length - 1].to + 0.4) * 1000) / 1000));
+  return out;
+}
 /** The words of each cue, as one line each for the timing (no "/"). */
 export const SCRIPT31 = CAPTIONS31.map((c) => c.text.replace(/ \/ /g, " "));
 
@@ -57,6 +70,11 @@ function find(timing: Timing, cue: number, word: string, nth = 1) {
   for (const w of timing.lines[cue - 1]) if (bare(w.w) === bare(word) && ++seen === nth) return w;
   throw new Error(`no "${word}" (${nth}) in cue ${cue}`);
 }
+
+/** The area drawn on the map: a freehand loop (the app's lasso) over the rice country of the
+ * northern Delta, as [lon, lat], in the order the hand draws it. */
+export const LASSO: [number, number][] = [[30.576, 31.151], [30.635, 31.205], [30.74, 31.237], [30.841, 31.263], [30.93, 31.302], [31.045, 31.305], [31.155, 31.278], [31.255, 31.275], [31.361, 31.274], [31.468, 31.26], [31.581, 31.24], [31.655, 31.193], [31.693, 31.136], [31.768, 31.088], [31.808, 31.028], [31.751, 30.968], [31.693, 30.917], [31.645, 30.87], [31.585, 30.827], [31.54, 30.775], [31.464, 30.733], [31.353, 30.722], [31.255, 30.695], [31.144, 30.658], [31.023, 30.667], [30.918, 30.698], [30.827, 30.736], [30.765, 30.786], [30.691, 30.824], [30.614, 30.865], [30.611, 30.924], [30.612, 30.977], [30.557, 31.031], [30.542, 31.093]];
+export const V31_QUERY = `poly=${LASSO.map(([x, y]) => `${x},${y}`).join(";")}&day=2023-10-20`;
 
 // ---------------------------------------------------------------- the desk
 
@@ -122,16 +140,16 @@ export function makeCut31(timing: Timing): Cut31 {
   const b: Beats31 = {
     shots, end: lastOf.to,
     team: [0, 0], dots: [0.05, 0.45], fold: [NaN, NaN], modis: [fire, tenfold - 0.15], leap: tenfold, numbers: tenfold + 0.35,
-    circle: W(2, "satellite").from - 0.1, sensors: [W(2, "satellite").from + 0.25, W(2, "satellite").from + 0.5], still: W(2, "did").to,
+    circle: W(2, "satellites").from - 0.1, sensors: [W(2, "satellites").from + 0.25, W(2, "satellites").from + 0.5], still: W(2, "did").to,
     machine: W(3, "model").from, feed: [W(3, "model").from, W(3, "area", 1).from + 0.3],
     stages: [W(3, "model").to, W(3, "learns").from, W(3, "both").from, W(3, "area", 1).from], out: [W(3, "area", 1).from + 0.35, Math.min(W(3, "area", 1).from + 1.35, first(4) - 0.05)],
     dial: [W(4, "77").from, fourteen + 0.2], smallText: W(4, "77").from, margin: W(5, "margin").from,
     box: [W(6, "draw").from - 0.1, Math.min(W(6, "draw").from + 0.9, W(6, "zij").from)], tag: W(6, "live").from,
-    results: W(6, "live").to + 0.05, badge: tells, verdict: tells + 0.1, drops: [W(7, "season's").from - 0.3, shots[4] - 0.3],
+    results: W(6, "live").to + 0.05, badge: tells, verdict: tells + 0.1, drops: [W(7, "season").from - 0.3, shots[4] - 0.3],
     line: [shots[4] + 0.55, shots[4] + 1.3], flash: W(8, "split").from, ban: W(9, "ban").from - 0.25, stamp: W(10, "halved").from, seal: NaN,
     pull: [0.5, 1.45], text: [0.75, 0.95], flyModis: [fire - 0.55, tenfold - 0.75], flyViirs: tenfold - 0.62, fly: 0.6,
     stack: [stack0, stack0 + 0.45], close: [stack0 + 0.45, stack0 + 0.75], brush: [stack0 + 0.75, stack0 + 1.25], site: stack0 + 1.15, credit: stack0 + 1.25,
-    coverage: W(7, "season's").from + 0.6,
+    coverage: W(7, "season").from + 0.6,
   };
 
   const scenes: Scene[] = ["The leap", "Two sensors", "The model", "Any area", "What the record hid"].map((name, k) => ({

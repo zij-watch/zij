@@ -1,45 +1,46 @@
 1
-00:00:00,500 --> 00:00:03,800
+00:00:00,100 --> 00:00:03,310
 In 2012, NASA's fire record jumps tenfold.
 
 2
-00:00:04,050 --> 00:00:06,100
-The fires didn't change.
-The satellite did.
+00:00:03,310 --> 00:00:05,760
+The fires didn't change,
+but the satellites did.
 
 3
-00:00:06,350 --> 00:00:09,850
-So we built a model that learns how
-both satellites see, area by area.
+00:00:05,760 --> 00:00:09,930
+So we built a model that learns
+how both satellites see, area by area.
 
 4
-00:00:10,100 --> 00:00:14,250
+00:00:09,930 --> 00:00:13,300
 On unseen years, error drops
 from 77 to 14%,
 
 5
-00:00:14,350 --> 00:00:16,400
+00:00:13,300 --> 00:00:15,600
 and every value shows its margin.
 
 6
-00:00:16,650 --> 00:00:19,000
+00:00:15,600 --> 00:00:17,360
 Draw any area:
 Zij fits it live,
 
 7
-00:00:19,050 --> 00:00:21,600
-and tells responders
-if this season's normal.
+00:00:17,360 --> 00:00:20,210
+and it tells responders
+if this season is normal.
 
 8
-00:00:21,850 --> 00:00:23,500
-And it reveals what the split record hid:
+00:00:20,210 --> 00:00:22,840
+Using Zij, we revealed
+what the split record hid.
 
 9
-00:00:23,600 --> 00:00:26,600
-in the Delta, detected burning
-rose after the 2004 ban,
+00:00:22,840 --> 00:00:26,670
+For example, in the Delta, detected
+burning rose after the 2004 ban,
 
 10
-00:00:26,650 --> 00:00:28,850
-and has halved since 2018.
+00:00:26,670 --> 00:00:29,200
+and it has halved since 2018.

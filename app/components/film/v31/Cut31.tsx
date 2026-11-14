@@ -14,7 +14,7 @@ import type { Polygon } from "@/lib/fit/cells";
 import type { Cue } from "@/lib/film/srt";
 import { clamp, FPS, HEIGHT, lerp, move, PRESET, WIDTH } from "@/lib/film/timeline";
 import { layerTransform, type Timing } from "@/lib/film/v3";
-import { CHUNKS31, DURATION31, FRAMES31, makeCut31, placeOf, S31, STILL31, TACK } from "@/lib/film/v31";
+import { CHUNKS31, DURATION31, FRAMES31, LASSO, makeCut31, placeOf, S31, STILL31 } from "@/lib/film/v31";
 import { useAppState } from "@/lib/url";
 import { areaVerdict, standing } from "@/lib/verdict";
 import { TooltipProvider } from "../../ui";
@@ -31,7 +31,6 @@ interface Loaded { delta: Area; drawn: Area; country: string; shape: Polygon; da
 
 const PARTS = ["data", "fonts", "desk", "photo", "record", "map"];
 const DESK_F = 0.965;
-const RAD = Math.PI / 180;
 
 export default function Cut31({ cues, seal, timing, trials, findings }: { cues: Cue[]; seal: string; timing: Timing; trials: Trials; findings: Findings }) {
   const [state] = useAppState();
@@ -152,7 +151,7 @@ export default function Cut31({ cues, seal, timing, trials, findings }: { cues: 
     if (i === 0) return <Photo b={b} day={loaded.day} dayResult={loaded.dayResult} />;
     if (i === 1) return <Record31 area={loaded.delta} b={b} dayResult={loaded.dayResult} />;
     if (i === 2) return <Machine area={loaded.delta} b={b} trials={trials} />;
-    if (i === 3) return <MapSheet area={loaded.drawn} country={loaded.country} shape={loaded.shape} day={loaded.day} dayResult={loaded.dayResult} b={b} fitMs={loaded.fitMs} tagText="fitted live in your browser" coverageAt={b.coverage} />;
+    if (i === 3) return <MapSheet area={loaded.drawn} country={loaded.country} shape={loaded.shape} day={loaded.day} dayResult={loaded.dayResult} b={b} fitMs={loaded.fitMs} tagText="fitted live in your browser" coverageAt={b.coverage} lasso={LASSO} />;
     return (
       <>
         <Finale area={loaded.delta} b={b} findings={findings} seal={null} />
@@ -161,20 +160,8 @@ export default function Cut31({ cues, seal, timing, trials, findings }: { cues: 
     );
   };
 
-  // The tacks, where their sheets are now; the string from tack to tack, arcing above the sheets.
+  // Where each sheet is now: in place, or sliding together to make the book.
   const places = S31.map((_, i) => placeOf(i, t, b));
-  const tacks = S31.map((s, i) => {
-    const [lx, ly] = TACK(s), p = places[i], r = p.rot * RAD, ox = s.w / 2, oy = s.h / 2;
-    const dx = lx - ox, dy = ly - oy;
-    return [s.x + p.dx + ox + dx * Math.cos(r) - dy * Math.sin(r), s.y + p.dy + oy + dx * Math.sin(r) + dy * Math.cos(r)] as [number, number];
-  });
-  const drawn = cut.stringDrawn(t);
-  const tight = move(t, b.stack[0], b.stack[1] - b.stack[0]);
-  const stretches = tacks.slice(0, -1).map((a, k) => {
-    const c = tacks[k + 1];
-    const lift = lerp(Math.min(a[1], c[1]) - 170, (a[1] + c[1]) / 2, tight);
-    return `M${a[0].toFixed(1)} ${a[1].toFixed(1)} C${lerp(a[0], c[0], 1 / 3).toFixed(1)} ${lift.toFixed(1)} ${lerp(a[0], c[0], 2 / 3).toFixed(1)} ${lift.toFixed(1)} ${c[0].toFixed(1)} ${c[1].toFixed(1)}`;
-  });
 
   return (
     <FilmContext.Provider value={context}>
@@ -200,15 +187,6 @@ export default function Cut31({ cues, seal, timing, trials, findings }: { cues: 
                   </section>
                 );
               })}
-              <svg className="v31-string" width="1" height="1" aria-hidden="true">
-                {stretches.map((d, k) => (
-                  <g key={k}>
-                    <path d={d} pathLength={1} className="v31-string-shadow" strokeDasharray="1 1" strokeDashoffset={1 - drawn[k]} transform="translate(4 6)" />
-                    <path d={d} pathLength={1} className="v31-string-line" strokeDasharray="1 1" strokeDashoffset={1 - drawn[k]} />
-                  </g>
-                ))}
-              </svg>
-              {tacks.map(([x, y], i) => <i key={i} className="v31-tack" style={{ left: x, top: y }} aria-hidden="true" />)}
             </div>
             <div className="board-light" aria-hidden="true"
               style={{ background: `radial-gradient(1750px 1300px at ${(lamp[0] + 90).toFixed(1)}px ${(lamp[1] + 90).toFixed(1)}px, #fff 0%, color-mix(in srgb, var(--flame) 14%, #fff) 26%, color-mix(in srgb, var(--wood) 22%, #fff) 56%, color-mix(in srgb, var(--wood) 42%, #fff) 80%, color-mix(in srgb, var(--wood) 56%, #fff) 100%)`, opacity: lerp(0.35, 1, move(t, b.pull[0], b.pull[1] - b.pull[0])) }} />
