@@ -8,10 +8,32 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { WaxSeal, Constellation, type SealKind } from "../art/Things";
 import { useGame, type Who } from "./context";
 
-/** The marginal note: a paper slip in italic, joined to its speaker by a hairline. Lines are written in. */
-export function Note({ lines, still, names }: { lines: { id: string; who: Who; text: string }[]; still: boolean; names: { modis: string; viirs: string } }) {
+/** Bring a newly shown step into view inside the play area, without jumping the page. */
+export function useIntoView<T extends HTMLElement>(again?: unknown) {
+  const ref = useRef<T>(null);
+  useEffect(() => { ref.current?.scrollIntoView({ block: "nearest", behavior: "smooth" }); }, [again]);
+  return ref;
+}
+
+/**
+ * Your turn: what to do now, in a few words, on a slip with a brass rule. It writes itself in and
+ * brings itself into view, so the next step is never off screen or left to guess.
+ */
+export function Task({ id }: { id: string }) {
+  const { L } = useGame();
+  const ref = useIntoView<HTMLDivElement>(id);
   return (
-    <div className={`note-slip slip${lines.length ? " is-open" : ""}`} aria-live="polite" role="status">
+    <div ref={ref} key={id} className="task slip" data-theme="folio" role="status">
+      <span className="task-turn">{L["ui.turn"]}</span>
+      <span className="task-text">{L[id]}</span>
+    </div>
+  );
+}
+
+/** The marginal note: a paper slip in italic, joined to its speaker by a hairline. Lines are written in. */
+export function Note({ lines, still, names }: { lines: { id: string; who: Who; text: string }[]; still: boolean; names: { modis: string; viirs: string; mona: string } }) {
+  return (
+    <div className={`note-slip slip${lines.length ? " is-open" : ""}`} data-theme="folio" aria-live="polite" role="status">
       {lines.map((l, i) => (
         <p key={`${l.id}-${i}`} className={`note-line is-${l.who}`} style={{ animationDelay: still ? "0ms" : `${i * 360}ms` }}>
           {l.who !== "hudhud" && <span className="note-who">{names[l.who]}</span>}
@@ -32,8 +54,9 @@ export function Choice({ question, options, onPick, done = false }: { question?:
   const { L } = useGame();
   const [struck, setStruck] = useState<string[]>([]);
   const [chosen, setChosen] = useState<string | null>(null);
+  const ref = useIntoView<HTMLDivElement>();
   return (
-    <div className="choice slip" data-theme="folio">
+    <div ref={ref} className="choice slip" data-theme="folio">
       {question && <p className="choice-q">{question}</p>}
       <div className="choice-list" role="group" aria-label={question}>
         {options.map((o) => (
@@ -71,8 +94,9 @@ export function Folded({ text }: { text: string }) {
 export function SealPress({ kind, label, onPressed }: { kind: SealKind; label: string; onPressed: () => void }) {
   const { still } = useGame();
   const [pressed, setPressed] = useState(false);
+  const ref = useIntoView<HTMLDivElement>();
   return (
-    <div className="seal-press">
+    <div ref={ref} className="seal-press">
       <button
         type="button"
         className={`seal-button${pressed ? " is-done" : ""}`}

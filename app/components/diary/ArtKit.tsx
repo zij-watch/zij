@@ -51,13 +51,13 @@ export default function ArtKit({ data }: { data: GameData }) {
   return (
     <main className="kit">
       <header className="kit-head">
-        <p className="t-eyebrow">studio · hudhud&rsquo;s fire diary</p>
+        <p className="t-eyebrow">studio · roro&rsquo;s fire diary</p>
         <h1>The art kit</h1>
         <p className="kit-lede">Every drawing of the game, with its states, in the room by lamplight and on paper. Ink outlines, hatching, flat paper colours: drawn like an old natural-history manuscript, not a cartoon.</p>
         <a className="catchword" href="/studio/diary?script">Read the script</a>
       </header>
 
-      <Row eyebrow="the guide" title="Hudhud" note="Feeling shows in the body: the crest rises, the head tilts, a short step. No face, no smile.">
+      <Row eyebrow="the guide" title="Roro" note="Feeling shows in the body: the crest rises, the head tilts, a short step. No face, no smile.">
         <Pane theme="night">
           <div className="kit-states">
             <State label="resting"><Hudhud /></State>

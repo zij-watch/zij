@@ -192,7 +192,7 @@
 .book { position: relative; padding: var(--space-8) var(--space-8) var(--space-12); color: var(--ink); }
 .book .jadwal { --jadwal-inset: 12px; }
 .book-title { position: relative; margin: 0 0 var(--space-4); color: var(--brass); }
-.book-chart { position: relative; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-items: end; height: var(--book-h, 220px); border-bottom: var(--stroke-hair) solid var(--brass); }
+.book-chart { position: relative; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-items: end; height: var(--book-h, clamp(130px, 26vh, 220px)); border-bottom: var(--stroke-hair) solid var(--brass); }
 .book-col { position: relative; height: 100%; }
 .book-bar { position: absolute; left: 14%; right: 14%; bottom: 0; height: 100%; transform-origin: 50% 100%; transform: scaleY(var(--v)); transition: transform var(--dur-sheet) var(--ease-paper); }
 .book-bar.is-modis { background: var(--lapis); }

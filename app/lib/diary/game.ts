@@ -7,7 +7,7 @@ export type GameData = {
   lines: Record<string, string>;
   notes: Record<string, string>;
   /** who says each spoken line */
-  speakers: Record<string, "hudhud" | "modis" | "viirs">;
+  speakers: Record<string, "hudhud" | "modis" | "viirs" | "mona">;
   runningHead: string[];
   seasons: Season[];
   jump: { modisYear: number; viirsYear: number };

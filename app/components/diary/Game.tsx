@@ -51,6 +51,9 @@ export default function Game({ data, chapters, keep = true, startAt = 0 }: { dat
   const [pose, setPose] = useState<Pose>({ crest: false, tilt: false, fly: false, stone: false });
   const [stepKey, setStepKey] = useState(0);
   const [dark, setDark] = useState(false);
+  // The turning page between chapters: a sheet crosses the scene with the next chapter's name.
+  const [turning, setTurning] = useState<{ eyebrow: string; word: string; key: number } | null>(null);
+  const [noteKey, setNoteKey] = useState(0);
   const timers = useRef<number[]>([]);
   useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
   const later = useCallback((fn: () => void, ms: number) => { timers.current.push(window.setTimeout(fn, ms)); }, []);
@@ -72,11 +75,15 @@ export default function Game({ data, chapters, keep = true, startAt = 0 }: { dat
       setPose({ crest: false, tilt: false, fly: false, stone: false });
       store({ ...p, chapter: next });
     };
-    // Between scenes the camera tilts; within one, the lamp goes out and lights up again.
-    if (still || !from || !to || from.scene !== to.scene) { swap(); return; }
-    setDark(true);
-    later(() => { swap(); setDark(false); }, 1200);
-  }, [chapter, chapters, still, store, later]);
+    // A page turns: the sheet crosses with the next chapter's name, the chapter changes under it, and
+    // between the sky and the desk the camera tilts as well. With reduced motion, simply the next chapter.
+    if (still || !from || !to) { swap(); return; }
+    const word = to.level >= 1 && to.level <= 5 ? data.runningHead[to.level - 1] : to.level === 6 ? L["ui.ch6"] : "";
+    setTurning({ eyebrow: to.level >= 1 && to.level <= 5 ? L[`ui.ch${to.level}`] : "", word, key: Date.now() });
+    setDark(false);
+    later(swap, 900);
+    later(() => setTurning(null), 2300);
+  }, [chapter, chapters, still, store, later, data.runningHead, L]);
 
   const api: GameApi = useMemo(() => ({
     data,
@@ -85,12 +92,14 @@ export default function Game({ data, chapters, keep = true, startAt = 0 }: { dat
     say: (ids) => {
       const list = (Array.isArray(ids) ? ids : [ids]).filter((id) => L[id]);
       setNote(list.map((id) => ({ id, who: data.speakers[id] ?? "hudhud", text: L[id] })));
+      setNoteKey((k) => k + 1);
     },
     quiet: () => setNote([]),
     hint: (id) => {
       setMistakes((m) => m + 1);
       setPose((p) => ({ ...p, tilt: true, crest: false }));
       setNote([{ id, who: "hudhud", text: L[id] }]);
+      setNoteKey((k) => k + 1);
       later(() => setPose((p) => ({ ...p, tilt: false })), 1800);
     },
     slip: () => {
@@ -130,7 +139,12 @@ export default function Game({ data, chapters, keep = true, startAt = 0 }: { dat
       <DragProvider hint={L["ui.keys"]}>
         <div className={`dd${still ? " is-still" : ""}`} data-theme="night">
           <RunningHead words={data.runningHead} current={level} sealAlt="Zij" />
-          <Stage scene={def.scene} still={still} dark={dark}>
+          <Stage scene={def.scene} still={still} dark={dark} guide={
+            <div className="dd-guide">
+              <Hudhud key={`hh-${stepKey}`} className={stepKey ? "is-step" : ""} crest={pose.crest} tilt={pose.tilt} fly={pose.fly} stone={pose.stone} label={L["ui.hudhud"]} />
+              <Note key={`note-${noteKey}`} lines={note} still={still} names={{ modis: L["ui.modis"], viirs: L["ui.viirs"], mona: L["ui.mona"] }} />
+            </div>
+          }>
             {resume && saved ? (
               <div className="dd-resume slip" data-theme="folio">
                 <button type="button" className="stamp" onClick={() => { setStarted(true); setProgress(saved); setChapter(saved.chapter); }}>{L["ui.carry"]}</button>
@@ -157,11 +171,16 @@ export default function Game({ data, chapters, keep = true, startAt = 0 }: { dat
                 )}
               </>
             )}
-            <div className="dd-guide">
-              <Hudhud key={stepKey} className={stepKey ? "is-step" : ""} crest={pose.crest} tilt={pose.tilt} fly={pose.fly} stone={pose.stone} label={L["ui.hudhud"]} />
-              <Note lines={note} still={still} names={{ modis: L["ui.modis"], viirs: L["ui.viirs"] }} />
-            </div>
           </Stage>
+          {turning && (
+            <div className="dd-turn" key={turning.key} aria-hidden="true">
+              <div className="dd-turn-sheet" data-theme="folio">
+                <span className="jadwal" />
+                {turning.eyebrow && <span className="dd-turn-eyebrow">{turning.eyebrow}</span>}
+                <span className="dd-turn-word">{turning.word}</span>
+              </div>
+            </div>
+          )}
         </div>
       </DragProvider>
     </GameContext.Provider>

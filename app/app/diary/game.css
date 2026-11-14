@@ -26,7 +26,8 @@
 .dd-layer[data-on="false"] { opacity: 0; visibility: hidden; }
 .dd-layer.is-sky { background: var(--sky); }
 .dd-sky { position: absolute; left: 0; top: 0; width: 100%; height: 62%; }
-.dd-land { position: absolute; left: 0; right: 0; bottom: 0; height: 46%; -webkit-mask-image: linear-gradient(180deg, transparent 0, black 16%); mask-image: linear-gradient(180deg, transparent 0, black 16%); }
+/* the land begins where the levels place it: 54% down the play area, which ends above the guide band */
+.dd-land { position: absolute; left: 0; right: 0; bottom: 0; top: calc((100% - var(--guide-h)) * 0.54); -webkit-mask-image: linear-gradient(180deg, transparent 0, black 16%); mask-image: linear-gradient(180deg, transparent 0, black 16%); }
 .dd-fields { width: 100%; height: 100%; display: block; }
 .dd-palm { position: absolute; left: 1%; bottom: 26%; height: 44%; width: auto; fill: color-mix(in srgb, var(--shadow) 75%, var(--sky)); }
 .dd-palm .dd-palm-ring { fill: none; stroke: color-mix(in srgb, var(--brass) 25%, var(--sky)); stroke-width: 1; }
@@ -39,19 +40,22 @@
 .dd-dark.is-out { opacity: 1; }
 
 /* the play area, and the guide in the lower left */
-.dd-play { position: absolute; inset: 0; z-index: 2; overflow-y: auto; overflow-x: hidden; }
+/* The guide has a band of its own along the bottom; the play area ends above it, so nothing hides behind Hudhud. */
+.dd-stage { --guide-h: 168px; }
+.dd-play { position: absolute; inset: 0 0 var(--guide-h) 0; z-index: 2; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; }
 .dd-play:has(.dd-resume) { display: grid; place-items: center; }
-.dd-level { min-height: 100%; display: grid; place-items: center; padding: var(--space-6) var(--space-4) 190px; }
-.dd-guide { position: absolute; left: var(--space-3); bottom: var(--space-3); z-index: 6; display: flex; align-items: flex-end; gap: var(--space-3); max-width: calc(100% - var(--space-6)); pointer-events: none; }
-.dd-guide .hh { --hh: 128px; }
-.note-slip { position: relative; max-width: 360px; padding: var(--space-3) var(--space-4); margin-bottom: var(--space-10); opacity: 0; pointer-events: auto; }
+.dd-level { min-height: 100%; display: grid; place-items: center; padding: var(--space-6) var(--space-4); }
+.dd-guide { position: absolute; left: var(--space-3); right: var(--space-3); bottom: var(--space-2); height: calc(var(--guide-h) - var(--space-2)); z-index: 6; display: flex; align-items: flex-end; gap: var(--space-3); pointer-events: none; }
+.dd-guide .hh { --hh: 156px; }
+.note-slip { position: relative; max-width: 420px; padding: var(--space-3) var(--space-4); margin-bottom: var(--space-12); opacity: 0; pointer-events: auto; transform: rotate(-0.6deg); }
 .note-slip.is-open { opacity: 1; }
-.note-slip::before { content: ""; position: absolute; left: calc(var(--space-3) * -1); bottom: var(--space-6); width: var(--space-3); height: 1px; background: var(--rule); }
+.note-slip::after { content: ""; position: absolute; left: calc(var(--space-6) * -1); bottom: var(--space-6); width: var(--space-6); height: 1px; background: var(--brass); }
 .note-line { margin: 0; font: var(--type-marginal); font-size: 19px; line-height: 28px; color: var(--ink); animation: dd-rise var(--dur-ink) var(--ease-ink) both; }
 .note-line + .note-line { margin-top: var(--space-1); }
 @keyframes dd-rise { from { opacity: 0; transform: translateY(10px); } }
 .note-who { display: block; font: var(--type-label); letter-spacing: var(--tracking-label); font-style: normal; }
 .note-line.is-modis .note-who { color: var(--lapis); }
+.note-slip .note-line { font-size: 20px; line-height: 29px; }
 .note-line.is-viirs .note-who { color: var(--rubric); }
 .dd .slip { position: relative; }
 .dd-resume { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-6); padding: var(--space-6) var(--space-8); }
@@ -96,9 +100,66 @@
   .dd-chapters { gap: var(--space-2); letter-spacing: 0.04em; font-size: 14px; }
   .dd-seal img { height: 24px; }
   .dd-head { gap: var(--space-2); padding: 0 var(--space-3); }
-  .dd-guide .hh { --hh: 84px; }
-  .note-slip { margin-bottom: var(--space-4); max-width: calc(100vw - 120px); padding: var(--space-2) var(--space-3); }
+  .dd-stage { --guide-h: 128px; }
+  .dd-guide .hh { --hh: 96px; }
+  .note-slip { margin-bottom: var(--space-6); max-width: calc(100vw - 130px); padding: var(--space-2) var(--space-3); }
+  .note-slip .note-line { font-size: 17px; line-height: 24px; }
   .note-line { font-size: 17px; line-height: 24px; }
-  .dd-level { padding-bottom: 170px; }
   .dd-palm { height: 34%; }
+}
+
+/* ================================================================ your turn: the task slip */
+.task { display: inline-grid; gap: 2px; justify-items: start; max-width: min(100%, 460px); padding: var(--space-2) var(--space-4) var(--space-2) var(--space-6); box-shadow: inset 4px 0 0 var(--brass), var(--shadow-card); color: var(--ink); animation: dd-rise var(--dur-sheet) var(--ease-paper) both; }
+.task-turn { font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); font-feature-settings: var(--features-eyebrow); color: var(--brass); }
+.task-text { font: var(--type-ui); font-size: 19px; line-height: 27px; }
+
+/* the note slides in afresh with each new line, from the bird */
+.note-slip.is-open { animation: dd-note var(--dur-sheet) var(--ease-paper) both; }
+@keyframes dd-note { from { opacity: 0; transform: translate(-14px, 6px) rotate(-1.4deg); } to { opacity: 1; transform: rotate(-0.6deg); } }
+
+/* ================================================================ instruments that answer the hand */
+.dd .stamp, .dd .catchword, .dd .choice-a, .dd .lv-yeartoken, .dd .lv-brtoken { transition: transform var(--dur-touch) var(--ease-ink), box-shadow var(--dur-touch) var(--ease-ink), background-color var(--dur-touch) var(--ease-ink); }
+.dd .stamp { padding: var(--space-3) var(--space-6); box-shadow: inset 0 0 0 2px var(--rubric), inset 0 0 0 3px color-mix(in srgb, var(--on-rubric) 40%, transparent), var(--shadow-token); }
+.dd .stamp:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 2px var(--rubric), inset 0 0 0 3px color-mix(in srgb, var(--on-rubric) 40%, transparent), var(--shadow-card); }
+.dd .stamp:active { transform: translateY(1px); box-shadow: inset 0 0 0 2px var(--rubric), var(--shadow-pressed); }
+/* a catchword in the game is a small paper tab: ink on paper, a brass rule under it that doubles on hover */
+.dd button.catchword, .dd a.catchword { padding: var(--space-2) var(--space-4); background: var(--ground-raised); color: var(--ink); text-decoration: none; box-shadow: inset 0 -2px 0 var(--brass), var(--shadow-token); font: var(--type-ui); font-size: 18px; }
+.dd button.catchword:hover:not(:disabled), .dd a.catchword:hover { background: var(--ground-raised); transform: translateY(-2px); box-shadow: inset 0 -4px 0 -1px var(--brass), inset 0 -1px 0 var(--brass), var(--shadow-card); }
+.dd button.catchword:active:not(:disabled), .dd a.catchword:active { transform: translateY(1px); box-shadow: inset 0 -2px 0 var(--brass), var(--shadow-pressed); }
+/* answers: each a strip of paper on the slip, ruled in brass at its left */
+.dd .choice-list { gap: var(--space-2); justify-items: stretch; }
+.dd button.choice-a { justify-content: flex-start; padding: var(--space-2) var(--space-4); background: var(--ground); color: var(--ink); box-shadow: inset 3px 0 0 var(--brass), var(--shadow-token); font: var(--type-ui); font-size: 18px; text-decoration: none; }
+.dd button.choice-a:hover:not(:disabled) { background: var(--ground); transform: translateX(3px); box-shadow: inset 6px 0 0 var(--brass), var(--shadow-card); }
+.dd button.choice-a:active:not(:disabled) { transform: translateX(1px); box-shadow: inset 3px 0 0 var(--brass), var(--shadow-pressed); }
+.dd button.choice-a.is-struck { color: var(--ink-muted); text-decoration: line-through; text-decoration-color: var(--ink); box-shadow: inset 3px 0 0 var(--rule); }
+.dd button.choice-a.is-chosen { font-weight: 700; box-shadow: inset 6px 0 0 var(--brass), 0 0 0 1px var(--brass), var(--shadow-card); }
+.dd .drag:hover:not(:disabled) > * { transform: translateY(-3px); }
+.dd .drag > * { transition: transform var(--dur-touch) var(--ease-ink); }
+.dd .tap-sat { transition: transform var(--dur-touch) var(--ease-ink); }
+.dd .tap-sat:hover { transform: translateY(-3px); }
+
+/* the next thing to touch: brass corner marks drawn round it, settling in, then breathing slowly */
+.is-next { position: relative; }
+.is-next::before, .is-next::after { content: ""; position: absolute; width: 14px; height: 14px; pointer-events: none; border: 2px solid var(--brass); animation: dd-mark var(--dur-sheet) var(--ease-ink) both, dd-breathe 2.4s ease-in-out var(--dur-sheet) infinite alternate; }
+.is-next::before { left: -8px; top: -8px; border-right: 0; border-bottom: 0; }
+.is-next::after { right: -8px; bottom: -8px; border-left: 0; border-top: 0; }
+@keyframes dd-mark { from { opacity: 0; transform: scale(1.6); } }
+@keyframes dd-breathe { from { opacity: 1; } to { opacity: 0.45; } }
+.drag.is-held::before, .drag.is-held::after, .drag.is-dragging::before, .drag.is-dragging::after { display: none; }
+
+/* the keyboard's help shows only to someone using the keyboard */
+.dd .lv-keys { visibility: hidden; }
+.dd:has(:focus-visible) .lv-keys { visibility: visible; }
+
+/* ================================================================ the page turning between chapters */
+.dd-turn { position: fixed; inset: 56px 0 0; z-index: 20; display: grid; place-items: center; pointer-events: none; overflow: hidden; }
+.dd-turn-sheet { position: relative; display: grid; justify-items: center; align-content: center; gap: var(--space-2); width: min(92vw, 640px); height: min(70vh, 420px); background: var(--ground-raised); box-shadow: var(--shadow-held); color: var(--ink); animation: dd-turn 2.3s var(--ease-paper) both; }
+.dd-turn-sheet .jadwal { --jadwal-inset: 14px; }
+.dd-turn-eyebrow { font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); font-feature-settings: var(--features-eyebrow); color: var(--brass); text-transform: lowercase; animation: dd-rise var(--dur-ink) var(--ease-ink) 0.5s both; }
+.dd-turn-word { font: var(--type-display-xl); font-size: clamp(56px, 12vw, 104px); line-height: 1; letter-spacing: var(--tracking-display-xl); animation: dd-rise var(--dur-ink) var(--ease-ink) 0.65s both; }
+@keyframes dd-turn {
+  0% { transform: translateX(110vw) rotate(4deg); }
+  28% { transform: translateX(0) rotate(-0.8deg); }
+  72% { transform: translateX(0) rotate(-0.8deg); opacity: 1; }
+  100% { transform: translateX(-110vw) rotate(-5deg); opacity: 1; }
 }

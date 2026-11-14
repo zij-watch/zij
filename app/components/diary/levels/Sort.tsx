@@ -9,6 +9,7 @@ import { FactoryFlame, FieldFire, GhostDot } from "../art/Fire";
 import { IllusTag, Tray } from "../art/Things";
 import { useGame } from "../engine/context";
 import { Draggable, DropZone } from "../engine/Drag";
+import { Task } from "../engine/Parts";
 
 type Kind = "field" | "factory" | "ghost";
 const ARRIVALS: Kind[] = ["field", "field", "factory", "field", "ghost", "field", "field", "factory", "field", "ghost", "factory", "field"];
@@ -19,12 +20,28 @@ function Spot({ kind, seed }: { kind: Kind; seed: number }) {
   return <FieldFire seed={seed} scale={1.2} />;
 }
 
-/** Seven nights over the same spot: the flame is there every night. */
-function SevenNights() {
+/**
+ * The evidence: the same spot on seven nights. A field burns a night or two after its harvest; a
+ * factory's flame is there every night; a ghost is a faint mark, too weak to trust.
+ */
+function nightsOf(kind: Kind, seed: number): ("lit" | "faint" | "dark")[] {
+  if (kind === "factory") return Array(7).fill("lit");
+  const n = Array(7).fill("dark") as ("lit" | "faint" | "dark")[];
+  const a = seed % 6;
+  if (kind === "ghost") { n[a] = "faint"; return n; }
+  n[a] = "lit";
+  if (seed % 2) n[a + 1] = "lit";
+  return n;
+}
+
+function SevenNights({ kind, seed, label }: { kind: Kind; seed: number; label: string }) {
   return (
-    <div className="lv-nights" aria-hidden="true">
-      {Array.from({ length: 7 }, (_, i) => <span key={i} className="lv-night"><i /></span>)}
-    </div>
+    <figure className="lv-evidence" data-theme="folio">
+      <div className="lv-nights" aria-hidden="true">
+        {nightsOf(kind, seed).map((v, i) => <span key={i} className={`lv-night is-${v}`}><i /></span>)}
+      </div>
+      <figcaption>{label}</figcaption>
+    </figure>
   );
 }
 
@@ -60,13 +77,14 @@ export default function Sort() {
   return (
     <div className="lv lv-sort">
       <IllusTag text={g.L["ui.illus"]} />
+      {i < ARRIVALS.length && <Task id="sort.task" />}
       <div className="lv-arrive">
         {i < ARRIVALS.length && (
           <div className="lv-arrival" key={i}>
             <Draggable id={`spot-${i}`} label={g.L[`sort.is.${kind}`]} onDrop={drop}>
               <Spot kind={kind} seed={i * 5 + 2} />
             </Draggable>
-            {kind === "factory" && <SevenNights />}
+            <SevenNights kind={kind} seed={i * 5 + 2} label={g.L["sort.nights"]} />
           </div>
         )}
         <p className="lv-keys">{g.L["ui.keys"]}</p>

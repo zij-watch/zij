@@ -7,7 +7,7 @@ import type { CSSProperties } from "react";
 export type Line = { values: number[]; kind: "viirs" | "guess"; label: string };
 
 export function Chart({ years, lines, max, label }: { years: number[]; lines: Line[]; max: number; label: string }) {
-  const W = 320, H = 150, pad = { l: 8, r: 8, t: 10, b: 22 };
+  const W = 320, H = 150, pad = { l: 18, r: 18, t: 10, b: 22 };
   const x = (i: number) => pad.l + (i * (W - pad.l - pad.r)) / Math.max(1, years.length - 1);
   const y = (v: number) => pad.t + (H - pad.t - pad.b) * (1 - Math.min(1.08, v / max));
   const path = (vs: number[]) => vs.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join("");
