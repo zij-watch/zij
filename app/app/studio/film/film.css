@@ -1,0 +1,140 @@
+/* The film (/studio/film): the landing page's night desk under lamp light, with the app lying on it
+   as sheets of paper. The frame is 1920 by 1080. Nothing here moves by itself: every transition and
+   animation of the app's own stylesheets is switched off inside the film, and each frame's styles
+   are worked out from its time (components/film). See docs/event/FILM.md. */
+
+body:has(.film) { overflow: hidden; background: #000; }
+/* The development tools' badge must never be in a frame. */
+body:has(.film) nextjs-portal { display: none !important; }
+
+.film, .film *, .film *::before, .film *::after {
+  transition: none !important; animation: none !important; scroll-behavior: auto !important; cursor: none !important;
+}
+.film { position: fixed; inset: 0; overflow: hidden; background: #000; }
+.film-stage {
+  position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; isolation: isolate;
+  transform-origin: 0 0; background: var(--ground); color: var(--ink);
+}
+/* A desk at night: the wood itself is kept dark, so the paper is what the lamp shows. */
+.film-desk { position: absolute; left: -40px; top: -30px; width: 2000px; height: 1140px; max-width: none; transform-origin: 50% 40%; filter: brightness(0.7) saturate(0.92); }
+.film-layer { position: absolute; inset: 0; transform-origin: 50% 40%; pointer-events: none; }
+.film-group { position: absolute; inset: 0; }
+.film-sheet { position: absolute; transform-origin: 0 0; }
+.film-sheets, .film-words { color: var(--ink); }
+.film-offstage { position: absolute; left: -6000px; top: 0; width: 1000px; visibility: hidden; }
+.film-problem { position: absolute; z-index: 9; left: 96px; top: 96px; margin: 0; max-width: 1200px; font-size: 30px; line-height: 40px; color: var(--ink); }
+
+/* Paper on a dark desk: the lamp is up and to the left, so shadows fall down and to the right. */
+.film-sheets .paper-back, .film-words .paper-back {
+  filter: drop-shadow(7px 14px 16px color-mix(in srgb, var(--shadow) 70%, transparent)) drop-shadow(1px 2px 2px color-mix(in srgb, var(--shadow) 55%, transparent));
+}
+
+/* The lamp: its light falls off across the desk and everything on it, with a warm glow near it. */
+.film-light {
+  inset: -90px; mix-blend-mode: multiply;
+  background: radial-gradient(1750px 1300px at 13% 2%, #fff 0%, color-mix(in srgb, var(--flame) 14%, #fff) 26%,
+    color-mix(in srgb, var(--wood) 22%, #fff) 56%, color-mix(in srgb, var(--wood) 42%, #fff) 80%, color-mix(in srgb, var(--wood) 56%, #fff) 100%);
+}
+.film-glow {
+  inset: -90px; mix-blend-mode: screen;
+  background: radial-gradient(1050px 800px at 5% -8%, color-mix(in srgb, var(--flame) 24%, transparent), color-mix(in srgb, var(--flame) 7%, transparent) 55%, transparent 76%);
+}
+.film-dark { background: var(--shadow); }
+
+/* The ink rule: the manuscript's double rule, drawn across and carried down the frame. */
+.film-rule { position: absolute; left: 0; height: 8px; margin-top: -4px; border-top: 3px solid var(--brass); border-bottom: 1px solid var(--rule); }
+
+/* ---------------------------------------------------------------- words */
+.film-corner {
+  position: absolute; left: 96px; top: 46px; margin: 0; width: max-content;
+  font: 600 25px/32px var(--font-display); letter-spacing: 0.05em; color: var(--ink-muted);
+  font-variant-numeric: lining-nums;
+}
+.film-caption {
+  position: absolute; left: 50%; bottom: 60px; width: 1180px; height: 172px; margin-left: -590px;
+  display: flex; align-items: center; justify-content: center; transform-origin: 50% 100%;
+}
+.film-caption p {
+  margin: 0; text-align: center; font: 600 58px/66px var(--font-display); letter-spacing: 0.005em; color: var(--ink);
+  font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1, "onum" 0;
+}
+.film-caption p span { display: block; white-space: nowrap; }
+
+/* ---------------------------------------------------------------- 1 and 2: the record */
+.film-seasons .result { padding: 20px 26px 22px; }
+.film-seasons .result .chart { height: 300px; }
+.film .lever .knob { left: calc(var(--film-lever, 0) * 100%) !important; }
+.film-chart { position: relative; padding-top: 34px; }
+.film-chart .film-half {
+  position: absolute; top: 0; height: 28px; margin: 0; border-bottom: 2.5px solid; overflow: hidden;
+  font: 400 15px/24px var(--font-text); font-variant-numeric: lining-nums; color: var(--ink-muted); text-align: center; white-space: nowrap;
+}
+.film-half b { margin-right: 6px; font: 600 20px/24px var(--font-display); letter-spacing: 0.08em; color: var(--ink); }
+.film-half.is-modis { border-color: var(--lapis); }
+.film-half.is-viirs { border-color: var(--rubric); }
+.film-divide { position: absolute; width: 0; border-left: 1.5px dashed var(--brass); }
+.film-calendar .result { padding: 16px 20px 18px; }
+
+/* ---------------------------------------------------------------- 3: the proof */
+.film-proof { padding: 22px; }
+.film-proof svg { display: block; width: 100%; height: auto; }
+/* The picture's own flat ground and frame are left out: it lies on the sheet's paper. */
+.film-proof svg > rect:first-of-type { fill: none; stroke: none; }
+.film-counter { padding: 22px 26px 22px; }
+.film-counter .eyebrow { margin: 0 0 6px; }
+.film-figure { margin: 0; font: 600 116px/104px var(--font-display); color: var(--ink); font-variant-numeric: lining-nums tabular-nums; font-feature-settings: "lnum" 1, "tnum" 1; }
+/* Tabular figures whatever the face offers: every digit has one width. */
+.film-figure i { display: inline-block; width: 0.5em; font-style: normal; text-align: center; }
+.film-counter-note { margin: 10px 0 0; font: 400 15px/21px var(--font-text); color: var(--ink-muted); }
+
+/* ---------------------------------------------------------------- 4 and 5: the map */
+.film-mapsheet { width: 100%; height: 100%; }
+.film-map { position: absolute; inset: 14px; overflow: hidden; background: var(--sky); }
+.film-map .map { position: absolute; inset: 0; }
+.film-map-over { position: absolute; inset: 0; }
+.film-drops { position: absolute; left: 0; top: 0; max-width: none; overflow: visible; }
+.film-blot { mix-blend-mode: multiply; filter: blur(1.6px); }
+.film-blot.is-viirs { fill: var(--rubric); }
+.film-blot.is-modis { fill: var(--lapis); }
+.film-drop.is-viirs { fill: var(--rubric); stroke: var(--ground-raised); }
+.film-drop.is-modis { fill: none; stroke: var(--lapis); }
+.film-drop.is-halo { fill: none; stroke: var(--ground-raised); stroke-opacity: 0.9; }
+.film-cursor {
+  position: absolute; width: 26px; height: 26px; border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, var(--flame) 0, color-mix(in srgb, var(--brass) 80%, var(--flame)) 26%, color-mix(in srgb, var(--brass) 55%, var(--shadow)) 72%, color-mix(in srgb, var(--brass) 30%, var(--shadow)) 100%);
+  box-shadow: 0 0 0 2px var(--ground-raised), 4px 7px 7px -1px color-mix(in srgb, var(--shadow) 70%, transparent);
+}
+.film-cursor::before, .film-cursor::after { content: ""; position: absolute; left: 50%; top: 50%; background: var(--ink); }
+.film-cursor::before { width: 46px; height: 1.5px; margin: -0.75px 0 0 -23px; }
+.film-cursor::after { width: 1.5px; height: 46px; margin: -23px 0 0 -0.75px; }
+.film-day { left: 28px; bottom: 26px; transform-origin: 0 100%; box-shadow: var(--shadow-card); }
+.film-results.results {
+  --edge: 12px; --strip: 0px; --col: 440px;
+  position: absolute; left: auto; right: 0; top: 0; bottom: auto; overflow: hidden; scrollbar-gutter: auto; transform-origin: 100% 0;
+}
+
+/* ---------------------------------------------------------------- 6: the brief and the files */
+.film-brief iframe { display: block; border: 0; background: transparent; color-scheme: light; }
+.film-file { padding: 16px 18px; }
+.film-file .plate-mark { display: block; margin: 0 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+.film-csv { margin: 0; overflow: hidden; white-space: pre; font: 400 13.5px/20px var(--font-text); font-variant-numeric: lining-nums tabular-nums; color: var(--ink); }
+.film-file-note { margin: 8px 0 0; font: 400 14px/20px var(--font-text); font-style: italic; color: var(--ink-muted); }
+.film-picture { display: block; width: 100%; height: auto; border: 1px solid var(--rule); }
+
+/* ---------------------------------------------------------------- 7: the end card */
+.film-end { color: var(--ink); }
+.film-seal { position: absolute; left: 50%; top: 190px; width: 400px; margin-left: -200px; }
+.film-seal svg { display: block; width: 100%; height: auto; overflow: visible; }
+.film-seal .seal-ink { fill: var(--ink); }
+.film-seal .seal-wet { fill: color-mix(in srgb, var(--flame) 62%, var(--ink)); }
+.film-seal .seal-stroke { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.film-seal .seal-dot { fill: none; stroke: white; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+.film-seal .seal-wet-stroke { opacity: 0; }
+.film-credit {
+  position: absolute; left: 50%; top: 680px; margin: 0; width: max-content; transform: translateX(-50%);
+  font: 400 30px/40px var(--font-text); letter-spacing: 0.02em; color: var(--ink-muted);
+}
+.film-team {
+  position: absolute; left: 50%; top: 590px; margin: 0; width: max-content; transform: translateX(-50%);
+  font: 600 60px/72px var(--font-display); letter-spacing: 0.05em; color: var(--ink); font-variant-numeric: lining-nums;
+}

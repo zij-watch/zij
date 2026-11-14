@@ -1,0 +1,38 @@
+1
+00:00:00,300 --> 00:00:03,000
+In 2012, NASA's fire record jumped.
+
+2
+00:00:03,300 --> 00:00:06,200
+The fires didn't change.
+The satellite did.
+
+3
+00:00:06,700 --> 00:00:10,300
+Zij joins MODIS and VIIRS
+into one record, 2000 to today.
+
+4
+00:00:10,700 --> 00:00:13,800
+Tested on unseen years:
+error falls from 77% to 14%.
+
+5
+00:00:14,200 --> 00:00:18,000
+Draw any area and ask:
+is this fire season normal?
+
+6
+00:00:18,500 --> 00:00:21,900
+See any day's fires
+over NASA satellite imagery.
+
+7
+00:00:22,300 --> 00:00:24,900
+Download every number.
+Plan, warn, respond.
+
+8
+00:00:25,200 --> 00:00:29,300
+1,000 years ago, a zij charted the sky.
+Ours charts a safer Earth.
