@@ -110,7 +110,17 @@ export default function Game({ data, chapters, keep = true, startAt = 0 }: { dat
     },
     seal: (id: SealId) => store({ ...progress, seals: progress.seals.includes(id) ? progress.seals : [...progress.seals, id] }),
     wait: (ms) => new Promise<void>((res) => { if (still) res(); else later(res, ms); }),
-  }), [data, L, still, later, def, chapter, chapters.length, goTo, progress, store]);
+    progress: { stars: progress.stars, seals: progress.seals },
+    playAgain: () => {
+      if (keep) clearProgress();
+      setStarted(true);
+      setProgress(fresh());
+      setChapter(0);
+      setPhase("play");
+      setMistakes(0);
+      setNote([]);
+    },
+  }), [data, L, still, later, def, chapter, chapters.length, goTo, progress, store, keep]);
 
   const Level = def.Level;
   const level = def.level;
@@ -156,12 +166,4 @@ export default function Game({ data, chapters, keep = true, startAt = 0 }: { dat
       </DragProvider>
     </GameContext.Provider>
   );
-}
-
-/** Start the game over from the opening: used by the ending's Play again. */
-export function usePlayAgain(): () => void {
-  return () => {
-    clearProgress();
-    window.location.reload();
-  };
 }

@@ -30,6 +30,10 @@ export type GameApi = {
   /** the level is done: its stars and its note for grown-ups */
   finish: () => void;
   seal: (id: SealId) => void;
+  /** what the player has earned so far: stars kept by each level, seals pressed */
+  progress: { stars: number[]; seals: SealId[] };
+  /** start the whole game again from the opening */
+  playAgain: () => void;
   /** wait, or not at all under reduced motion */
   wait: (ms: number) => Promise<void>;
 };

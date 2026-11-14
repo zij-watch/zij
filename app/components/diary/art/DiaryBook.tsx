@@ -10,7 +10,7 @@ import { PaperBack } from "@/components/Paper";
 
 export type Bar = { year: number; value: number; lo?: number; hi?: number; kind: "modis" | "viirs" | "ink"; mark?: boolean; faint?: boolean };
 
-export default function DiaryBook({ title, bars, max, bands = false, children, className = "", label, copying = false, onPick, pickLabel }: {
+export default function DiaryBook({ title, bars, max, bands = false, children, className = "", label, copying = false, onPick, pickLabel, canPick = (b) => b.kind === "ink" }: {
   title?: string;
   bars: Bar[];
   max: number;
@@ -22,6 +22,8 @@ export default function DiaryBook({ title, bars, max, bands = false, children, c
   /** makes the translated (ink) bars pressable */
   onPick?: (year: number) => void;
   pickLabel?: (year: number) => string;
+  /** which bars can be pressed; translated ones unless said otherwise */
+  canPick?: (b: Bar) => boolean;
 }) {
   return (
     <div className={`book paper is-sheet ${className}`} data-theme="folio" role={label ? "img" : undefined} aria-label={label}>
@@ -38,7 +40,7 @@ export default function DiaryBook({ title, bars, max, bands = false, children, c
           >
             {bands && b.kind === "ink" && b.lo != null && <i className="book-band" />}
             <i className={`book-bar is-${b.kind}`} />
-            {onPick && b.kind === "ink" && <button type="button" className="plain book-pick" onClick={() => onPick(b.year)} aria-label={pickLabel?.(b.year) ?? String(b.year)} />}
+            {onPick && canPick(b) && <button type="button" className="plain book-pick" onClick={() => onPick(b.year)} aria-label={pickLabel?.(b.year) ?? String(b.year)} />}
             <span className="book-year t-figure">{b.year % 5 === 0 || i === 0 || (i === bars.length - 1 && b.year % 5 >= 3) ? b.year : ""}</span>
           </div>
         ))}

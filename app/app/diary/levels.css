@@ -133,10 +133,66 @@
 .lv-built ul { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-1); }
 .lv-built li { font: var(--type-marginal); font-size: 19px; line-height: 28px; animation: dd-rise var(--dur-ink) var(--ease-ink) both; }
 
+/* ================================================================ level 5 · compare */
+.lv-compare { gap: var(--space-6); }
+.lv-skip { justify-self: end; }
+.lv-brtoken { display: inline-block; padding: var(--space-2) var(--space-4); background: var(--ground-raised); color: var(--ink); box-shadow: inset 0 -3px 0 var(--brass), var(--shadow-token); font: var(--type-figure); font-size: 16px; }
+.lv-bracket { position: absolute; top: 0; bottom: 0; z-index: 2; pointer-events: none; }
+.lv-bracket-zone { position: absolute; inset: -6px 0 0; pointer-events: auto; border-bottom: 3px solid transparent; }
+.lv-bracket.is-laid .lv-bracket-zone { border: var(--stroke-instrument) solid var(--brass); border-top: 0; }
+.lv-bracket-cap { position: absolute; left: 0; right: 0; top: calc(100% + 26px); text-align: center; font: var(--type-figure); font-size: 15px; color: var(--ink-muted); white-space: nowrap; }
+.lv-water { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--m) * 100%); background: color-mix(in srgb, var(--lapis) 22%, transparent); border-top: 2px solid var(--lapis); transform-origin: 50% 100%; animation: dd-water var(--dur-camera) var(--ease-ink) both; }
+@keyframes dd-water { from { transform: scaleY(0); } }
+.lv-bracket.is-lens .lv-bracket-zone { border-radius: 0; }
+.lv-mean { position: absolute; left: 50%; top: var(--space-2); transform: translateX(-50%); padding: 0 var(--space-2); background: var(--ground-raised); box-shadow: var(--shadow-token); font: var(--type-figure); font-size: 17px; color: var(--ink); animation: dd-place var(--dur-sheet) var(--ease-paper) both; }
+.lv-flag { position: absolute; top: -14px; bottom: 0; z-index: 3; border-left: var(--stroke-instrument) solid var(--ink); pointer-events: none; }
+.lv-flag-cloth { position: absolute; left: 0; top: 0; padding: 2px var(--space-2); background: var(--ground-raised); box-shadow: var(--shadow-token); font: var(--type-label); letter-spacing: var(--tracking-label); color: var(--ink); white-space: nowrap; }
+.lv-why { display: grid; gap: var(--space-2); width: min(100%, 460px); margin: 0; padding: 0; list-style: none; }
+.lv-why li { padding: var(--space-3) var(--space-4); font: var(--type-ui); color: var(--ink); animation: dd-place var(--dur-sheet) var(--ease-paper) both; animation-delay: calc(var(--i) * 260ms); }
+.lv-alidade { width: min(100%, 320px); color: var(--ink); }
+.lv-verdict { margin: 0; font: var(--type-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink-muted); }
+.lv-verdict.is-caught { color: var(--rubric); }
+.lv-world { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-6); width: 100%; }
+.lv-world .globe { width: min(100%, 380px); }
+.dd button.lv-pin { position: absolute; transform: translate(-22px, -22px); display: flex; align-items: center; gap: var(--space-1); padding: 0; z-index: 2; }
+.lv-pin .token-disc { width: 24px; height: 24px; margin: 10px; box-shadow: inset 0 0 0 2px var(--brass), var(--shadow-token); }
+.lv-pin.is-open .token-disc { box-shadow: inset 0 0 0 3px var(--rubric), var(--shadow-token); }
+.lv-pin-word { padding: 0 var(--space-1); background: var(--ground-raised); box-shadow: var(--shadow-token); font: var(--type-label); letter-spacing: var(--tracking-label); color: var(--ink); white-space: nowrap; }
+.lv-pinlines { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; width: min(100%, 340px); }
+.lv-pinlines li { padding: var(--space-3) var(--space-4); font: var(--type-ui); color: var(--ink); animation: dd-place var(--dur-sheet) var(--ease-paper) both; }
+.lv-pinlines b { display: block; font: var(--type-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--brass); }
+.lv-pen { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; cursor: crosshair; touch-action: none; }
+.lv-pen-line { fill: none; stroke: var(--brass); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.lv-tiny-book { width: min(100%, 520px); --book-h: 120px; }
+.lv-match { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: var(--space-8); width: min(100%, 760px); }
+.lv-threads { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 1; }
+.lv-thread { fill: none; stroke: var(--brass); stroke-width: var(--stroke-thread); }
+.lv-people, .lv-questions { display: grid; gap: var(--space-3); margin: 0; padding: 0; list-style: none; align-content: start; }
+.lv-people .person { grid-template-columns: 72px 1fr; justify-items: start; align-items: center; width: auto; text-align: left; }
+.lv-question { display: block; min-height: 44px; padding: var(--space-3) var(--space-4); font: var(--type-marginal); font-size: 18px; color: var(--ink); }
+.lv-question.is-tied { box-shadow: inset 4px 0 0 var(--brass), var(--shadow-card); }
+
+/* ================================================================ the ending */
+.lv-ending { gap: var(--space-6); }
+.lv-ending > .constellation { --const-w: min(80vw, 420px); }
+.keeper { position: relative; display: grid; justify-items: center; gap: var(--space-4); width: min(100%, 560px); padding: var(--space-10) var(--space-8); color: var(--ink); text-align: center; animation: dd-slide var(--dur-sheet) var(--ease-paper) both; }
+.keeper .jadwal { --jadwal-inset: 12px; }
+.keeper-title { margin: 0; font: var(--type-display-l); font-size: clamp(32px, 6vw, 48px); line-height: 1.1; }
+.keeper-sky { width: 100%; padding: var(--space-4); background: var(--sky); display: grid; place-items: center; --const-w: 240px; }
+.keeper-seals { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-6); }
+.keeper-seal { margin: 0; display: grid; justify-items: center; gap: var(--space-1); }
+.keeper-seal figcaption { font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); font-feature-settings: var(--features-eyebrow); }
+.keeper-chapters { margin: 0; font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); font-feature-settings: var(--features-eyebrow); text-transform: lowercase; font-size: 18px; }
+.keeper-acts { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-3) var(--space-6); }
+
 @media (max-width: 640px) {
   .lv-orbit { width: 200px; height: 130px; }
   .lv-ring { left: 0; }
   .lv-week { grid-template-columns: repeat(7, minmax(36px, 1fr)); gap: var(--space-1); width: 100%; }
   .lv-trays { gap: var(--space-6); }
   .lv-trays .tray { width: 150px; }
+  .lv-match { gap: var(--space-4); }
+  .lv-people .person { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .lv-question { font-size: 16px; padding: var(--space-2) var(--space-3); }
+  .keeper { padding: var(--space-8) var(--space-4); }
 }

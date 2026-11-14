@@ -22,17 +22,23 @@ export function Tray({ label, lit = false, children }: { label: string; lit?: bo
 
 export type SealKind = "honest" | "detective" | "keeper";
 
+/** The seals' shapes in a 100 by 100 box: the wax, and the emblem pressed into each. */
+export const SEAL = {
+  wax: "M50 4C62 4 70 9 78 14C88 20 96 30 96 46C97 60 92 70 85 79C77 89 64 96 50 96C35 96 24 90 15 81C7 72 4 61 4 49C4 35 10 23 20 15C29 8 39 4 50 4Z",
+  honest: "M50 30V68M34 40H66M34 40L28 54H40ZM66 40L60 54H72ZM42 68H58",
+  detective: "M58 46A12 12 0 1 1 34 46A12 12 0 1 1 58 46ZM55 55L68 68",
+  keeper: "M38 66C36 54 44 46 54 46C62 46 66 52 64 58M54 46L50 30M54 46L58 31M54 46L64 34M54 46L44 33M64 58L76 64",
+};
+
 /** A wax seal: the wax spread a little at the edge, an emblem pressed into it. */
 export function WaxSeal({ kind, pressed = true, size = 96 }: { kind: SealKind; pressed?: boolean; size?: number }) {
   return (
     <div className={`seal${pressed ? " is-pressed" : ""}`} style={{ width: size, height: size }} data-theme="folio" aria-hidden="true">
       <svg viewBox="0 0 100 100">
-        <path className="seal-wax" d="M50 4C62 4 70 9 78 14C88 20 96 30 96 46C97 60 92 70 85 79C77 89 64 96 50 96C35 96 24 90 15 81C7 72 4 61 4 49C4 35 10 23 20 15C29 8 39 4 50 4Z" />
+        <path className="seal-wax" d={SEAL.wax} />
         <circle className="seal-ring" cx={50} cy={50} r={33} />
         <circle className="seal-ring is-inner" cx={50} cy={50} r={29} />
-        {kind === "honest" && <path className="seal-mark" d="M50 30V68M34 40H66M34 40L28 54H40ZM66 40L60 54H72ZM42 68H58" />}
-        {kind === "detective" && <><circle className="seal-mark" cx={46} cy={46} r={12} /><path className="seal-mark" d="M55 55L68 68" /></>}
-        {kind === "keeper" && <path className="seal-mark" d="M38 66C36 54 44 46 54 46C62 46 66 52 64 58M54 46L50 30M54 46L58 31M54 46L64 34M54 46L44 33M64 58L76 64" />}
+        <path className="seal-mark" d={SEAL[kind]} />
       </svg>
     </div>
   );

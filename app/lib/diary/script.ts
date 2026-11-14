@@ -388,6 +388,7 @@ export const SCRIPT: Chapter[] = [
         title: "The ban",
         beats: [
           { id: "c53.flag", label: "{banYear}: Burning straw banned.", role: "flag" },
+          { id: "c53.stone", label: "The reading stone", role: "token", was: "(none)", why: "The name of the thing the player carries." },
           { act: "Move the reading stone over the years before the ban, then the years after." },
           { id: "c53.up", say: "hudhud", text: "After the ban, the fires seen went up." },
           { id: "c53.fail", line: "So did the ban fail?", role: "question" },
@@ -410,6 +411,7 @@ export const SCRIPT: Chapter[] = [
           { id: "c54.day", label: "Day", role: "caption" },
           { id: "c54.night", label: "Night", role: "caption" },
           { id: "c54.fire", label: "A fire", role: "token" },
+          { id: "c54.move", label: "Move the fire", role: "caption", was: "(none)", why: "The name of the lever that moves the fire round the clock." },
           { id: "c54.caught", label: "Caught", role: "caption" },
           { id: "c54.missed", label: "Missed", role: "caption" },
           { act: "Drag a fire along the clock: caught while it overlaps a pass, missed between passes. Then a tiny fire and a smoky one." },
