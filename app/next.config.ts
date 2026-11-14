@@ -11,6 +11,9 @@ const EXPLORE_PARAMS = ["area", "box", "poly", "day", "days", "from", "to", "vie
 // The build's id, sent as a version with every /data/ request (lib/version.ts).
 const BUILD_ID = (process.env.VERCEL_GIT_COMMIT_SHA ?? `t${Date.now().toString(36)}`).slice(0, 12);
 
+// The demo film (NASA Space Apps 2026).
+const DEMO = "https://www.youtube.com/watch?v=XABi7qeNZwA";
+
 const nextConfig: NextConfig = {
   env: { NEXT_PUBLIC_BUILD_ID: BUILD_ID },
   // "/" is the landing page: a plain HTML file made by scripts/build-landing.mjs.
@@ -18,7 +21,12 @@ const nextConfig: NextConfig = {
     return { beforeFiles: [{ source: "/", destination: "/landing.html" }], afterFiles: [], fallback: [] };
   },
   async redirects() {
-    return EXPLORE_PARAMS.map((key) => ({ source: "/", has: [{ type: "query" as const, key }], destination: "/explore", permanent: false }));
+    return [
+      ...EXPLORE_PARAMS.map((key) => ({ source: "/", has: [{ type: "query" as const, key }], destination: "/explore", permanent: false })),
+      // The 30-second demo film on YouTube, with its captions switched on: /demo in English, /demo/ar in Arabic.
+      { source: "/demo", destination: `${DEMO}&cc_load_policy=1&cc_lang_pref=en&hl=en`, permanent: false },
+      { source: "/demo/ar", destination: `${DEMO}&cc_load_policy=1&cc_lang_pref=ar&hl=ar`, permanent: false },
+    ];
   },
   async headers() {
     return [
