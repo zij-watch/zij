@@ -2311,6 +2311,7 @@
       A[n.dataset.anchor] = { x: r.left + r.width / 2 - dr.left, y: r.top + r.height / 2 - dr.top, r: tok ? tok.offsetWidth / 2 : 0, el: n };
     });
     const drawn = new Set(threads.filter((t) => t.drawn).map((t) => t.key));
+    const had = new Map(threads.map((t) => [t.key, t.f || 0]));
     threads = [];
     let paths = '', pins = '';
     THREADS.forEach(([a, b], i) => {
@@ -2320,7 +2321,7 @@
       const bend = (i % 2 ? 1 : -1) * 0.05 * L, nx = -uy, ny = ux;
       const c1 = [p[0] + (q[0] - p[0]) / 3 + nx * bend, p[1] + (q[1] - p[1]) / 3 + ny * bend], c2 = [p[0] + 2 * (q[0] - p[0]) / 3 + nx * bend * 0.7, p[1] + 2 * (q[1] - p[1]) / 3 + ny * bend * 0.7];
       const d = `M${n1(p[0])} ${n1(p[1])} C${n1(c1[0])} ${n1(c1[1])} ${n1(c2[0])} ${n1(c2[1])} ${n1(q[0])} ${n1(q[1])}`;
-      const t = { key: a + '>' + b, d, end: b, chapter: chapterOf(Q.el), lineage: /^l\d/.test(b), pins: [] };
+      const t = { key: a + '>' + b, d, end: b, chapter: chapterOf(Q.el), lineage: /^l\d/.test(b), pins: [], y0: p[1], y1: q[1], f: had.get(a + '>' + b) || 0 };
       const pinAt = (pt, k) => { t.pins.push(k); pins += `<i class="pin" data-k="${threads.length}-${k}" style="left:${n1(pt[0])}px;top:${n1(pt[1])}px"></i>`; };
       if (a !== 'spool') pinAt(p, 0);
       pinAt(q, 1);
@@ -2331,7 +2332,7 @@
     const lines = svg.querySelectorAll('.t');
     threads.forEach((t, i) => {
       const path = lines[i], len = Math.ceil(path.getTotalLength()) + 2;
-      t.els = [path.previousElementSibling, path];
+      t.els = [path.previousElementSibling, path]; t.len = len;
       t.pinEls = t.pins.map((k) => pinBox.querySelector(`[data-k="${i}-${k}"]`));
       for (const e of t.els) e.style.setProperty('--len', len);
       if (drawn.has(t.key) || still) { t.drawn = true; for (const e of t.els) e.classList.add('is-drawn'); }
@@ -2367,13 +2368,30 @@
       });
     });
   }
+  // how far each thread is drawn: its tip on the reading line (desk coordinates), never drawn back
+  function followThreads(line) {
+    if (still) return;
+    for (const t of threads) {
+      if (t.lineage || !t.els) continue;
+      const span = Math.max(Math.abs(t.y1 - t.y0), 240);
+      const f = Math.max(t.f, clamp((line - Math.min(t.y0, t.y1)) / span));
+      if (f === t.shown) continue;
+      t.f = t.shown = f;
+      const off = n1(t.len * (1 - f));
+      for (const e of t.els) { e.classList.add('is-follow'); e.style.strokeDashoffset = off; }
+      const start = t.pins[0] === 0 ? t.pinEls[0] : null, end = t.pinEls[t.pinEls.length - 1];
+      if (start) start.style.opacity = f > 0 ? '1' : '0';
+      if (end && end !== start) end.style.opacity = f >= 0.995 ? '1' : '0';
+    }
+  }
   function drawThread(t) {
     if (!t || t.drawn) return;
+    if (!t.lineage && !still) return;   // the scroll draws it (followThreads)
     t.drawn = true;
     for (const e of t.els) e.classList.add('is-drawn');
     if (t.pinEls[0]) t.pinEls[0].style.opacity = '1';
     const endPin = t.pinEls[t.pinEls.length - 1];
-    setTimeout(() => { if (endPin) endPin.style.opacity = '1'; }, 1900);
+    setTimeout(() => { if (endPin) endPin.style.opacity = '1'; }, 800);
   }
 
   // ---- ink: where each sheet's one drop lands, and how big it grows to cover the sheet ----
@@ -2610,6 +2628,7 @@
     desk.querySelectorAll('[data-ink]').forEach(inkLayout);
     layThreads();
     threadsOverRecord();
+    followThreads(scrollY + vh * 0.75 - deskTop);
     mapDesk();
     if (lamp.mode === 0 && !lamp.moving) { lamp.x = opening.x; lamp.y = opening.y; placeLamp(lamp.x, lamp.y, 0); }
     else if (lamp.mode === 1 && !lamp.moving) { placeLamp(lamp.x, lamp.y, 0); lamp.recheck = true; }
@@ -2647,6 +2666,7 @@
     let idx = 0;
     for (let i = 1; i < regions.length; i++) if (focus > regions[i] + (chIdx >= i ? -60 : 60)) idx = i;
     if (idx !== chIdx) { chIdx = idx; activate(idx); }
+    followThreads(y + vh * 0.75 - deskTop);
     if (y !== lastY) { lamp.dir = y > lastY ? 1 : -1; lastY = y; }
 
     // the room goes dark as the closing comes up, and the lantern is thrown out into the sky

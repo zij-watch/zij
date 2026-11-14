@@ -232,3 +232,26 @@
 @keyframes seal-glow-in { from { opacity: 0; transform: scale(0.9); } to { opacity: 0.2; transform: scale(0.96); } }
 @keyframes intro-rise { from { opacity: 0.001; translate: 0 14px; } to { opacity: 1; translate: 0 0; } }
 @keyframes intro-in { from { opacity: 0.001; } to { opacity: 1; } }
+
+/* ---------------------------------------------------------------- leaving for the app (leave.js)
+   The lamp goes out: the night ground comes over the page with the Seal on it, and the app opens
+   under the same veil (app/veil.css). The two are drawn alike, to the pixel, so it reads as one. */
+.veil {
+  position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; align-content: center; gap: 22px;
+  background: var(--ground); opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity 620ms cubic-bezier(0.45, 0, 0.25, 1), visibility 0s 620ms;
+}
+.veil img { display: block; height: 72px; width: auto; opacity: 0; transform: translateY(6px); transition: opacity 420ms ease-out 200ms, transform 620ms cubic-bezier(0.22, 0.61, 0.36, 1) 200ms; }
+.veil i { display: block; width: 120px; height: 1px; background: var(--brass); transform: scaleX(0); transform-origin: 0 50%; transition: transform 620ms cubic-bezier(0.22, 0.61, 0.36, 1) 260ms; }
+.is-leaving .veil { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
+.is-leaving .veil img { opacity: 1; transform: none; }
+.is-leaving .veil i { transform: scaleX(1); }
+/* the scene sinks a little as the light goes */
+.is-leaving .hero { transition: opacity 420ms ease-in, transform 620ms cubic-bezier(0.45, 0, 0.25, 1); opacity: 0; transform: translateY(-10px); }
+
+/* ---------------------------------------------------------------- the thread follows the scroll
+   (build-landing.mjs, followThreads): only a breath of smoothing between frames, so it moves with
+   the page. The line of pins at the end is still drawn pin by pin, but quickly. */
+.desk-threads .is-follow { transition: stroke-dashoffset 90ms linear; }
+.desk-threads .is-drawn { transition-duration: 900ms; }
+.still .desk-threads .is-follow { transition: none; }
