@@ -28,6 +28,7 @@
 @keyframes cue { 0%, 100% { transform: translateY(-3px); } 50% { transform: translateY(4px); } }
 @media (prefers-reduced-motion: reduce) { .scroll-cue svg { animation: none; } }
 .hero .enter { margin-top: calc(var(--u, 40px) * 0.45); margin-left: -2px; }
+.hero .play { margin-top: calc(var(--u, 40px) * 0.2); margin-left: -2px; }
 
 /* ---------------------------------------------------------------- the record */
 /* Above the lantern (z-index 9 on the desk): the lantern passes behind this sheet and can never

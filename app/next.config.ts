@@ -31,6 +31,8 @@ const nextConfig: NextConfig = {
   // The Explore page reads the index and the area files on the server, for its first HTML.
   outputFileTracingIncludes: {
     "/explore": ["./public/data/index.json", "./public/data/areas/*.json"],
+    // The review pages of Hudhud's Fire Diary read the same files on request (lib/diary/load.ts).
+    "/studio/diary": ["./public/data/areas/*.json", "./public/data/method.json", "./public/data/findings.json", "./public/data/basemap/countries.json"],
   },
 };
 

@@ -17,6 +17,13 @@ const method = JSON.parse(read("../public/data/method.json"));
 const findings = JSON.parse(read("../public/data/findings.json"));
 const num = (n) => Math.round(n).toLocaleString("en");
 
+// The link to Hudhud's Fire Diary takes its words from the game's own script, like every word of
+// the game (lib/diary/script.ts, read by Node directly; it notes the file has no module type).
+process.removeAllListeners("warning");
+process.on("warning", (w) => { if (w.code !== "MODULE_TYPELESS_PACKAGE_JSON") console.warn(w); });
+const { UI_LABELS } = await import(here("../lib/diary/script.ts").href);
+const playWords = UI_LABELS.find((u) => u.id === "ui.landing").label;
+
 mkdirSync(here("../public/landing/reference/"), { recursive: true });
 for (const dir of ["logo", "assets"]) cpSync(here(`../landing-src/${dir}/`), here(`../public/landing/${dir}/`), { recursive: true });
 for (const file of ["tokens.css", "reference/materials.css", "additions.css", "life.js"]) cpSync(here(`../landing-src/${file}`), here(`../public/landing/${file}`));
@@ -597,6 +604,8 @@ const edits = [
   ["<p>This page is a design reference. Its maps, tables and figures are illustrations, not data.</p>", "<p>The season chart, the calendar and every number on this page come from the record. The two pixel grids and the map of the Delta are drawings, each marked “illustration”. The sky and the desk are the page’s setting.</p>", "the colophon's last line"],
 ];
 for (const [from, to, what] of edits) html = swap(html, from, to, what);
+// Hudhud's Fire Diary, the game, under the hero's link to the map.
+html = swap(html, '<a class="catchword enter" href="/explore">Open the map</a>', `<a class="catchword enter" href="/explore">Open the map</a>\n      <a class="catchword play" href="/diary">${playWords}</a>`, "the hero's link to the game");
 html = html.replaceAll('"../logo/', '"/landing/logo/');
 // The page's own styles point at the patterns beside the reference; here they are under /landing.
 html = html.replaceAll('"../assets/', '"/landing/assets/');

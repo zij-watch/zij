@@ -54,7 +54,7 @@
 .lv-eye.is-open { stroke: var(--ink); }
 .lv-eye.is-open circle { fill: color-mix(in srgb, var(--lapis) 35%, var(--sky)); }
 .lv-eye .lv-pupil { fill: var(--ink); stroke: none; }
-.lv-box { display: grid; place-items: center; aspect-ratio: 1; min-height: 44px; background: var(--ground-raised); box-shadow: inset 0 0 0 1px var(--rule); }
+.lv-box { display: grid; place-items: center; aspect-ratio: 1; min-height: 44px; background: var(--ground-raised); box-shadow: inset 0 0 0 1px var(--brass); }
 .lv-box.is-seen { background: color-mix(in srgb, var(--ground-raised) 80%, var(--brass)); }
 .lv-mark { font: var(--type-display-m); font-size: 30px; line-height: 1; color: var(--ink); animation: dd-place var(--dur-sheet) var(--ease-paper) both; }
 .lv-tokens { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-4); }

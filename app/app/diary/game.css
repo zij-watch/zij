@@ -9,6 +9,7 @@
 }
 .dd button.drag:hover:not(:disabled), .dd button.tap-sat:hover:not(:disabled), .dd button.seal-button:hover:not(:disabled), .dd button.plain:hover:not(:disabled) { background: none; }
 .dd button:disabled { opacity: 1; cursor: default; }
+.dd :is(.catchword, .stamp) { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; }
 .dd-head { position: relative; z-index: 5; display: flex; align-items: center; gap: var(--space-4); height: 56px; padding: 0 var(--space-4); background: var(--ground-raised); border-bottom: var(--stroke-hair) solid var(--rule); flex: none; }
 .dd-seal { display: flex; align-items: center; min-height: 44px; min-width: 44px; }
 .dd-seal img { display: block; height: 30px; width: auto; }
