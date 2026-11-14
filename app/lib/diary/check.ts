@@ -80,7 +80,7 @@ function checkText(template: string, kind: Kind, ph: Record<string, Fill>): Omit
 
   // Figures come from the data. Outside the placeholders the only figure allowed is the 0 token.
   const bare = template.replace(PLACEHOLDER, " ");
-  const typed = (bare.match(/\d[\d,.]*/g) ?? []).filter((d) => d !== "0");
+  const typed = (bare.match(/\d(?:[\d,.]*\d)?/g) ?? []).filter((d) => d !== "0");
   if (typed.length) problems.push(`a figure typed in (${typed.join(", ")}): use a {placeholder}`);
 
   // Numbers in one line: placeholders that hold numbers, number words, and the 0 token.
@@ -153,5 +153,35 @@ export function checkScript(
   for (const [where, t] of all) for (const p of t.problems) issues.push(`${where}: “${t.plain}”: ${p}`);
   for (const c of claims) if (!c.holds) issues.push(`the data no longer supports: ${c.claim}`);
 
+  // Every word the game shows has an id, and each id is used once.
+  const seen = new Set<string>();
+  const ids = [...rows.map((r) => ("id" in r.beat ? r.beat.id : null)), ...script.ui.map((u) => (u as { id?: string }).id ?? "")];
+  for (const id of ids) {
+    if (id === null) continue;
+    if (!id) issues.push("a label without an id");
+    else if (seen.has(id)) issues.push(`the id ${id} is used twice`);
+    else seen.add(id);
+  }
+
   return { rows, notes, runningHead, ui, issues };
+}
+
+/** Every word the game shows, by id, filled with the data and with the data's version picked. */
+export function resolveLines(
+  script: { chapters: Chapter[]; ui: { id: string; label: string }[] },
+  ph: Record<string, Fill>,
+  picks: Record<string, string>,
+): { lines: Record<string, string>; notes: Record<string, string> } {
+  const lines: Record<string, string> = {}, notes: Record<string, string> = {};
+  const pick = (t: Text) => (typeof t === "string" ? t : t.options[picks[t.pick]] ?? Object.values(t.options)[0]);
+  for (const ch of script.chapters) {
+    if (ch.note) notes[ch.id] = fill(ch.note.text, ph).plain;
+    for (const part of ch.parts)
+      for (const b of part.beats) {
+        const s = shown(b);
+        if (s && "id" in b) lines[b.id] = fill(pick(s.text), ph).plain;
+      }
+  }
+  for (const u of script.ui) lines[u.id] = fill(u.label, ph).plain;
+  return { lines, notes };
 }
