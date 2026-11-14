@@ -129,7 +129,12 @@ export function Draggable({ id, label, onDrop, children, className = "", disable
           try { ref.current?.setPointerCapture(e.pointerId); } catch { /* the pointer may already be gone */ }
           ref.current?.classList.add("is-dragging");
         }
-        if (ref.current) ref.current.style.transform = `translate(${dx}px, ${dy}px)`;
+        // the play area may be drawn smaller to fit (Game's Fit): follow the pointer in its own units
+        const el = ref.current;
+        if (el) {
+          const k = el.offsetWidth ? el.getBoundingClientRect().width / el.offsetWidth || 1 : 1;
+          el.style.transform = `translate(${dx / k}px, ${dy / k}px)`;
+        }
       }}
       onPointerUp={(e) => {
         const s = start.current;

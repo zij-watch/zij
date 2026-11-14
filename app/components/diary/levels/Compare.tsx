@@ -63,10 +63,11 @@ function ThisYear({ onDone }: { onDone: () => void }) {
   const max = Math.max(...data.seasons.map((s) => s.hi));
   const right = { lower: "c51.lower", usual: "c51.usual", higher: "c51.higher" }[data.thisYear.verdict];
   return (
-    <>
-      <div className="lv-bookzone">
+    <div className="lv-split">
+      <div className="lv-main lv-bookzone">
         <DiaryBook title={L["ui.diary"]} bars={bars} max={max} bands label={L["ui.diary"]} />
       </div>
+      <div className="lv-side">
       <Choice
         question={L["c51.ask"]}
         options={[{ id: "c51.higher", right: right === "c51.higher" }, { id: "c51.usual", right: right === "c51.usual" }, { id: "c51.lower", right: right === "c51.lower" }]}
@@ -77,7 +78,8 @@ function ThisYear({ onDone }: { onDone: () => void }) {
           g.wait(3400).then(onDone);
         }}
       />
-    </>
+      </div>
+    </div>
   );
 }
 
@@ -103,7 +105,9 @@ function Quiet({ onDone }: { onDone: () => void }) {
 
   return (
     <>
-      <div className="lv-bookzone">
+      {answered && <Task id="c52.task.pick" />}
+      <div className={`lv-split${answered ? " is-one" : ""}`}>
+      <div className="lv-main lv-bookzone">
         <DiaryBook title={L["ui.diary"]} bars={bars} max={max} bands label={L["ui.diary"]}
           canPick={(b) => answered && b.year >= since.recent[0]}
           onPick={answered ? (y) => { if (y === since.bounceYear) { g.cheer(); g.quiet(); g.wait(900).then(onDone); } else g.slip(); } : undefined}>
@@ -111,7 +115,8 @@ function Quiet({ onDone }: { onDone: () => void }) {
           {bracket(since.recent, since.recentMean, L["c52.after"], 1)}
         </DiaryBook>
       </div>
-      {!answered ? (
+      {!answered && (
+        <div className="lv-side">
         <Choice
           question={L["c52.ask"]}
           options={(["c52.same", "c52.half", "c52.double"] as const).map((id) => ({ id, right: id === answer }))}
@@ -122,9 +127,9 @@ function Quiet({ onDone }: { onDone: () => void }) {
             setAnswered(true);
           }}
         />
-      ) : (
-        <Task id="c52.task.pick" />
+        </div>
       )}
+      </div>
     </>
   );
 }
@@ -155,13 +160,15 @@ function Ban({ onDone }: { onDone: () => void }) {
   return (
     <>
       {!asked && <Task id="c53.task" />}
-      <div className="lv-bookzone">
+      <div className="lv-split">
+      <div className="lv-main lv-bookzone">
         <DiaryBook title={L["ui.diary"]} bars={bars} max={max} bands label={L["ui.diary"]}>
           <span className="lv-flag" style={{ left: flagAt.left, width: flagAt.width }}><span className="lv-flag-cloth">{L["c53.flag"]}</span></span>
           {lens("before", ban.before, ban.beforeMean)}
           {lens("after", ban.after, ban.afterMean)}
         </DiaryBook>
       </div>
+      <div className="lv-side">
       {!asked && (
         <div className="lv-row">
           <button type="button" className={`catchword${!read.before ? " is-next" : ""}`} onClick={() => look("before")}>{L["c53.before"]}</button>
@@ -179,6 +186,8 @@ function Ban({ onDone }: { onDone: () => void }) {
           {["c53.k1", "c53.k2", "c53.k3"].map((id, i) => <li key={id} className="slip" data-theme="folio" style={{ "--i": i } as CSSProperties}>{L[id]}</li>)}
         </ol>
       )}
+      </div>
+      </div>
     </>
   );
 }
@@ -199,8 +208,12 @@ function Missing({ onDone }: { onDone: () => void }) {
   return (
     <>
       {!done && <Task id="c54.task" />}
-      <IllusTag text={L["ui.illus"]} />
+      <div className="lv-split is-even">
+      <div className="lv-main">
       <PassClock passes={PASSES} fire={{ from: h, to: h + LASTS, caught }} labels={{ day: L["c54.day"], night: L["c54.night"] }} />
+      <IllusTag text={L["ui.illus"]} />
+      </div>
+      <div className="lv-side">
       <label className={`ruled lv-alidade${!done ? " is-next" : ""}`}>
         <span>{L["c54.move"]}</span>
         <input className="alidade" type="range" min={0} max={23} step={0.5} value={h} onChange={(e) => {
@@ -214,6 +227,8 @@ function Missing({ onDone }: { onDone: () => void }) {
       </label>
       <p className={`lv-verdict${caught ? " is-caught" : ""}`} aria-live="polite">{L["c54.fire"]}: {caught ? L["c54.caught"] : L["c54.missed"]}</p>
       {done && <button type="button" className="catchword is-next" onClick={onDone}>{L["ui.next"]}</button>}
+      </div>
+      </div>
     </>
   );
 }
@@ -273,11 +288,13 @@ function Who() {
       const root = box.current;
       if (!root) return;
       const r = root.getBoundingClientRect();
+      // the play area may be drawn smaller to fit (Game's Fit): measure in the box's own units
+      const k = root.offsetWidth ? r.width / root.offsetWidth || 1 : 1;
       setThreads(tied.map((i) => {
-        const a = root.querySelector(`[data-person="${i}"]`)?.getBoundingClientRect();
+        const a = root.querySelector(`[data-person="${i}"] .lv-person`)?.getBoundingClientRect();
         const b = root.querySelector(`[data-zone="q${i}"]`)?.getBoundingClientRect();
         if (!a || !b) return "";
-        return threadPath([a.right - r.left - 8, a.top + a.height / 2 - r.top], [b.left - r.left + 6, b.top + b.height / 2 - r.top], 14);
+        return threadPath([(a.right - r.left) / k, (a.top + a.height / 2 - r.top) / k], [(b.left - r.left) / k, (b.top + b.height / 2 - r.top) / k], 10);
       }));
     };
     measure();
@@ -299,14 +316,14 @@ function Who() {
         <svg className="lv-threads" aria-hidden="true">{threads.map((d, k) => d && <path key={k} className="lv-thread" d={d} />)}</svg>
         <ul className="lv-people">
           {PEOPLE.map((i) => (
-            <li key={i} data-person={i}>
-              {tied.includes(i) ? <PersonToken who={i} label={L[`c56.p${i}`]} /> : (
-                <Draggable id={`p${i}`} label={L[`c56.p${i}`]} onDrop={(z) => tie(i, z)}><PersonToken who={i} label={L[`c56.p${i}`]} /></Draggable>
+            <li key={i} data-person={i} className={tied.includes(i) ? "is-tied" : ""}>
+              {tied.includes(i) ? <span className="lv-person"><PersonToken who={i} label={L[`c56.p${i}`]} /></span> : (
+                <Draggable id={`p${i}`} label={L[`c56.p${i}`]} className="lv-person" onDrop={(z) => tie(i, z)}><PersonToken who={i} label={L[`c56.p${i}`]} /></Draggable>
               )}
             </li>
           ))}
         </ul>
-        <ul className="lv-questions">
+        <ul className="lv-questions" data-theme="folio">
           {[3, 1, 5, 2, 4].map((i) => (
             <li key={i}><DropZone id={`q${i}`} label={L[`c56.q${i}`]} className={`lv-question slip${tied.includes(i) ? " is-tied" : ""}`}><span>{L[`c56.q${i}`]}</span></DropZone></li>
           ))}

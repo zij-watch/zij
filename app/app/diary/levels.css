@@ -70,9 +70,22 @@
 .lv-realrow.is-other { opacity: 0.85; }
 .lv-who { margin: 0; font: var(--type-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink); }
 
+/* ================================================================ two sides of the desk
+   Where there is room, the thing being studied lies on the left and what to do with it on the right,
+   so a step reads across the screen instead of down it (nothing in the game scrolls). */
+.lv-split { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); align-items: center; gap: var(--space-8); width: 100%; }
+.lv-split.is-even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.lv-split.is-one { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+.lv-main { min-width: 0; width: 100%; display: grid; justify-items: center; gap: var(--space-4); }
+.lv-side { min-width: 0; display: grid; justify-items: center; align-content: center; gap: var(--space-4); }
+.lv-side .choice { width: min(100%, 440px); }
+@media (max-width: 960px) {
+  .lv-split, .lv-split.is-even { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: var(--space-4); }
+}
+
 /* ================================================================ level 4 · translate */
 .lv-translate { gap: var(--space-8); }
-.lv-bookzone, .lv-onebook { width: min(100%, 760px); }
+.lv-bookzone, .lv-onebook { width: min(100%, 760px); justify-items: stretch; }
 .lv-yeartoken { display: inline-block; padding: var(--space-3) var(--space-4); background: var(--ground-raised); color: var(--ink); box-shadow: var(--shadow-token); font: var(--type-label); letter-spacing: var(--tracking-label); text-transform: uppercase; }
 .lv-yeartoken.is-modis { box-shadow: inset 5px 0 0 var(--lapis), var(--shadow-token); }
 .lv-yeartoken.is-viirs { box-shadow: inset 5px 0 0 var(--rubric), var(--shadow-token); }
@@ -171,18 +184,33 @@
 .lv-pen { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; cursor: crosshair; touch-action: none; }
 .lv-pen-line { fill: none; stroke: var(--brass); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 .lv-tiny-book { width: min(100%, 520px); --book-h: 120px; }
-.lv-match { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: var(--space-8); width: min(100%, 760px); }
+/* 5.6: five people on the left, five questions on the right, each row the same height so the brass
+   threads run straight across between them */
+.lv-match { position: relative; display: grid; grid-template-columns: minmax(220px, 280px) minmax(0, 420px); justify-content: center; column-gap: var(--space-16, 64px); width: min(100%, 860px); }
 .lv-threads { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 1; }
-.lv-thread { fill: none; stroke: var(--brass); stroke-width: var(--stroke-thread); }
-.lv-people, .lv-questions { display: grid; gap: var(--space-3); margin: 0; padding: 0; list-style: none; align-content: start; }
-.lv-people .person { grid-template-columns: 72px 1fr; justify-items: start; align-items: center; width: auto; text-align: left; }
-.lv-question { display: block; min-height: 44px; padding: var(--space-3) var(--space-4); font: var(--type-marginal); font-size: 18px; color: var(--ink); }
+.lv-thread { fill: none; stroke: var(--brass); stroke-width: 2; stroke-linecap: round; animation: dd-place var(--dur-sheet) var(--ease-paper) both; }
+.lv-people, .lv-questions { display: grid; grid-auto-rows: 64px; gap: var(--space-2); margin: 0; padding: 0; list-style: none; align-content: start; }
+.lv-people > li, .lv-questions > li { display: flex; align-items: center; min-width: 0; }
+.dd .lv-people .drag.lv-person, .lv-people .lv-person { display: flex; width: 100%; height: 100%; padding: 0; }
+.lv-people .person { display: flex; align-items: center; gap: var(--space-3); width: 100%; height: 100%; padding: 0 var(--space-4) 0 var(--space-1); background: color-mix(in srgb, var(--wood) 70%, var(--shadow)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brass) 45%, transparent), var(--shadow-token); text-align: left; }
+.lv-people .token-disc { width: 54px; height: 54px; flex: none; }
+.lv-people .person-art { width: 40px; height: 40px; }
+.lv-people .person-label { color: var(--on-wood, var(--ink)); font-size: 18px; line-height: 22px; }
+.lv-people li.is-tied .person { box-shadow: inset 0 0 0 1px var(--brass), inset -4px 0 0 var(--brass); opacity: 0.85; }
+.dd .lv-people .drag:hover:not(:disabled) > * { transform: none; }
+.dd .lv-people .drag:hover:not(:disabled) .person { box-shadow: inset 0 0 0 1px var(--brass), var(--shadow-card); }
+.lv-questions .zone { width: 100%; height: 100%; }
+.lv-question { display: flex; align-items: center; width: 100%; height: 100%; padding: 0 var(--space-4); font: var(--type-marginal); font-size: 19px; line-height: 23px; color: var(--ink); cursor: pointer; }
 .lv-question.is-tied { box-shadow: inset 4px 0 0 var(--brass), var(--shadow-card); }
 
 /* ================================================================ the ending */
 .lv-ending { gap: var(--space-6); }
 .lv-ending > .constellation { --const-w: min(80vw, 420px); }
-.keeper { position: relative; display: grid; justify-items: center; gap: var(--space-4); width: min(100%, 560px); padding: var(--space-10) var(--space-8); color: var(--ink); text-align: center; animation: dd-slide var(--dur-sheet) var(--ease-paper) both; }
+.keeper { position: relative; display: grid; justify-items: center; gap: var(--space-4); width: min(100%, 900px); padding: var(--space-8) var(--space-8) var(--space-6); color: var(--ink); text-align: center; animation: dd-slide var(--dur-sheet) var(--ease-paper) both; }
+.keeper-cols { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); align-items: center; gap: var(--space-8); width: 100%; }
+.keeper-col { display: grid; justify-items: center; gap: var(--space-3); }
+.keeper-learned li { font-size: 18px; line-height: 24px; }
+@media (max-width: 760px) { .keeper-cols { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); } }
 .keeper .jadwal { --jadwal-inset: 12px; }
 .keeper-title { margin: 0; font: var(--type-display-l); font-size: clamp(32px, 6vw, 48px); line-height: 1.1; }
 .keeper-sky { width: 100%; padding: var(--space-4); background: var(--sky); display: grid; place-items: center; --const-w: 240px; }
@@ -190,7 +218,9 @@
 .keeper-seal { margin: 0; display: grid; justify-items: center; gap: var(--space-1); }
 .keeper-seal figcaption { font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); font-feature-settings: var(--features-eyebrow); }
 .keeper-chapters { margin: 0; font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); font-feature-settings: var(--features-eyebrow); text-transform: lowercase; font-size: 18px; }
-.keeper-acts { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-3) var(--space-6); }
+.keeper-acts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: var(--space-3); width: 100%; margin-top: var(--space-2); }
+.keeper-acts > .stamp { grid-column: 1 / -1; justify-self: center; min-width: 60%; }
+.dd .keeper-acts > .catchword { justify-content: center; padding-left: var(--space-2); padding-right: var(--space-2); }
 
 @media (max-width: 640px) {
   .lv-orbit { width: 200px; height: 160px; }
@@ -199,15 +229,21 @@
   .lv-week { grid-template-columns: repeat(7, minmax(36px, 1fr)); gap: var(--space-1); width: 100%; }
   .lv-trays { gap: var(--space-6); }
   .lv-trays .tray { width: 150px; }
-  .lv-match { gap: var(--space-4); }
-  .lv-people .person { grid-template-columns: 1fr; justify-items: center; text-align: center; }
-  .lv-question { font-size: 16px; padding: var(--space-2) var(--space-3); }
+  .lv-match { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); column-gap: var(--space-6); }
+  .lv-people .person { padding-right: var(--space-2); gap: var(--space-2); }
+  .lv-people .token-disc { width: 42px; height: 42px; }
+  .lv-people .person-art { width: 30px; height: 30px; }
+  .lv-people .person-label { font-size: 15px; line-height: 18px; }
+  .lv-question { font-size: 16px; line-height: 20px; padding: 0 var(--space-3); }
   .keeper { padding: var(--space-8) var(--space-4); }
 }
 
-/* 4.4: the translator and the trial side by side where there is room */
-.lv-bench { align-items: center; gap: var(--space-6); }
-.lv-bench .tr { flex: 0 0 min(100%, 380px); width: min(100%, 380px); }
+/* 4.3 and 4.4: the translator always keeps its own width (a wrapper of no width once shrank it to nothing) */
+.lv-trwrap { width: min(100%, 440px); padding-top: var(--space-6); }
+.lv-trwrap .tr, .lv-geared .tr { width: 100%; }
+.lv-geared { width: min(100%, 460px); }
+.lv-geared .tr { margin-top: var(--space-6); }
+.lv-side .chart { width: min(100%, 460px); }
 
 /* ================================================================ Mona */
 .lv-mona .person { width: 120px; }
@@ -250,7 +286,8 @@
 /* ================================================================ level 4 · the gears to tap */
 .lv-gears { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
 .dd button.lv-gear { display: grid; justify-items: center; gap: var(--space-1); padding: var(--space-2) var(--space-3); background: var(--ground-raised); color: var(--ink); box-shadow: var(--shadow-token); font: var(--type-ui); font-size: 16px; transition: transform var(--dur-touch) var(--ease-ink), box-shadow var(--dur-touch) var(--ease-ink); }
-.dd button.lv-gear:hover:not(:disabled) { background: var(--ground-raised); transform: translateY(-2px); box-shadow: var(--shadow-card); }
+.dd button.lv-gear:hover:not(:disabled) { background: var(--ground-raised); box-shadow: var(--shadow-card); }
+.dd button.lv-gear:hover:not(:disabled) .gear { transform: rotate(18deg); }
 .dd button.lv-gear:disabled:not(.is-fitted) { opacity: 0.5; }
 .lv-gear.is-fitted { opacity: 0.4; }
 .lv-gear.is-fitted .gear { transform: rotate(30deg); }

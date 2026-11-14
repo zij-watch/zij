@@ -10,11 +10,10 @@ import { WaxSeal, Constellation, type SealKind } from "../art/Things";
 import { Star8 } from "./Stage";
 import { useGame, type Who } from "./context";
 
-/** Bring a newly shown step into view inside the play area, without jumping the page. */
+/** A ref for a newly shown step. Nothing scrolls any more: the play area fits every step (Game's Fit). */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function useIntoView<T extends HTMLElement>(again?: unknown) {
-  const ref = useRef<T>(null);
-  useEffect(() => { ref.current?.scrollIntoView({ block: "nearest", behavior: "smooth" }); }, [again]);
-  return ref;
+  return useRef<T>(null);
 }
 
 /**
