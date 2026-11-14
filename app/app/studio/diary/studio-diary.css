@@ -1,0 +1,74 @@
+/* /studio/diary: the review sheets for Hudhud's Fire Diary. A Folio page; tokens only. */
+
+.ds {
+  width: 100%; max-width: 1040px; margin: 0 auto; padding: var(--space-12) var(--space-4) var(--space-24);
+  background: var(--ground); color: var(--ink); font: var(--type-ui);
+}
+.ds code { font: var(--type-figure); font-feature-settings: var(--features-figure); color: var(--brass); }
+
+.ds-head { display: grid; gap: var(--space-3); margin-bottom: var(--space-12); }
+.ds-head h1 { font: var(--type-display-l); font-size: clamp(40px, 6vw, 56px); line-height: 1.05; }
+.ds-head .catchword { justify-self: start; }
+.ds-lede { margin: 0; max-width: 44em; color: var(--ink-muted); }
+.ds-pass { justify-self: start; margin: var(--space-2) 0 0 var(--space-1); padding: var(--space-3) var(--space-4); }
+.ds-issues ul { margin: var(--space-2) 0 0; padding-left: var(--space-6); }
+.ds-issues li { margin-bottom: var(--space-1); }
+
+.ds-budget { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-8); margin: var(--space-2) 0 0; padding-top: var(--space-3); border-top: var(--stroke-hair) solid var(--rule); }
+.ds-budget div { display: flex; gap: var(--space-2); align-items: baseline; }
+.ds-budget dt { font: var(--type-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink-muted); }
+.ds-budget dd { margin: 0; }
+
+.ds-chapter { margin-top: var(--space-16); }
+.ds-chapter h2 { font: var(--type-display-m); padding-bottom: var(--space-2); border-bottom: var(--stroke-hair) solid var(--brass); }
+.ds-head-words { margin: var(--space-4) 0 0; font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); font-feature-settings: var(--features-eyebrow); font-size: 20px; }
+.ds-part h3 { margin: var(--space-8) 0 var(--space-2); font: var(--type-display-m); font-size: 26px; line-height: 32px; }
+.ds-part h3 .t-figure { color: var(--brass); margin-right: var(--space-2); }
+.ds-bonus { margin-left: var(--space-2); color: var(--ink-muted); }
+
+.ds-beats { list-style: none; margin: var(--space-2) 0 0; padding: 0; }
+.ds-beat {
+  display: grid; grid-template-columns: 104px minmax(0, 1fr) 52px; gap: var(--space-4); align-items: baseline;
+  padding: var(--space-2) 0; border-bottom: var(--stroke-hair) solid var(--rule);
+}
+.ds-beat p { margin: 0; }
+.ds-who, .ds-role { font: var(--type-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink-muted); }
+.ds-who { color: var(--ink); }
+.ds-who.is-modis { color: var(--lapis); }
+.ds-who.is-viirs { color: var(--rubric); }
+.ds-beat.is-say .ds-words { font: var(--type-reading); }
+.ds-beat.is-label .ds-words { font-weight: 700; }
+.ds-beat.is-act, .ds-beat.is-show { padding: var(--space-1) 0; }
+.ds-direction, .ds-when { font: var(--type-marginal); color: var(--ink-muted); }
+.ds-when { font-size: 15px; line-height: 22px; }
+.ds-text + .ds-text { margin-top: var(--space-1); }
+.ds-text.is-unused .ds-words { color: var(--ink-muted); }
+.ds-option { font: var(--type-marginal); font-size: 15px; color: var(--ink-muted); }
+.ds-fill { text-decoration: underline dotted var(--brass); text-underline-offset: 4px; text-decoration-thickness: var(--stroke-instrument); cursor: help; }
+.ds-count { justify-self: end; color: var(--ink-muted); font-feature-settings: var(--features-figure); }
+.ds-count.is-over { color: var(--ink); outline: var(--stroke-instrument) solid var(--brass); outline-offset: 2px; }
+.ds-problem { margin-top: var(--space-1); }
+.ds-was { margin-top: var(--space-1); font: var(--type-marginal); font-size: 15px; line-height: 22px; color: var(--ink-muted); }
+.ds-was .t-eyebrow { color: var(--brass); margin-right: var(--space-1); }
+
+.ds-note { position: relative; margin: var(--space-8) 0 0; padding: var(--space-4) var(--space-6); max-width: 760px; }
+.ds-note .t-eyebrow { margin: 0 0 var(--space-1); color: var(--brass); }
+.ds-note-row { display: grid; grid-template-columns: minmax(0, 1fr) 52px; gap: var(--space-4); align-items: baseline; }
+.ds-note-row .ds-words { margin: 0; font: var(--type-marginal); color: var(--ink); }
+
+.ds-claims { list-style: none; margin: var(--space-4) 0 0; padding: 0; }
+.ds-claims li { padding: var(--space-1) 0; border-bottom: var(--stroke-hair) solid var(--rule); }
+.ds-claims .t-eyebrow { display: inline-block; min-width: 88px; color: var(--brass); }
+
+.ds-numbers { width: 100%; margin-top: var(--space-4); border-collapse: collapse; }
+.ds-numbers th { text-align: left; font: var(--type-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--rubric); padding: var(--space-2) var(--space-3) var(--space-2) 0; border-bottom: var(--stroke-hair) solid var(--brass); }
+.ds-numbers td { padding: var(--space-2) var(--space-3) var(--space-2) 0; border-bottom: var(--stroke-hair) solid var(--rule); vertical-align: baseline; }
+.ds-numbers td:last-child { color: var(--ink-muted); font-size: 15px; line-height: 22px; }
+
+@media (max-width: 640px) {
+  .ds { padding-top: var(--space-8); }
+  .ds-beat { grid-template-columns: minmax(0, 1fr) 44px; gap: var(--space-1) var(--space-3); }
+  .ds-beat > :first-child { grid-column: 1 / -1; }
+  .ds-numbers td:last-child { display: none; }
+  .ds-numbers th:last-child { display: none; }
+}
