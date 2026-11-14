@@ -1592,13 +1592,27 @@
     g.Ww = Math.ceil(2 * k.wx + 64); g.Hw2 = Math.ceil(k.wh + 40);
     return g;
   }
+  // The rise and the turn are eased at both ends (no kick as they start, no stop as they land), and
+  // they don't move as one hinge: the camera lifts a little ahead of the tilt, so it arcs over the
+  // desk instead of swinging through a right angle. As it goes over it stands higher than it will
+  // rest, which draws the whole view back while it turns (by about a fifth at its furthest), the most
+  // so early, while the wall is still square to it and fills the frame: the wall and the desk have
+  // room to turn instead of crowding it. That extra height is gone at both ends of the turn, so the
+  // camera is exactly where it was before the turn and exactly on the desk after it, where it must be
+  // pixel for pixel.
+  const smoother = (t) => { t = clamp(t); return t * t * t * (t * (6 * t - 15) + 10); };
+  const span = (p, a, b) => clamp((p - a) / (b - a));
   function cam(p, g = G) {
+    const t = span(p, 0.36, g.p1), swing = Math.pow(Math.sin(Math.PI * Math.pow(t, 0.7)), 2);
     let D;
-    if (p < 0.3) D = lerp(g.D0, g.P, smooth(p / 0.3));
+    if (p < 0.3) D = lerp(g.D0, g.P, smoother(p / 0.3));
     else if (p < 0.36) D = g.P;
-    else if (p < g.p1) D = lerp(g.P, g.Dmin, smooth((p - 0.36) / (g.p1 - 0.36)));
+    else if (p < g.p1) D = lerp(g.P, g.Dmin, smoother(t));
     else D = g.Dmin + g.range * (p - g.p1) * (p - g.p1) / (2 * (1 - g.p1));
-    return { D, H: lerp(g.Hw, g.P, seg(p, 0.35, g.p1)), phi: 90 * (1 - seg(p, 0.36, g.p1)) };
+    const H = lerp(g.Hw, g.P, smoother(span(p, 0.34, g.p1 - 0.05))) + 0.11 * g.V * swing;
+    // the turn itself eases on the softer smoothstep: over the stretch it has, the harder curve would
+    // make the middle of the swing the quickest part of it, and the middle is what is seen
+    return { D, H, phi: 90 * (1 - smooth(span(p, 0.36, g.p1))) };
   }
   // Cast rays through the edges of the screen at every point of the move: how far across and along
   // the desk they land, and how wide and high up the wall (once it has faded in).
