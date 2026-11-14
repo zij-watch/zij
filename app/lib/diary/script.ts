@@ -244,6 +244,7 @@ export const SCRIPT: Chapter[] = [
           { id: "t43.close", label: "close", role: "scale" },
           { id: "t43.spot", label: "spot on", role: "scale" },
           { id: "t43.dial", label: "Turn the dial", role: "caption" },
+          { id: "t43.guess", label: "MODIS, translated", role: "caption", was: "(none)", why: "The chart names both its lines in words." },
           { act: "Turn the × dial. The needle moves from far off towards close, and overshoots past ×{magic}." },
           { id: "t43.closer", say: "hudhud", text: "Closer. But one number can't fit every week.", when: "at ×{magic}" },
         ],

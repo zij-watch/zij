@@ -34,7 +34,7 @@ const subscribeMotion = (cb: () => void) => {
 const noop = () => () => {};
 const readStill = () => window.matchMedia(motionQuery).matches || /[?&]still\b/.test(window.location.search);
 
-export default function Game({ data, chapters, keep = true }: { data: GameData; chapters: ChapterDef[]; keep?: boolean }) {
+export default function Game({ data, chapters, keep = true, startAt = 0 }: { data: GameData; chapters: ChapterDef[]; keep?: boolean; startAt?: number }) {
   const L = data.lines;
   const still = useSyncExternalStore(subscribeMotion, readStill, () => false);
   const savedRaw = useRemembered("zij.diary.v1");
@@ -44,7 +44,7 @@ export default function Game({ data, chapters, keep = true }: { data: GameData; 
 
   const [started, setStarted] = useState(false);
   const [progress, setProgress] = useState<Progress>(fresh);
-  const [chapter, setChapter] = useState(0);
+  const [chapter, setChapter] = useState(startAt);
   const [phase, setPhase] = useState<"play" | "end">("play");
   const [mistakes, setMistakes] = useState(0);
   const [note, setNote] = useState<{ id: string; who: Who; text: string }[]>([]);

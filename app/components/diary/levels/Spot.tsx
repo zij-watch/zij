@@ -29,7 +29,7 @@ export default function Spot() {
   const [step, setStep] = useState(0);
   // The marks are kept in a ref as well, so two quick taps never count from a stale copy.
   const marksRef = useRef<Mark[]>(FIRES.map(() => ({ modis: false, viirs: false })));
-  const [marks, setMarks] = useState<Mark[]>(marksRef.current);
+  const [marks, setMarks] = useState<Mark[]>(() => FIRES.map(() => ({ modis: false, viirs: false })));
   const [over, setOver] = useState(false);
   const started = useRef(false);
   const squares = { modis: marks.filter((m) => m.modis).length, viirs: marks.filter((m) => m.viirs).length * 4 };

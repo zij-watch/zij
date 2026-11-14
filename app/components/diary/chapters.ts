@@ -7,6 +7,7 @@ import Opening from "./levels/Opening";
 import Sort from "./levels/Sort";
 import Spot from "./levels/Spot";
 import Stub from "./levels/Stub";
+import Translate from "./levels/Translate";
 import { TestDesk, TestSky } from "./levels/Test";
 
 export const CHAPTERS: ChapterDef[] = [
@@ -14,7 +15,7 @@ export const CHAPTERS: ChapterDef[] = [
   { level: 1, scene: "sky", id: "spot", Level: Spot },
   { level: 2, scene: "sky", id: "sort", Level: Sort },
   { level: 3, scene: "sky", id: "count", Level: Count },
-  { level: 4, scene: "desk", id: "translate", Level: Stub },
+  { level: 4, scene: "desk", id: "translate", Level: Translate },
   { level: 5, scene: "desk", id: "compare", Level: Stub },
   { level: 6, scene: "sky", id: "ending", Level: Stub },
 ];
