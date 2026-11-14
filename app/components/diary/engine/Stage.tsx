@@ -45,7 +45,7 @@ function Palm() {
   );
 }
 
-export function Stage({ scene, still, dark, sky, children }: { scene: Scene; still: boolean; dark: boolean; sky?: ReactNode; children: ReactNode }) {
+export function Stage({ scene, still, dark, sky, guide, children }: { scene: Scene; still: boolean; dark: boolean; sky?: ReactNode; guide?: ReactNode; children: ReactNode }) {
   const skyRef = useRef<HTMLDivElement>(null);
   const deskRef = useRef<HTMLDivElement>(null);
   const shown = useRef<Scene>(scene);
@@ -89,6 +89,7 @@ export function Stage({ scene, still, dark, sky, children }: { scene: Scene; sti
         </div>
       </div>
       <div className="dd-play">{children}</div>
+      {guide}
       <i className={`dd-dark${dark ? " is-out" : ""}`} aria-hidden="true" />
     </div>
   );

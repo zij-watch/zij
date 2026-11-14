@@ -265,6 +265,7 @@ export function claims(n: DiaryNumbers): { claim: string; holds: boolean }[] {
     { claim: "The translator gets closer with each gear (4.4)", holds: n.needle.raw > n.needle.M0 && n.needle.M0 > n.needle.M1 && n.needle.M1 > n.needle.M2 && n.needle.M2 > n.needle.M3 && n.needle.M3 > n.needle.M4 },
     { claim: "This autumn is lower than usual (5.1's right answer)", holds: n.thisYear.verdict === "lower" && n.thisYear.rankBand !== "other" },
     { claim: "Since 2018, about half the burning (5.2's right answer)", holds: n.since.answer === "half" },
+    { claim: "The year that bounced back came almost to the old level (Mona's answer)", holds: n.since.bounce.value >= 0.85 * n.since.referenceMean },
     { claim: "After the ban the fires seen went up (5.3)", holds: n.ban.wentUp },
     { claim: "The diary can't tell what the ban did (5.3)", holds: n.ban.cantTell },
     { claim: "Kafr El Sheikh: the last two autumns are the quietest VIIRS has seen (5.5)", holds: n.kafr.lastTwoLowest },

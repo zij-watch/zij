@@ -1,22 +1,22 @@
 "use client";
 
-// Level 5 · Compare, on the desk, with Hudhud holding the reading stone. Rule one: only say what the
-// diary shows.
-//   5.1 is this year special? this autumn set at the end of the row, against the others
-//   5.2 the quiet autumns: two brackets, their water lines at the two averages; the year that bounced back
-//   5.3 the 2004 ban: the reading stone over the years before and after; the diary can't tell
+// Level 5 · Compare, on the desk, with Roro holding the reading stone: now Mona's question is answered,
+// one step at a time, saying only what the diary shows.
+//   5.1 is this autumn unusual? It stands at the end of the row, marked; the player answers
+//   5.2 when Mona was little, and now: the two averages draw themselves; the year that bounced back
+//   5.3 did the 2004 law work? Before and after; the diary can't tell
 //   5.4 (bonus) the missing fires: a fire moved round a clock of passes (an illustration)
-//   5.5 (bonus) around the world: three pins on the globe, then a loop drawn round a field
-//   5.6 who needs the diary: five people tied to their questions with brass thread
+//   5.5 (bonus) around the world: three pins on the globe, then Mona's district's own diary
+//   5.6 who else needs the diary: five people, Mona among them, tied to their questions
 // Every figure is from the record (GameData); the clock is a drawing and says so.
 
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { fmt, type GameData } from "@/lib/diary/game";
 import DiaryBook, { type Bar } from "../art/DiaryBook";
-import { Globe, IllusTag, PassClock, PersonToken, ReadingStone, threadPath } from "../art/Things";
+import { Globe, IllusTag, PassClock, PersonToken, threadPath } from "../art/Things";
 import { useGame } from "../engine/context";
 import { Draggable, DropZone } from "../engine/Drag";
-import { Choice, SealPress } from "../engine/Parts";
+import { Choice, SealPress, Task } from "../engine/Parts";
 
 type Part = "this" | "quiet" | "ban" | "missing" | "world" | "who";
 
@@ -54,64 +54,50 @@ export default function Compare() {
   );
 }
 
-// ================================================================ 5.1 is this year special?
+// ================================================================ 5.1 is this autumn unusual?
 function ThisYear({ onDone }: { onDone: () => void }) {
   const g = useGame();
   const { data, L } = g;
-  const [placed, setPlaced] = useState(false);
   const year = data.thisYear.year;
-  const bars = oneDiary(data, data.seasons[0].year, placed ? year : year - 1, placed ? year : undefined);
+  const bars = oneDiary(data, data.seasons[0].year, year, year);
   const max = Math.max(...data.seasons.map((s) => s.hi));
   const right = { lower: "c51.lower", usual: "c51.usual", higher: "c51.higher" }[data.thisYear.verdict];
   return (
     <>
-      <DropZone id="end" label={L["ui.diary"]} className="lv-bookzone">
+      <div className="lv-bookzone">
         <DiaryBook title={L["ui.diary"]} bars={bars} max={max} bands label={L["ui.diary"]} />
-      </DropZone>
-      {!placed ? (
-        <div className="lv-row">
-          <Draggable id="this-autumn" label={L["c51.this"]} onDrop={(z) => { if (z === "end") setPlaced(true); }}>
-            <span className="lv-yeartoken is-viirs">{L["c51.this"]}</span>
-          </Draggable>
-          <p className="lv-keys">{L["ui.keys"]}</p>
-        </div>
-      ) : (
-        <Choice
-          options={[{ id: "c51.higher", right: right === "c51.higher" }, { id: "c51.usual", right: right === "c51.usual" }, { id: "c51.lower", right: right === "c51.lower" }]}
-          onPick={(o) => {
-            if (!o.right) { g.hint("c51.wrong"); return; }
-            g.say(["c51.right", "c51.fresh"]);
-            g.cheer();
-            g.wait(3200).then(onDone);
-          }}
-        />
-      )}
+      </div>
+      <Choice
+        question={L["c51.ask"]}
+        options={[{ id: "c51.higher", right: right === "c51.higher" }, { id: "c51.usual", right: right === "c51.usual" }, { id: "c51.lower", right: right === "c51.lower" }]}
+        onPick={(o) => {
+          if (!o.right) { g.hint("c51.wrong"); return; }
+          g.say(["c51.right", "c51.fresh"]);
+          g.cheer();
+          g.wait(3400).then(onDone);
+        }}
+      />
     </>
   );
 }
 
-// ================================================================ 5.2 the quiet autumns
+// ================================================================ 5.2 when Mona was little, and now
 function Quiet({ onDone }: { onDone: () => void }) {
   const g = useGame();
   const { data, L } = g;
   const { since } = data;
-  const [laid, setLaid] = useState({ early: false, recent: false });
   const [answered, setAnswered] = useState(false);
   const bars = oneDiary(data, data.seasons[0].year, data.thisYear.year);
   const max = Math.max(...data.seasons.map((s) => s.hi));
-  const both = laid.early && laid.recent;
   const answer = { same: "c52.same", half: "c52.half", double: "c52.double" }[since.answer];
 
-  function lay(which: "early" | "recent", zone: string) {
-    if (zone !== which) { g.slip(); return; }
-    setLaid((l) => ({ ...l, [which]: true }));
-  }
-  const bracket = (which: "early" | "recent", years: [number, number], mean: number, caption: string) => (
-    <div className={`lv-bracket${laid[which] ? " is-laid" : ""}`} style={{ ...span(bars, years[0], years[1]), "--m": Math.min(1, mean / max) } as CSSProperties}>
-      <DropZone id={which} label={caption} className="lv-bracket-zone">
-        {laid[which] && <i className="lv-water" aria-hidden="true" />}
+  // The two brackets lay themselves over the diary, each with its water line at its average.
+  const bracket = (years: [number, number], mean: number, caption: string, i: number) => (
+    <div className="lv-bracket is-laid" style={{ ...span(bars, years[0], years[1]), "--m": Math.min(1, mean / max), "--i": i } as CSSProperties}>
+      <div className="lv-bracket-zone">
+        <i className="lv-water" aria-hidden="true" />
         <span className="lv-bracket-cap">{caption}</span>
-      </DropZone>
+      </div>
     </div>
   );
 
@@ -121,19 +107,13 @@ function Quiet({ onDone }: { onDone: () => void }) {
         <DiaryBook title={L["ui.diary"]} bars={bars} max={max} bands label={L["ui.diary"]}
           canPick={(b) => answered && b.year >= since.recent[0]}
           onPick={answered ? (y) => { if (y === since.bounceYear) { g.cheer(); g.quiet(); g.wait(900).then(onDone); } else g.slip(); } : undefined}>
-          {bracket("early", since.reference, since.referenceMean, L["c52.before"])}
-          {bracket("recent", since.recent, since.recentMean, L["c52.after"])}
+          {bracket(since.reference, since.referenceMean, L["c52.before"], 0)}
+          {bracket(since.recent, since.recentMean, L["c52.after"], 1)}
         </DiaryBook>
       </div>
-      {!both && (
-        <div className="lv-row">
-          {!laid.early && <Draggable id="br-early" label={L["c52.before"]} onDrop={(z) => lay("early", z)}><span className="lv-brtoken">{L["c52.before"]}</span></Draggable>}
-          {!laid.recent && <Draggable id="br-recent" label={L["c52.after"]} onDrop={(z) => lay("recent", z)}><span className="lv-brtoken">{L["c52.after"]}</span></Draggable>}
-          <p className="lv-keys">{L["ui.keys"]}</p>
-        </div>
-      )}
-      {both && !answered && (
+      {!answered ? (
         <Choice
+          question={L["c52.ask"]}
           options={(["c52.same", "c52.half", "c52.double"] as const).map((id) => ({ id, right: id === answer }))}
           onPick={(o) => {
             if (!o.right) { g.hint("c52.wrong"); return; }
@@ -142,12 +122,14 @@ function Quiet({ onDone }: { onDone: () => void }) {
             setAnswered(true);
           }}
         />
+      ) : (
+        <Task id="c52.task.pick" />
       )}
     </>
   );
 }
 
-// ================================================================ 5.3 the 2004 ban
+// ================================================================ 5.3 did the 2004 law work?
 function Ban({ onDone }: { onDone: () => void }) {
   const g = useGame();
   const { data, L } = g;
@@ -157,25 +139,22 @@ function Ban({ onDone }: { onDone: () => void }) {
   const [turned, setTurned] = useState(false);
   const bars = oneDiary(data, data.seasons[0].year, ban.after[1]);
   const max = Math.max(...bars.map((b) => b.hi ?? b.value));
-  const both = read.before && read.after;
   const flagAt = span(bars, ban.year, ban.year);
 
-  function look(zone: string) {
-    if (zone !== "before" && zone !== "after") return;
-    const next = { ...read, [zone]: true };
+  function look(which: "before" | "after") {
+    const next = { ...read, [which]: true };
     setRead(next);
-    if (next.before && next.after) { g.say("c53.up"); setAsked(true); }
+    if (next.before && next.after && !asked) { g.say("c53.up"); setAsked(true); }
   }
   const lens = (which: "before" | "after", years: [number, number], mean: number) => (
     <div className={`lv-bracket is-lens${read[which] ? " is-laid" : ""}`} style={span(bars, years[0], years[1])}>
-      <DropZone id={which} label={`${years[0]} – ${years[1]}`} className="lv-bracket-zone">
-        {read[which] && <span className="lv-mean t-figure">{fmt(mean)}</span>}
-      </DropZone>
+      <div className="lv-bracket-zone">{read[which] && <span className="lv-mean t-figure">{fmt(mean)}</span>}</div>
     </div>
   );
 
   return (
     <>
+      {!asked && <Task id="c53.task" />}
       <div className="lv-bookzone">
         <DiaryBook title={L["ui.diary"]} bars={bars} max={max} bands label={L["ui.diary"]}>
           <span className="lv-flag" style={{ left: flagAt.left, width: flagAt.width }}><span className="lv-flag-cloth">{L["c53.flag"]}</span></span>
@@ -183,16 +162,16 @@ function Ban({ onDone }: { onDone: () => void }) {
           {lens("after", ban.after, ban.afterMean)}
         </DiaryBook>
       </div>
-      {!both && (
+      {!asked && (
         <div className="lv-row">
-          <Draggable id="stone" label={L["c53.stone"]} onDrop={look}><ReadingStone size={64} /></Draggable>
-          <p className="lv-keys">{L["ui.keys"]}</p>
+          <button type="button" className={`catchword${!read.before ? " is-next" : ""}`} onClick={() => look("before")}>{L["c53.before"]}</button>
+          <button type="button" className={`catchword${read.before && !read.after ? " is-next" : ""}`} onClick={() => look("after")}>{L["c53.after"]}</button>
         </div>
       )}
       {asked && !turned && (
         <Choice question={L["c53.fail"]} options={[{ id: "c53.yes" }, { id: "c53.no" }, { id: "c53.cant" }]} onPick={() => {
           setTurned(true);
-          g.wait(1400).then(() => { g.say("c53.detective"); g.cheer(); return g.wait(2400); }).then(onDone);
+          g.wait(1400).then(() => { g.say("c53.detective"); g.cheer(); return g.wait(2600); }).then(onDone);
         }} />
       )}
       {turned && (
@@ -219,9 +198,10 @@ function Missing({ onDone }: { onDone: () => void }) {
   const done = seen.caught && seen.missed;
   return (
     <>
+      {!done && <Task id="c54.task" />}
       <IllusTag text={L["ui.illus"]} />
       <PassClock passes={PASSES} fire={{ from: h, to: h + LASTS, caught }} labels={{ day: L["c54.day"], night: L["c54.night"] }} />
-      <label className="ruled lv-alidade">
+      <label className={`ruled lv-alidade${!done ? " is-next" : ""}`}>
         <span>{L["c54.move"]}</span>
         <input className="alidade" type="range" min={0} max={23} step={0.5} value={h} onChange={(e) => {
           const v = Number(e.target.value);
@@ -233,7 +213,7 @@ function Missing({ onDone }: { onDone: () => void }) {
         }} />
       </label>
       <p className={`lv-verdict${caught ? " is-caught" : ""}`} aria-live="polite">{L["c54.fire"]}: {caught ? L["c54.caught"] : L["c54.missed"]}</p>
-      {done && <button type="button" className="catchword" onClick={onDone}>{L["ui.next"]}</button>}
+      {done && <button type="button" className="catchword is-next" onClick={onDone}>{L["ui.next"]}</button>}
     </>
   );
 }
@@ -244,47 +224,19 @@ function World({ onDone }: { onDone: () => void }) {
   const { data, L } = g;
   const { globe } = data;
   const [open, setOpen] = useState<string[]>([]);
-  const [loop, setLoop] = useState<[number, number][]>([]);
-  const [drawn, setDrawn] = useState(false);
-  const drawing = useRef<{ box: DOMRect; pts: [number, number][] } | null>(null);
-  const kafr = globe.pins.find((p) => p.id === "kafr")!;
   const all = open.length === 3;
-
-  const inside = (pts: [number, number][], [x, y]: [number, number]) => {
-    let c = false;
-    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
-      const [xi, yi] = pts[i], [xj, yj] = pts[j];
-      if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c;
-    }
-    return c;
-  };
-  const finishLoop = (pts: [number, number][]) => {
-    if (pts.length > 8 && inside(pts, [kafr.x, kafr.y])) { setDrawn(true); g.cheer(); g.wait(3200).then(onDone); }
-    else setLoop([]);
-  };
-  const at = (e: ReactPointerEvent, box: DOMRect): [number, number] => [((e.clientX - box.left) / box.width) * globe.size, ((e.clientY - box.top) / box.height) * globe.size];
-
   return (
     <>
+      {!all && <Task id="c55.task" />}
       <div className="lv-world">
         <Globe size={globe.size} land={globe.land} graticule={globe.graticule}>
           {globe.pins.map((p) => (
-            <button key={p.id} type="button" className={`plain lv-pin${open.includes(p.id) ? " is-open" : ""}`} style={{ left: `${(p.x / globe.size) * 100}%`, top: `${(p.y / globe.size) * 100}%` }}
+            <button key={p.id} type="button" className={`plain lv-pin${open.includes(p.id) ? " is-open" : " is-next"}`} style={{ left: `${(p.x / globe.size) * 100}%`, top: `${(p.y / globe.size) * 100}%` }}
               onClick={() => { if (!open.includes(p.id)) setOpen((o) => [...o, p.id]); }} aria-label={L[`c55.${p.id}`]}>
               <i className="token-disc" aria-hidden="true" />
               <span className="lv-pin-word">{L[`c55.${p.id}`]}</span>
             </button>
           ))}
-          {all && !drawn && (
-            <svg className="lv-pen" viewBox={`0 0 ${globe.size} ${globe.size}`}
-              onPointerDown={(e) => { const box = e.currentTarget.getBoundingClientRect(); drawing.current = { box, pts: [at(e, box)] }; try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* gone */ } }}
-              onPointerMove={(e) => { const d = drawing.current; if (!d) return; d.pts.push(at(e, d.box)); if (d.pts.length % 3 === 0) setLoop([...d.pts]); }}
-              onPointerUp={() => { const d = drawing.current; drawing.current = null; if (d) { setLoop(d.pts); finishLoop(d.pts); } }}
-              aria-hidden="true">
-              {loop.length > 1 && <path className="lv-pen-line" d={`M${loop.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join("L")}`} />}
-            </svg>
-          )}
-          {drawn && <svg className="lv-pen" viewBox={`0 0 ${globe.size} ${globe.size}`} aria-hidden="true"><circle className="lv-pen-line" cx={kafr.x} cy={kafr.y} r={18} /></svg>}
         </Globe>
         <ul className="lv-pinlines">
           {globe.pins.filter((p) => open.includes(p.id)).map((p) => (
@@ -292,23 +244,18 @@ function World({ onDone }: { onDone: () => void }) {
           ))}
         </ul>
       </div>
-      {all && !drawn && (
-        <div className="lv-row">
-          <span className="lv-keys">{L["c55.pen"]}</span>
-          <button type="button" className="catchword" onClick={() => { setDrawn(true); g.cheer(); g.wait(3200).then(onDone); }}>{L["c55.draw"]}</button>
-        </div>
-      )}
-      {drawn && (
+      {all && (
         <div className="lv-tiny-book">
           <DiaryBook title={L["c55.kafr"]} max={Math.max(...data.kafr.map((s) => s.value))}
             bars={data.kafr.map((s) => ({ year: s.year, value: s.value, kind: s.source === "MODIS" ? "ink" : "viirs" }))} label={L["c55.kafr"]} copying />
+          <button type="button" className="catchword is-next" onClick={onDone}>{L["ui.next"]}</button>
         </div>
       )}
     </>
   );
 }
 
-// ================================================================ 5.6 who needs the diary
+// ================================================================ 5.6 who else needs the diary
 const PEOPLE = [1, 2, 3, 4, 5] as const;
 
 function Who() {
@@ -347,6 +294,7 @@ function Who() {
 
   return (
     <>
+      <Task id={all ? "c56.task.seal" : "c56.task"} />
       <div className="lv-match" ref={box}>
         <svg className="lv-threads" aria-hidden="true">{threads.map((d, k) => d && <path key={k} className="lv-thread" d={d} />)}</svg>
         <ul className="lv-people">
@@ -360,7 +308,7 @@ function Who() {
         </ul>
         <ul className="lv-questions">
           {[3, 1, 5, 2, 4].map((i) => (
-            <li key={i}><DropZone id={`q${i}`} label={L[`c56.q${i}`]} className={`lv-question slip${tied.includes(i) ? " is-tied" : ""}`}><span data-theme="folio">{L[`c56.q${i}`]}</span></DropZone></li>
+            <li key={i}><DropZone id={`q${i}`} label={L[`c56.q${i}`]} className={`lv-question slip${tied.includes(i) ? " is-tied" : ""}`}><span>{L[`c56.q${i}`]}</span></DropZone></li>
           ))}
         </ul>
       </div>

@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { IllusTag } from "../art/Things";
 import { useGame } from "../engine/context";
 import { Draggable, DropZone } from "../engine/Drag";
+import { Task } from "../engine/Parts";
 
 type Mark = "0" | "?";
 const WEEK = [true, true, false, true, false, false, true]; // looking or asleep, an illustration
@@ -84,6 +85,7 @@ export default function Count() {
     return (
       <div className="lv lv-count">
         <IllusTag text={g.L["ui.illus"]} />
+        <Task id="count.task" />
         <Week looking={WEEK} marks={marks} label={dayLabel(WEEK)} />
         {tokens}
       </div>
@@ -93,6 +95,7 @@ export default function Count() {
   return (
     <div className="lv lv-count">
       <p className="lv-caption t-eyebrow">{g.L["count.real"]}</p>
+      {!real.some(Boolean) && <Task id="count.task.real" />}
       <div className="lv-realrow">
         <p className="lv-who">{g.L["count.real.off"]}</p>
         <Week looking={off} marks={real.some(Boolean) ? real : off.map(() => null)} label={dayLabel(off)} />

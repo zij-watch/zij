@@ -7,7 +7,7 @@ import { createContext, useContext } from "react";
 import type { GameData } from "@/lib/diary/game";
 import type { SealId } from "@/lib/diary/progress";
 
-export type Who = "hudhud" | "modis" | "viirs";
+export type Who = "hudhud" | "modis" | "viirs" | "mona";
 export type Pose = { crest: boolean; tilt: boolean; fly: boolean; stone: boolean };
 
 export type GameApi = {

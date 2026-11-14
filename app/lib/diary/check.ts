@@ -171,9 +171,9 @@ export function resolveLines(
   script: { chapters: Chapter[]; ui: { id: string; label: string }[] },
   ph: Record<string, Fill>,
   picks: Record<string, string>,
-): { lines: Record<string, string>; notes: Record<string, string>; speakers: Record<string, "hudhud" | "modis" | "viirs"> } {
+): { lines: Record<string, string>; notes: Record<string, string>; speakers: Record<string, "hudhud" | "modis" | "viirs" | "mona"> } {
   const lines: Record<string, string> = {}, notes: Record<string, string> = {};
-  const speakers: Record<string, "hudhud" | "modis" | "viirs"> = {};
+  const speakers: Record<string, "hudhud" | "modis" | "viirs" | "mona"> = {};
   const pick = (t: Text) => (typeof t === "string" ? t : t.options[picks[t.pick]] ?? Object.values(t.options)[0]);
   for (const ch of script.chapters) {
     if (ch.note) notes[ch.id] = fill(ch.note.text, ph).plain;

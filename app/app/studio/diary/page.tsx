@@ -8,12 +8,12 @@ import "../../diary/game.css";
 import "../../diary/levels.css";
 import "./studio-diary.css";
 
-// Hudhud's Fire Diary, for review. Not linked from the site.
+// Roro's Fire Diary, for review. Not linked from the site.
 //   /studio/diary          the art kit: every drawing with its states, in Night and Folio
 //   /studio/diary?script   every line of the game with its word count
 //   /studio/diary?engine   the engine's test: each piece of it used once
 //   /studio/diary?play=4   the game from chapter 4 (0 the opening … 6 the ending), keeping no progress
-export const metadata: Metadata = { title: "Zij: studio, Hudhud's Fire Diary", robots: { index: false } };
+export const metadata: Metadata = { title: "Zij: studio, Roro's Fire Diary", robots: { index: false } };
 
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const query = await searchParams;

@@ -1,6 +1,8 @@
 /* Hudhud's Fire Diary: the levels. Tokens only; transform and opacity only. */
 
-.lv-full { position: absolute; inset: 0; }
+.lv-full { position: absolute; inset: 0; overflow: hidden; }
+/* a level drawn over the whole scene never scrolls: its fires must stay on the painted land */
+.dd-play:has(.lv-full) { overflow: hidden; }
 .lv-keys { margin: 0; font: var(--type-marginal); font-size: 15px; line-height: 20px; color: var(--ink-muted); }
 .lv-caption { margin: 0; color: var(--brass); }
 @keyframes dd-place { from { opacity: 0; transform: translateY(-14px) scale(1.04); } }
@@ -8,8 +10,10 @@
 /* ================================================================ the opening */
 .lv-orbits { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-8) var(--space-12); opacity: 0; transform: translateY(-24px); transition: opacity var(--dur-camera) var(--ease-lamp), transform var(--dur-camera) var(--ease-lamp); }
 .lv-orbits.is-in { opacity: 1; transform: none; }
-.lv-orbit { position: relative; width: 240px; height: 150px; display: grid; place-items: center; }
-.lv-ring { position: absolute; left: 20px; top: -25px; width: 200px; height: 200px; transform: scaleY(0.32); pointer-events: none; }
+.lv-orbit { position: relative; width: 260px; height: 190px; display: grid; justify-items: center; align-content: end; }
+.lv-orbit .sat { --sat: 128px; }
+/* the ring lies behind, flattened; the satellite rides along its near edge, its name below */
+.lv-ring { position: absolute; left: 10px; top: 9px; width: 240px; height: 240px; transform: scaleY(0.3); pointer-events: none; }
 .lv-orbit.is-viirs .lv-ring { transform: scaleY(0.32) rotate(8deg); }
 .lv-glide { animation: dd-glide 6s ease-in-out infinite alternate; }
 .lv-glide.is-quick { animation-duration: 3.2s; }
@@ -22,7 +26,7 @@
 .lv-tally b { margin-left: var(--space-1); font: var(--type-figure); font-size: 17px; font-weight: 700; color: var(--ink); }
 .lv-tally.is-modis { color: var(--lapis); }
 .lv-tally.is-viirs { color: var(--rubric); }
-.lv-track { position: absolute; left: 6%; right: 4%; top: 9%; bottom: 4%; container-type: inline-size; pointer-events: none; }
+.lv-track { position: absolute; left: 6%; right: 4%; top: 9%; bottom: 4%; container-type: inline-size; pointer-events: none; overflow: hidden; }
 .lv-beam { position: absolute; left: 0; top: 0; transform: translateX(calc(var(--beam) * 100cqw - 50%)); transition: transform var(--dur-sheet) var(--ease-paper); }
 .lv-beam .sat { --beam-w: 22cqw; --beam-h: 80vh; }
 .lv-land { position: absolute; left: 6%; right: 4%; top: 54%; bottom: 4%; }
@@ -38,11 +42,13 @@
 
 /* ================================================================ level 2 · sort */
 .lv-arrive { display: grid; justify-items: center; align-content: end; gap: var(--space-3); min-height: 170px; }
-.lv-arrival { display: flex; align-items: flex-end; gap: var(--space-4); animation: dd-place var(--dur-sheet) var(--ease-paper) both; }
-.lv-arrival .drag { padding: var(--space-3); }
-.lv-nights { display: grid; grid-template-columns: repeat(7, 22px); gap: 3px; padding: var(--space-2); background: var(--ground-raised); box-shadow: inset 0 0 0 1px var(--rule); }
-.lv-night { position: relative; height: 30px; background: color-mix(in srgb, var(--sky) 70%, var(--ground)); }
-.lv-night i { position: absolute; left: 58%; top: 34%; width: 4px; height: 7px; background: var(--flame); clip-path: polygon(50% 0, 100% 70%, 50% 100%, 0 70%); }
+.lv-arrival { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-4); animation: dd-place var(--dur-sheet) var(--ease-paper) both; }
+/* the hot spot arrives on a lit plate of field, drawn larger, so a chimney or a faint dot can be told apart */
+.dd .lv-arrival button.drag { display: grid; place-items: end center; width: 132px; height: 132px; padding: var(--space-3); background: color-mix(in srgb, var(--ground-raised) 80%, var(--flame)); box-shadow: inset 0 0 0 1px var(--brass), var(--shadow-token); }
+.lv-arrival .drag > * { transform: scale(1.7); transform-origin: 50% 100%; }
+.lv-nights { display: grid; grid-template-columns: repeat(7, 26px); gap: 4px; padding: var(--space-3); background: var(--ground-raised); box-shadow: inset 0 0 0 1px var(--brass), var(--shadow-card); }
+.lv-night { position: relative; height: 40px; background: var(--sky); box-shadow: inset 0 0 0 1px var(--rule); }
+.lv-night i { position: absolute; left: 58%; top: 30%; width: 6px; height: 11px; margin-left: -3px; background: var(--flame); clip-path: polygon(50% 0, 100% 70%, 50% 100%, 0 70%); }
 .lv-trays { gap: var(--space-10); margin-top: var(--space-4); }
 .lv-held { display: inline-block; transform: scale(0.55); transform-origin: 50% 100%; margin: -16px -12px 0; }
 
@@ -56,9 +62,9 @@
 .lv-eye .lv-pupil { fill: var(--ink); stroke: none; }
 .lv-box { display: grid; place-items: center; aspect-ratio: 1; min-height: 44px; background: var(--ground-raised); box-shadow: inset 0 0 0 1px var(--brass); }
 .lv-box.is-seen { background: color-mix(in srgb, var(--ground-raised) 80%, var(--brass)); }
-.lv-mark { font: var(--type-display-m); font-size: 30px; line-height: 1; color: var(--ink); animation: dd-place var(--dur-sheet) var(--ease-paper) both; }
+.lv-mark { font: 700 30px/1 var(--font-text); font-feature-settings: "lnum" 1; color: var(--ink); animation: dd-place var(--dur-sheet) var(--ease-paper) both; }
 .lv-tokens { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-4); }
-.lv-token { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--wood); color: var(--on-wood); box-shadow: inset 0 0 0 2px var(--brass), var(--shadow-token); font: var(--type-display-m); font-size: 30px; line-height: 1; }
+.lv-token { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--wood); color: var(--on-wood); box-shadow: inset 0 0 0 2px var(--brass), var(--shadow-token); font: 700 30px/1 var(--font-text); font-feature-settings: "lnum" 1; }
 .lv-realrow { display: grid; justify-items: center; gap: var(--space-2); }
 .lv-realrow.is-other { opacity: 0.85; }
 .lv-who { margin: 0; font: var(--type-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink); }
@@ -89,7 +95,7 @@
 .lv-days { font: var(--type-display-m); letter-spacing: 0.3em; color: var(--ink); }
 
 /* 4.3 and 4.4: the chart, the trials */
-.chart { margin: 0; width: min(100%, 520px); padding: var(--space-3) var(--space-4); }
+.chart { margin: 0; width: min(100%, 440px); padding: var(--space-3) var(--space-4); }
 .chart svg { display: block; width: 100%; height: auto; }
 .chart-axis { fill: none; stroke: var(--brass); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .chart-year { font: 400 10px var(--font-text); fill: var(--ink-muted); }
@@ -186,8 +192,9 @@
 .keeper-acts { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-3) var(--space-6); }
 
 @media (max-width: 640px) {
-  .lv-orbit { width: 200px; height: 130px; }
-  .lv-ring { left: 0; }
+  .lv-orbit { width: 200px; height: 160px; }
+  .lv-orbit .sat { --sat: 104px; }
+  .lv-ring { left: 0; top: 10px; width: 200px; height: 200px; }
   .lv-week { grid-template-columns: repeat(7, minmax(36px, 1fr)); gap: var(--space-1); width: 100%; }
   .lv-trays { gap: var(--space-6); }
   .lv-trays .tray { width: 150px; }
@@ -196,3 +203,64 @@
   .lv-question { font-size: 16px; padding: var(--space-2) var(--space-3); }
   .keeper { padding: var(--space-8) var(--space-4); }
 }
+
+/* 4.4: the translator and the trial side by side where there is room */
+.lv-bench { align-items: center; gap: var(--space-6); }
+.lv-bench .tr { flex: 0 0 min(100%, 380px); width: min(100%, 380px); }
+
+/* ================================================================ Mona */
+.lv-mona .person { width: 120px; }
+.lv-mona .person-label { color: var(--ink); font: var(--type-label); letter-spacing: var(--tracking-label); text-transform: uppercase; }
+.note-line.is-mona .note-who { color: var(--brass); }
+
+/* ================================================================ level 1 · two cameras */
+.lv-spot2 { gap: var(--space-4); }
+.lv-photos { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-6); width: 100%; }
+.lv-photo { margin: 0; display: grid; gap: var(--space-2); width: min(100%, 420px); padding: var(--space-2); background: var(--ground-raised); box-shadow: var(--shadow-card); opacity: 0.55; transition: opacity var(--dur-sheet) var(--ease-lamp), transform var(--dur-sheet) var(--ease-paper); }
+.lv-photo.is-active { opacity: 1; transform: translateY(-4px); box-shadow: 0 0 0 2px var(--brass), var(--shadow-held); }
+.lv-photo-pic { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: var(--sky); }
+.lv-photo-fields { position: absolute; inset: 0; width: 100%; height: 100%; }
+.dd button.lv-photo-fire { position: absolute; z-index: 2; transform: translate(-50%, -80%); display: grid; place-items: end center; }
+.lv-photo.is-modis .lv-photo-fire.is-tiny { opacity: 0.22; }
+.lv-photo-grid { position: absolute; inset: 0; z-index: 1; display: grid; grid-template-columns: repeat(var(--cols), 1fr); grid-template-rows: repeat(var(--rows), 1fr); pointer-events: none; }
+.lv-photo.is-modis .lv-photo-grid { background-image: linear-gradient(90deg, color-mix(in srgb, var(--lapis) 35%, transparent) 1px, transparent 1px), linear-gradient(0deg, color-mix(in srgb, var(--lapis) 35%, transparent) 1px, transparent 1px); background-size: calc(100% / 4) calc(100% / 3); }
+.lv-photo.is-viirs .lv-photo-grid { background-image: linear-gradient(90deg, color-mix(in srgb, var(--rubric) 22%, transparent) 1px, transparent 1px), linear-gradient(0deg, color-mix(in srgb, var(--rubric) 22%, transparent) 1px, transparent 1px); background-size: calc(100% / 12) calc(100% / 9); }
+.lv-photo-sq { display: block; animation: dd-place var(--dur-sheet) var(--ease-paper) both; }
+.lv-photo.is-modis .lv-photo-sq { background: color-mix(in srgb, var(--lapis) 30%, transparent); box-shadow: inset 0 0 0 2px var(--lapis); }
+.lv-photo.is-viirs .lv-photo-sq { background: color-mix(in srgb, var(--rubric) 30%, transparent); box-shadow: inset 0 0 0 1.5px var(--rubric); }
+.lv-photo-cap { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-2); padding: 0 var(--space-1); }
+.lv-photo-count { font: var(--type-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink-muted); }
+.lv-photo-count b { font: 700 22px/1 var(--font-text); font-feature-settings: "lnum" 1, "tnum" 1; color: var(--ink); margin-left: var(--space-1); }
+
+/* ================================================================ level 2 · seven nights of evidence */
+.lv-evidence { margin: 0; display: grid; gap: var(--space-1); justify-items: center; padding: var(--space-3); background: var(--ground-raised); box-shadow: var(--shadow-card); color: var(--ink); }
+.lv-evidence figcaption { font: var(--type-marginal); font-size: 15px; color: var(--ink-muted); }
+.lv-evidence .lv-nights { box-shadow: none; padding: 0; background: none; }
+.lv-evidence .lv-night { background: color-mix(in srgb, var(--ink) 88%, var(--lapis)); box-shadow: none; }
+.lv-night.is-dark i { display: none; }
+.lv-night.is-faint i { opacity: 0.28; }
+
+/* ================================================================ level 4 · the gears to tap */
+.lv-gears { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+.dd button.lv-gear { display: grid; justify-items: center; gap: var(--space-1); padding: var(--space-2) var(--space-3); background: var(--ground-raised); color: var(--ink); box-shadow: var(--shadow-token); font: var(--type-ui); font-size: 16px; transition: transform var(--dur-touch) var(--ease-ink), box-shadow var(--dur-touch) var(--ease-ink); }
+.dd button.lv-gear:hover:not(:disabled) { background: var(--ground-raised); transform: translateY(-2px); box-shadow: var(--shadow-card); }
+.dd button.lv-gear:disabled:not(.is-fitted) { opacity: 0.5; }
+.lv-gear.is-fitted { opacity: 0.4; }
+.lv-gear.is-fitted .gear { transform: rotate(30deg); }
+.lv-gear .gear { transition: transform var(--dur-sheet) var(--ease-ink); }
+
+/* ================================================================ 5.2: the brackets lay themselves, one then the other */
+.lv-bracket.is-laid .lv-bracket-zone { animation: dd-place var(--dur-sheet) var(--ease-paper) both; animation-delay: calc(var(--i, 0) * 700ms); }
+.lv-bracket.is-laid .lv-water { animation-delay: calc(var(--i, 0) * 700ms + 300ms); }
+
+/* ================================================================ the ending: Mona's answer and the Keeper's page */
+.lv-letter { position: relative; display: grid; gap: var(--space-2); width: min(100%, 520px); padding: var(--space-8) var(--space-8) var(--space-6); color: var(--ink); transform: rotate(-0.6deg); animation: dd-slide var(--dur-sheet) var(--ease-paper) both; }
+.lv-letter .jadwal { --jadwal-inset: 10px; }
+.lv-letter .t-eyebrow { margin: 0; color: var(--brass); }
+.lv-letter-q { margin: 0; font: var(--type-marginal); font-size: 18px; color: var(--ink-muted); }
+.lv-letter ul { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-2); }
+.lv-letter li { font: var(--type-reading); font-size: 20px; line-height: 30px; animation: dd-rise var(--dur-ink) var(--ease-ink) both; }
+.keeper-kept { margin: 0; font: var(--type-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink-muted); }
+.keeper-kept b { font: 700 24px/1 var(--font-text); font-feature-settings: "lnum" 1; color: var(--ink); margin-left: var(--space-1); }
+.keeper-learned { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-1); text-align: left; width: 100%; }
+.keeper-learned li { padding: var(--space-1) 0; border-bottom: var(--stroke-hair) solid var(--rule); font: var(--type-ui); animation: dd-rise var(--dur-ink) var(--ease-ink) both; }

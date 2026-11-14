@@ -6,7 +6,7 @@ import { checkScript, type Checked, type Row, type Segment } from "@/lib/diary/c
 import { claims, picks, placeholders, type DiaryNumbers, type Fill } from "@/lib/diary/numbers";
 import { RUNNING_HEAD, SCRIPT, UI_LABELS, type Beat } from "@/lib/diary/script";
 
-const WHO = { hudhud: "Hudhud", modis: "MODIS", viirs: "VIIRS" } as const;
+const WHO = { hudhud: "Roro", modis: "MODIS", viirs: "VIIRS", mona: "Mona" } as const;
 
 const when = (iso: string) => {
   const d = new Date(iso);
@@ -105,7 +105,7 @@ export default function ScriptSheet({ numbers }: { numbers: DiaryNumbers }) {
   return (
     <main className="ds" data-theme="folio">
       <header className="ds-head">
-        <p className="t-eyebrow">studio · hudhud&rsquo;s fire diary</p>
+        <p className="t-eyebrow">studio · roro&rsquo;s fire diary</p>
         <h1>The script</h1>
         <p className="ds-lede">
           Every word the game shows, by level, with its word count. Edit them in <code>app/lib/diary/script.ts</code>. Numbers are filled from the data of {when(numbers.builtAt)}: hover one to see where it comes from.
