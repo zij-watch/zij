@@ -312,13 +312,16 @@ js = swap(js, "  lineStops.forEach((s) => stopIO.observe(s));", `  lineStops.for
 // in the order a hand writes each: the stroke of the letter, then its hamza or dot. They stay
 // text (the face, the layout and what a reader hears are untouched): a mask of brush strokes, made
 // for each letter from where its ink actually lies (measured in its own font), uncovers it, and is
-// taken off once written, so nothing can be left hidden. A letter on a sheet waits for that sheet's
-// ink to dry. With reduced motion they are simply there.
+// taken off once written, so nothing can be left hidden. A letter's separate marks (its dot, its
+// hamza) are found where they really lie and kept covered until their own turn: the body's stroke
+// never shows a piece of a dot on the way past, and a dot is uncovered whole, at once. A letter on a
+// sheet waits for that sheet's ink to dry. With reduced motion they are simply there.
 js = swap(js, "  document.querySelectorAll('.desk > .record [data-ink]').forEach((s) => recordIO.observe(s));", `  document.querySelectorAll('.desk > .record [data-ink]').forEach((s) => recordIO.observe(s));
   (function abjadInk() {
     if (still) return;
     // each stroke: points across the letter's ink box (0,0 its top left, 1,1 its bottom right),
-    // the brush's width in ems, how long it takes (0: a dot, set down whole), and its wet tip as a share
+    // the brush's width in ems, how long it takes (0: a dot, set down whole), and its wet tip as a share.
+    // The first stroke is the letter's body; the others are its separate marks (a hamza, a dot).
     const DUCTUS = {
       'أ': [[[[0.5, 0.42], [0.5, 1.06]], 0.26, 0.45, 0.3], [[[0.9, 0], [0.3, 0.06], [0.62, 0.16], [0.2, 0.24]], 0.22, 0.32, 0.4]],
       'ب': [[[[1.02, 0], [0.98, 0.45], [0.75, 0.62], [0.25, 0.62], [0, 0.5], [-0.02, 0.15]], 0.34, 0.6, 0.16], [[[0.5, 0.78], [0.5, 1]], 0.26, 0, 0]],
@@ -326,6 +329,29 @@ js = swap(js, "  document.querySelectorAll('.desk > .record [data-ink]').forEach
       'د': [[[[0.4, 0], [0.9, 0.58], [0.7, 0.95], [-0.02, 0.95]], 0.34, 0.5, 0.2]],
     };
     const ctx = document.createElement('canvas').getContext('2d');
+    // Where a letter's separate marks lie: the letter is drawn once, off screen, and every piece of
+    // ink that is not joined to the largest one is a mark. Boxes in the ink box's own pixels.
+    function marksOf(ch, font, m) {
+      const edge = 3, w = Math.ceil(m.actualBoundingBoxLeft + m.actualBoundingBoxRight) + 2 * edge, h = Math.ceil(m.actualBoundingBoxAscent + m.actualBoundingBoxDescent) + 2 * edge;
+      const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      const g = cv.getContext('2d', { willReadFrequently: true });
+      g.font = font; g.fillText(ch, edge + m.actualBoundingBoxLeft, edge + m.actualBoundingBoxAscent);
+      const a = g.getImageData(0, 0, w, h).data, seen = new Uint8Array(w * h), pieces = [];
+      const ink = (i) => a[i * 4 + 3] > 40;
+      for (let i = 0; i < w * h; i++) {
+        if (seen[i] || !ink(i)) continue;
+        const piece = { x0: w, y0: h, x1: 0, y1: 0, n: 0 }, stack = [i];
+        seen[i] = 1;
+        while (stack.length) {
+          const j = stack.pop(), x = j % w, y = (j - x) / w;
+          piece.n++; piece.x0 = Math.min(piece.x0, x); piece.x1 = Math.max(piece.x1, x + 1); piece.y0 = Math.min(piece.y0, y); piece.y1 = Math.max(piece.y1, y + 1);
+          for (const [k, ok] of [[j - 1, x > 0], [j + 1, x < w - 1], [j - w, y > 0], [j + w, y < h - 1]]) if (ok && !seen[k] && ink(k)) { seen[k] = 1; stack.push(k); }
+        }
+        pieces.push(piece);
+      }
+      pieces.sort((p, q) => q.n - p.n);
+      return pieces.slice(1).filter((p) => p.n > 6).map((p) => ({ x: p.x0 - edge, y: p.y0 - edge, w: p.x1 - p.x0, h: p.y1 - p.y0 }));
+    }
     function write(letterEl, k) {
       const ch = letterEl.textContent.trim(), strokes = DUCTUS[ch];
       if (!strokes) { letterEl.classList.remove('ab-wait'); return; }
@@ -339,24 +365,34 @@ js = swap(js, "  document.querySelectorAll('.desk > .record [data-ink]').forEach
       const y0 = base - m.actualBoundingBoxAscent, y1 = base + m.actualBoundingBoxDescent;
       const pad = 0.14 * fs, iw = x1 - x0, ih = y1 - y0, W = iw + 2 * pad, H = ih + 2 * pad;
       const P = ([u, v]) => n1(pad + u * iw) + ' ' + n1(pad + v * ih);
-      let t = 0.15, ink = '', wet = '';
-      for (const [pts, w, dur, tip] of strokes) {
-        const d = \`M\${pts.map(P).join(' L')}\`, timing = \`--at:\${n1(t)}s;--dur:\${dur}s;--tip:\${tip}\`;
-        ink += \`<path class="\${dur ? 'ab-stroke' : 'ab-dot'}" pathLength="1" d="\${d}" stroke-width="\${n1(w * fs)}" style="\${timing}"/>\`;
-        if (dur) wet += \`<path class="ab-wet-stroke" pathLength="1" d="\${d}" stroke-width="\${n1(w * fs)}" style="\${timing}"/>\`;
+      // The marks, where they really are. A mark stays covered until its own turn, so the body's
+      // stroke can never show a piece of it on the way past; a dot is then uncovered whole, at once.
+      let marks = marksOf(ch, ctx.font, m);
+      if (marks.length !== strokes.length - 1) marks = [];
+      const box = (b, grow) => \`x="\${n1(pad + b.x - grow)}" y="\${n1(pad + b.y - grow)}" width="\${n1(b.w + 2 * grow)}" height="\${n1(b.h + 2 * grow)}"\`;
+      const keep = marks.map((b) => \`<rect \${box(b, 2)} fill="black"/>\`).join('');
+      let t = 0.15, body = '', bodyWet = '', late = '', lateWet = '';
+      strokes.forEach(([pts, w, dur, tip], i) => {
+        const d = \`M\${pts.map(P).join(' L')}\`, timing = \`--at:\${n1(t)}s;--dur:\${dur}s;--tip:\${tip}\`, sw = n1(w * fs);
+        const mark = i > 0 && marks.length ? marks[i - 1] : null;
+        if (!dur) late += mark ? \`<rect class="ab-dot" \${box(mark, 3)} style="\${timing}"/>\` : \`<path class="ab-dot is-stroke" d="\${d}" stroke-width="\${sw}" style="\${timing}"/>\`;
+        else {
+          const ink = \`<path class="ab-stroke" pathLength="1" d="\${d}" stroke-width="\${sw}" style="\${timing}"/>\`, wet = \`<path class="ab-wet-stroke" pathLength="1" d="\${d}" stroke-width="\${sw}" style="\${timing}"/>\`;
+          if (i > 0) { late += ink; lateWet += wet; } else { body += ink; bodyWet += wet; }
+        }
         t += (dur || 0.05) + 0.1;
-      }
+      });
       // the letter, drawn again exactly where it stands, in its own face, for the brush to uncover
       const glyph = \`x="\${n1(left - x0 + pad)}" y="\${n1(base - y0 + pad)}" style="font: \${cs.fontStyle} \${cs.fontWeight} \${fs}px \${cs.fontFamily.replace(/"/g, "'")}"\`;
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('class', 'ab-ink'); svg.setAttribute('aria-hidden', 'true');
       svg.setAttribute('width', n1(W)); svg.setAttribute('height', n1(H)); svg.setAttribute('viewBox', \`0 0 \${n1(W)} \${n1(H)}\`);
       svg.style.left = n1(x0 - pad) + 'px'; svg.style.top = n1(y0 - pad) + 'px';
-      const box = \`x="0" y="0" width="\${n1(W)}" height="\${n1(H)}"\`;
-      const brush = \`<filter id="ab-brush-\${k}" filterUnits="userSpaceOnUse" \${box}><feTurbulence type="fractalNoise" baseFrequency="0.35" numOctaves="2" seed="\${7 + k}"/><feDisplacementMap in="SourceGraphic" scale="\${n1(fs * 0.045)}" xChannelSelector="R" yChannelSelector="G"/></filter>\`;
+      const area = \`x="0" y="0" width="\${n1(W)}" height="\${n1(H)}"\`, f = \`filter="url(#ab-brush-\${k})"\`;
+      const brush = \`<filter id="ab-brush-\${k}" filterUnits="userSpaceOnUse" \${area}><feTurbulence type="fractalNoise" baseFrequency="0.35" numOctaves="2" seed="\${7 + k}"/><feDisplacementMap in="SourceGraphic" scale="\${n1(fs * 0.045)}" xChannelSelector="R" yChannelSelector="G"/></filter>\`;
       svg.innerHTML = \`<defs>\${brush}\` +
-        \`<mask id="ab-ink-\${k}" maskUnits="userSpaceOnUse" \${box}><g filter="url(#ab-brush-\${k})">\${ink}</g><rect class="ab-settle" width="100%" height="100%" style="--at:\${n1(t)}s"/></mask>\` +
-        \`<mask id="ab-wet-\${k}" maskUnits="userSpaceOnUse" \${box}><g filter="url(#ab-brush-\${k})">\${wet}</g></mask></defs>\` +
+        \`<mask id="ab-ink-\${k}" maskUnits="userSpaceOnUse" \${area}><g \${f}>\${body}</g>\${keep}<g \${f}>\${late}</g><rect class="ab-settle" width="100%" height="100%" style="--at:\${n1(t)}s"/></mask>\` +
+        \`<mask id="ab-wet-\${k}" maskUnits="userSpaceOnUse" \${area}><g \${f}>\${bodyWet}</g>\${keep}<g \${f}>\${lateWet}</g></mask></defs>\` +
         \`<text class="ab-glyph" \${glyph} mask="url(#ab-ink-\${k})">\${ch}</text><text class="ab-glyph is-wet" \${glyph} mask="url(#ab-wet-\${k})">\${ch}</text>\`;
       if (getComputedStyle(letterEl).position === 'static') letterEl.style.position = 'relative';
       letterEl.appendChild(svg);
@@ -416,60 +452,102 @@ js = swap(js, "  function drawThread(t) {", `  function threadsOverRecord() {
   }
   function drawThread(t) {`, "drawThread");
 
-// ---- the seal of the opening, written with a brush -------------------------------------------
-// The same eight shapes as logo/zij-seal-night.svg, inline, so they can be written in: a mask of
-// brush strokes, each along the line a reed brush would take through its shape, uncovers the seal
-// in the order it is written. It is written as زيج, right to left, the way Arabic is: the ز (the
-// hooked stroke, then its dot), the ي (the stem and its ring, then its two dots, right one first),
-// then the ج (the Z in one stroke, every bar drawn right to left, its crossbar, its dot), in a little
-// over two seconds. A little turbulence gives each stroke a brush's ragged edge, and a wet tip of
-// warm ink runs at the head of each long stroke and dries behind it; a dot is set down whole, in one
-// touch of the brush. The strokes rest fully drawn (additions.css animates them only from
-// nothing), so with reduced motion the seal is simply there.
-const SEAL_STROKES = [
-  // [d, width, start s, duration s (0: a dot, set down whole in one touch), wet tip as a share of the stroke]
-  ["M316 194 L316 340 L292 376 L254 376", 46, 0.15, 0.42, 0.2],
-  ["M316 141 L316 181", 40, 0.62, 0, 0],
-  ["M243 194 L243 306", 46, 0.74, 0.24, 0.35],
-  ["M243 149.25 A11.75 11.75 0 1 0 243 172.75 A11.75 11.75 0 1 0 243 149.25", 14, 1.02, 0, 0],
-  ["M260 311 L260 346", 34, 1.1, 0, 0],
-  ["M226 311 L226 346", 34, 1.18, 0, 0],
-  ["M198 376 L66 376 L198 214 L46 214", 46, 1.32, 0.72, 0.1],
-  ["M214 286 L162 286", 34, 2.08, 0.15, 0.6],
-  ["M145 313 L145 349", 34, 2.28, 0, 0],
+// ---- the seal of the opening, written with a reed pen ----------------------------------------
+// The same shapes as logo/zij-seal-night.svg, inline, so they can be written in. The pen is a reed
+// cut square and held at 45 degrees, the pen that makes the seal's own diamond dots: its edge is
+// the slanted line that leads every stroke. It writes زيج, right to left, each letter in the order
+// a hand writes it: the ز (down the stem and round the hook, then its dot), the ي (its stem, the
+// ring, then both dots together), the ج (along the top, down the diagonal, along the foot, then
+// the bar and its dot), in about a second and a quarter. The dots come one by one, each as its
+// letter is finished.
+//
+// Each shape has a mask of its own, so a stroke can only uncover its own shape: no stroke shows a
+// piece of a dot or of its neighbour on the way past. A stroke is one parallelogram per straight
+// run of the pen, swept by the nib; a dot is not swept at all: it is one press of the nib, set
+// down whole. The runs start and end a little outside the shape, so the slanted edge clears every
+// corner, and the build checks that the swept runs cover each shape entirely: at rest the seal is
+// the logo, exactly. With reduced motion nothing is animated and it is simply there.
+const SEAL_PARTS = [
+  // ز
+  { d: "M299,200L333,200L333,349.22L299.02,390L258,390L258,362L282,362L299,341.6Z", nib: 40, dur: 0.25, gap: 0.1,
+    runs: [[[316, 179], [316, 345.4]], [[316, 345.4], [290.5, 376]], [[290.5, 376], [240, 376]]] },
+  { d: "M316,144L333,161L316,178L299,161Z", stamp: true, gap: 0.03 },
+  // ي
+  { d: "M226,200L260,200L260,300L226,300Z", nib: 40, dur: 0.12, gap: 0.06, runs: [[[243, 179], [243, 321]]] },
+  { d: "M227,161a16,16 0 1,0 32,0a16,16 0 1,0 -32,0ZM235.5,161a7.5,7.5 0 1,1 15,0a7.5,7.5 0 1,1 -15,0Z", stamp: true, gap: 0.03 },
+  { d: "M226,314L240.5,328.5L226,343L211.5,328.5ZM260,314L274.5,328.5L260,343L245.5,328.5Z", stamp: true, gap: 0.06 },
+  // ج
+  { d: "M46,200L198,200L198,228L86.35,362L198,362L198,390L46,390L46,362L157.65,228L46,228Z", nib: 34, dur: 0.38, gap: 0.08,
+    runs: [[[28, 214], [216, 214]], [[189.5, 214], [54.5, 376]], [[28, 376], [216, 376]]] },
+  { d: "M179.56,272L212,272L212,300L156.23,300Z", nib: 34, dur: 0.08, gap: 0.03, runs: [[[230, 286], [138, 286]]] },
+  { d: "M145,316.5L159.5,331L145,345.5L130.5,331Z", stamp: true, gap: 0.03 },
 ];
-const SEAL_SHAPES = [
-  "M46,200L198,200L198,228L86.35,362L198,362L198,390L46,390L46,362L157.65,228L46,228Z",
-  "M179.56,272L212,272L212,300L156.23,300Z",
-  "M226,200L260,200L260,300L226,300Z",
-  "M299,200L333,200L333,349.22L299.02,390L258,390L258,362L282,362L299,341.6Z",
-  "M227,161a16,16 0 1,0 32,0a16,16 0 1,0 -32,0ZM235.5,161a7.5,7.5 0 1,1 15,0a7.5,7.5 0 1,1 -15,0Z",
-  "M316,144L333,161L316,178L299,161Z",
-  "M145,316.5L159.5,331L145,345.5L130.5,331Z",
-  "M226,314L240.5,328.5L226,343L211.5,328.5ZM260,314L274.5,328.5L260,343L245.5,328.5Z",
-];
-const SEAL_WRITTEN = `<svg class="seal-written" viewBox="46 144 287 246" width="287" height="246" role="img" aria-label="Zij · زيج">
+
+// a run of the pen as a parallelogram: along the run, and across it the nib's edge (1, 1). Each run
+// is a unit and a half longer at both ends than it is given, so two runs that meet at a corner
+// overlap there: no hairline shows between them.
+const penFrame = ([[x0, y0], [x1, y1]], nib) => {
+  const len = Math.hypot(x1 - x0, y1 - y0), ex = (1.5 * (x1 - x0)) / len, ey = (1.5 * (y1 - y0)) / len;
+  return [x1 - x0 + 2 * ex, y1 - y0 + 2 * ey, nib, nib, x0 - ex - nib / 2, y0 - ey - nib / 2];
+};
+
+// The check: every point of a written shape, and the points 1.5 units around it, lies inside one of
+// that shape's runs. So no corner is left unwritten, and no edge is trimmed by its mask.
+for (const part of SEAL_PARTS.filter((p) => p.runs)) {
+  const poly = part.d.replace(/[MZ]/g, "").split("L").map((p) => p.split(",").map(Number));
+  const inside = (x, y) => {
+    let hit = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const [xi, yi] = poly[i], [xj, yj] = poly[j];
+      if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) hit = !hit;
+    }
+    return hit;
+  };
+  const frames = part.runs.map((run) => penFrame(run, part.nib));
+  const swept = (x, y) => frames.some(([a, b, c, d, e, f]) => {
+    const det = a * d - b * c, u = ((x - e) * d - (y - f) * c) / det, v = ((y - f) * a - (x - e) * b) / det;
+    return u >= 0 && u <= 1 && v >= 0 && v <= 1;
+  });
+  const xs = poly.map((p) => p[0]), ys = poly.map((p) => p[1]);
+  for (let x = Math.min(...xs); x <= Math.max(...xs); x += 0.5) {
+    for (let y = Math.min(...ys); y <= Math.max(...ys); y += 0.5) {
+      if (!inside(x, y)) continue;
+      for (const [dx, dy] of [[0, 0], [1.5, 0], [-1.5, 0], [0, 1.5], [0, -1.5]]) {
+        if (!swept(x + dx, y + dy)) throw new Error(`build-landing: the pen does not cover the seal at ${x + dx}, ${y + dy}`);
+      }
+    }
+  }
+}
+
+// The times. A stroke of several runs moves as one: it gathers speed on its first run, holds it,
+// and lands softly on its last (the first and last run take 5/3 as long for their length, which is
+// what keeps the speed the same across each corner). A dot is pressed as its letter is finished, so
+// the dots come one by one: the ز's after its hook, the ي's pair after its ring, the ج's last.
+const round3 = (v) => Math.round(v * 1000) / 1000;
+let sealClock = 0;
+const SEAL_TIMED = SEAL_PARTS.map((part) => {
+  sealClock += part.gap;
+  if (part.stamp) return { ...part, at: round3(sealClock) };
+  const n = part.runs.length;
+  const weights = part.runs.map(([a, b], i) => Math.hypot(b[0] - a[0], b[1] - a[1]) * (n > 1 && (i === 0 || i === n - 1) ? 5 / 3 : 1));
+  const total = weights.reduce((a, b) => a + b, 0);
+  const runs = part.runs.map((run, i) => {
+    const dur = (part.dur * weights[i]) / total, at = sealClock;
+    sealClock += dur;
+    const ease = n === 1 ? "cubic-bezier(.4,0,.6,1)" : i === 0 ? "cubic-bezier(.4,0,1,1)" : i === n - 1 ? "cubic-bezier(0,0,.6,1)" : "linear";
+    return { frame: penFrame(run, part.nib).map((v) => Math.round(v * 100) / 100).join(" "), at: round3(at), dur: round3(dur), ease };
+  });
+  return { ...part, runs };
+});
+const SEAL_END = round3(sealClock + 0.16);
+const SEAL_WRITTEN = `<svg class="seal-written" viewBox="46 144 287 246" width="287" height="246" role="img" aria-label="Zij · زيج" style="--seal-end:${SEAL_END}s">
         <defs>
-          <filter id="seal-brush" filterUnits="userSpaceOnUse" x="20" y="120" width="340" height="300">
-            <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="7"/>
-            <feDisplacementMap in="SourceGraphic" scale="7" xChannelSelector="R" yChannelSelector="G"/>
-          </filter>
-          <mask id="seal-ink" maskUnits="userSpaceOnUse" x="20" y="120" width="340" height="300">
-            <g filter="url(#seal-brush)" fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round">
-${SEAL_STROKES.map(([d, w, at, dur]) => `              <path class="${dur ? "seal-stroke" : "seal-dot"}" pathLength="1" d="${d}" stroke-width="${w}" style="--at:${at}s;--dur:${dur}s"/>`).join("\n")}
-            </g>
+${SEAL_TIMED.map((part, i) => (part.stamp ? "" : `          <mask id="seal-pen-${i}" maskUnits="userSpaceOnUse" x="20" y="120" width="340" height="300">
+${part.runs.map((run) => `            <g transform="matrix(${run.frame})"><path class="seal-pen" pathLength="1" d="M0 .5H1" style="--at:${run.at}s;--dur:${run.dur}s;--ease:${run.ease}"/></g>`).join("\n")}
           </mask>
-          <mask id="seal-wet" maskUnits="userSpaceOnUse" x="20" y="120" width="340" height="300">
-            <g filter="url(#seal-brush)" fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round">
-${SEAL_STROKES.filter(([, , , dur]) => dur).map(([d, w, at, dur, tip]) => `              <path class="seal-wet-stroke" pathLength="1" d="${d}" stroke-width="${w}" style="--at:${at}s;--dur:${dur}s;--tip:${tip}"/>`).join("\n")}
-            </g>
-          </mask>
-        </defs>
-        <g class="seal-ink" mask="url(#seal-ink)">
-${SEAL_SHAPES.map((d) => `          <path d="${d}"/>`).join("\n")}
-        </g>
-        <g class="seal-wet" mask="url(#seal-wet)" aria-hidden="true">
-${SEAL_SHAPES.map((d) => `          <path d="${d}"/>`).join("\n")}
+`)).join("")}        </defs>
+        <g class="seal-ink">
+${SEAL_TIMED.map((part, i) => (part.stamp ? `          <path class="seal-stamp" d="${part.d}" style="--at:${part.at}s"/>` : `          <path d="${part.d}" mask="url(#seal-pen-${i})"/>`)).join("\n")}
         </g>
       </svg>`;
 
@@ -486,7 +564,7 @@ const edits = [
   ['<link rel="stylesheet" href="materials.css">', '<link rel="stylesheet" href="/landing/reference/materials.css">\n<link rel="stylesheet" href="/landing/additions.css">', "materials.css"],
   ['<script src="landing.js"></script>', `<script>window.ZIJ_TABLE = ${JSON.stringify(table)};</script>\n<script src="/landing/reference/landing.js"></script>\n<script src="/landing/life.js"></script>`, "the script"],
   ['<p class="line">Satellites do the watching.<br>We make the tables.</p>', '<p class="line">1,000 years ago, a zij charted the sky.<br>Ours charts a safer Earth.</p>', "the hero's line"],
-  ['<h1><img src="../logo/zij-seal-night.svg" alt="Zij · زيج" width="287" height="246"></h1>', `<h1>${SEAL_WRITTEN}</h1>`, "the hero's seal"],
+  ['<h1><img src="../logo/zij-seal-night.svg" alt="Zij · زيج" width="287" height="246"></h1>', `<h1 style="--seal-end:${SEAL_END}s">${SEAL_WRITTEN}</h1>`, "the hero's seal"],
   ["from 25 years of NASA satellite records.", `from ${years} years of NASA satellite records.`, "the dek"],
   ['<a class="catchword begin" id="begin" href="#ch-1">Begin reading</a>', '<a class="catchword enter" href="/explore">Open the map</a>\n      <a class="scroll-cue" id="begin" href="#record" aria-label="Scroll down to the record"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v15M5 13l7 7 7-7"/></svg></a>', "the hero's link"],
   ["Over the Nile Delta, VIIRS sees 11 to 20 times more fire pixels than MODIS, and the gap changes from year to year.", `Over the Nile Delta in autumn, VIIRS on Suomi NPP records ${Math.round(usual[0])} to ${Math.round(usual[usual.length - 1])} times more fire pixels than MODIS on Aqua in most years, and ${Math.round(peak.ratio)} times in ${peak.year}. The gap changes from year to year.`, "the pixel ratio"],
