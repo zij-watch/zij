@@ -31,12 +31,15 @@ const subscribeMotion = (cb: () => void) => {
   m.addEventListener("change", cb);
   return () => m.removeEventListener("change", cb);
 };
+const noop = () => () => {};
 const readStill = () => window.matchMedia(motionQuery).matches || /[?&]still\b/.test(window.location.search);
 
 export default function Game({ data, chapters, keep = true }: { data: GameData; chapters: ChapterDef[]; keep?: boolean }) {
   const L = data.lines;
   const still = useSyncExternalStore(subscribeMotion, readStill, () => false);
   const savedRaw = useRemembered("zij.diary.v1");
+  // Nothing plays until the browser has read what it kept: a level must not start and be replaced.
+  const client = useSyncExternalStore(noop, () => true, () => false);
   const saved = useMemo(() => (savedRaw ? loadProgress() : null), [savedRaw]);
 
   const [started, setStarted] = useState(false);
@@ -59,6 +62,8 @@ export default function Game({ data, chapters, keep = true }: { data: GameData; 
 
   const goTo = useCallback((next: number, p: Progress) => {
     const from = chapters[chapter], to = chapters[next];
+    // Once the player has moved on, the progress being saved is this visit's, not one to resume.
+    setStarted(true);
     const swap = () => {
       setChapter(next);
       setPhase("play");
@@ -124,7 +129,7 @@ export default function Game({ data, chapters, keep = true }: { data: GameData; 
             ) : (
               <>
                 <div className="dd-level" key={chapter}>
-                  <Level />
+                  {client && <Level />}
                 </div>
                 {phase === "end" && (
                   <LevelEnd

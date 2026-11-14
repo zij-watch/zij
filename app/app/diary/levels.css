@@ -1,0 +1,72 @@
+/* Hudhud's Fire Diary: the levels. Tokens only; transform and opacity only. */
+
+.lv-full { position: absolute; inset: 0; }
+.lv-keys { margin: 0; font: var(--type-marginal); font-size: 15px; line-height: 20px; color: var(--ink-muted); }
+.lv-caption { margin: 0; color: var(--brass); }
+@keyframes dd-place { from { opacity: 0; transform: translateY(-14px) scale(1.04); } }
+
+/* ================================================================ the opening */
+.lv-orbits { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-8) var(--space-12); opacity: 0; transform: translateY(-24px); transition: opacity var(--dur-camera) var(--ease-lamp), transform var(--dur-camera) var(--ease-lamp); }
+.lv-orbits.is-in { opacity: 1; transform: none; }
+.lv-orbit { position: relative; width: 240px; height: 150px; display: grid; place-items: center; }
+.lv-ring { position: absolute; left: 20px; top: -25px; width: 200px; height: 200px; transform: scaleY(0.32); pointer-events: none; }
+.lv-orbit.is-viirs .lv-ring { transform: scaleY(0.32) rotate(8deg); }
+.lv-glide { animation: dd-glide 6s ease-in-out infinite alternate; }
+.lv-glide.is-quick { animation-duration: 3.2s; }
+@keyframes dd-glide { from { transform: translateX(-34px); } to { transform: translateX(34px); } }
+.lv-begin { margin-top: var(--space-4); }
+
+/* ================================================================ level 1 · spot */
+.lv-tallies { position: absolute; z-index: 3; top: var(--space-3); left: 50%; transform: translateX(-50%); display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--space-2) var(--space-4); width: max-content; max-width: calc(100% - var(--space-8)); }
+.lv-tally { padding: var(--space-1) var(--space-3); background: var(--ground-raised); box-shadow: inset 0 0 0 1px var(--rule); font: var(--type-label); letter-spacing: var(--tracking-label); text-transform: uppercase; }
+.lv-tally b { margin-left: var(--space-1); font: var(--type-figure); font-size: 17px; font-weight: 700; color: var(--ink); }
+.lv-tally.is-modis { color: var(--lapis); }
+.lv-tally.is-viirs { color: var(--rubric); }
+.lv-track { position: absolute; left: 6%; right: 4%; top: 9%; bottom: 4%; container-type: inline-size; pointer-events: none; }
+.lv-beam { position: absolute; left: 0; top: 0; transform: translateX(calc(var(--beam) * 100cqw - 50%)); transition: transform var(--dur-sheet) var(--ease-paper); }
+.lv-beam .sat { --beam-w: 22cqw; --beam-h: 80vh; }
+.lv-land { position: absolute; left: 6%; right: 4%; top: 54%; bottom: 4%; }
+.lv-fire { position: absolute; transform: translate(-50%, -100%); }
+.lv-firebtn { display: grid; place-items: end center; }
+.lv-square.is-modis { position: absolute; left: 50%; top: 58%; width: 60px; height: 60px; transform: translate(-50%, -50%); outline: 2px solid var(--lapis); outline-offset: 0; pointer-events: none; animation: dd-place var(--dur-sheet) var(--ease-paper) both; }
+.lv-smalls { position: absolute; left: 50%; top: 58%; display: grid; grid-template-columns: repeat(2, 16px); gap: 3px; transform: translate(-50%, -50%); pointer-events: none; }
+.lv-smalls i, .lv-small { display: block; width: 16px; height: 16px; outline: 1.5px solid var(--rubric); animation: dd-place var(--dur-sheet) var(--ease-paper) both; }
+.lv-smalls i:nth-child(2) { animation-delay: 80ms; } .lv-smalls i:nth-child(3) { animation-delay: 160ms; } .lv-smalls i:nth-child(4) { animation-delay: 240ms; }
+.lv-tiny { position: absolute; transform: translate(-50%, -100%); display: grid; place-items: center; pointer-events: none; }
+.lv-tiny .lv-small { position: absolute; width: 14px; height: 14px; top: 40%; }
+.lv-next { position: absolute; z-index: 3; right: var(--space-4); bottom: var(--space-4); }
+
+/* ================================================================ level 2 · sort */
+.lv-arrive { display: grid; justify-items: center; align-content: end; gap: var(--space-3); min-height: 170px; }
+.lv-arrival { display: flex; align-items: flex-end; gap: var(--space-4); animation: dd-place var(--dur-sheet) var(--ease-paper) both; }
+.lv-arrival .drag { padding: var(--space-3); }
+.lv-nights { display: grid; grid-template-columns: repeat(7, 22px); gap: 3px; padding: var(--space-2); background: var(--ground-raised); box-shadow: inset 0 0 0 1px var(--rule); }
+.lv-night { position: relative; height: 30px; background: color-mix(in srgb, var(--sky) 70%, var(--ground)); }
+.lv-night i { position: absolute; left: 58%; top: 34%; width: 4px; height: 7px; background: var(--flame); clip-path: polygon(50% 0, 100% 70%, 50% 100%, 0 70%); }
+.lv-trays { gap: var(--space-10); margin-top: var(--space-4); }
+.lv-held { display: inline-block; transform: scale(0.55); transform-origin: 50% 100%; margin: -16px -12px 0; }
+
+/* ================================================================ level 3 · count */
+.lv-week { display: grid; grid-template-columns: repeat(7, minmax(40px, 64px)); gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.lv-day { display: grid; justify-items: stretch; gap: var(--space-2); }
+.lv-above { display: grid; place-items: center; height: 34px; background: color-mix(in srgb, var(--sky) 80%, var(--ground)); box-shadow: inset 0 0 0 1px var(--rule); }
+.lv-eye { width: 34px; height: 20px; fill: none; stroke: var(--ink-muted); stroke-width: 1.5; stroke-linecap: round; }
+.lv-eye.is-open { stroke: var(--ink); }
+.lv-eye.is-open circle { fill: color-mix(in srgb, var(--lapis) 35%, var(--sky)); }
+.lv-eye .lv-pupil { fill: var(--ink); stroke: none; }
+.lv-box { display: grid; place-items: center; aspect-ratio: 1; min-height: 44px; background: var(--ground-raised); box-shadow: inset 0 0 0 1px var(--rule); }
+.lv-box.is-seen { background: color-mix(in srgb, var(--ground-raised) 80%, var(--brass)); }
+.lv-mark { font: var(--type-display-m); font-size: 30px; line-height: 1; color: var(--ink); animation: dd-place var(--dur-sheet) var(--ease-paper) both; }
+.lv-tokens { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-4); }
+.lv-token { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--wood); color: var(--on-wood); box-shadow: inset 0 0 0 2px var(--brass), var(--shadow-token); font: var(--type-display-m); font-size: 30px; line-height: 1; }
+.lv-realrow { display: grid; justify-items: center; gap: var(--space-2); }
+.lv-realrow.is-other { opacity: 0.85; }
+.lv-who { margin: 0; font: var(--type-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink); }
+
+@media (max-width: 640px) {
+  .lv-orbit { width: 200px; height: 130px; }
+  .lv-ring { left: 0; }
+  .lv-week { grid-template-columns: repeat(7, minmax(36px, 1fr)); gap: var(--space-1); width: 100%; }
+  .lv-trays { gap: var(--space-6); }
+  .lv-trays .tray { width: 150px; }
+}

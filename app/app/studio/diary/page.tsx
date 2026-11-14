@@ -5,6 +5,7 @@ import ScriptSheet from "@/components/diary/ScriptSheet";
 import { readDiaryData, readDiaryNumbers } from "@/lib/diary/load";
 import "../../diary/diary.css";
 import "../../diary/game.css";
+import "../../diary/levels.css";
 import "./studio-diary.css";
 
 // Hudhud's Fire Diary, for review. Not linked from the site.
