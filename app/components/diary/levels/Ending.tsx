@@ -71,7 +71,7 @@ export default function Ending() {
 
   return (
     <div className="lv lv-ending">
-      <Constellation lit={lit} threaded label={L["ui.stars"]} />
+      {step < 4 && <Constellation lit={lit} threaded label={L["ui.stars"]} />}
       {step === 0 && <Task id="end.task" />}
       {step < 4 && (
         <TapToSpeak className={`lv-mona${step === 0 ? " is-next" : ""}`} label={L["ui.mona"]} onTap={() => { if (step === 0) { setStep(1); g.quiet(); g.wait(2600).then(() => { g.say("end.mona"); setStep(2); }); } }}>
@@ -96,20 +96,24 @@ export default function Ending() {
       {step === 35 && (
         <>
           <Task id="end.task.seal" />
-          <SealPress kind="keeper" label={L["end.seal"]} onPressed={() => { g.seal("keeper"); g.cheer(); g.pose({ fly: true }); setStep(4); }} />
+          <SealPress kind="keeper" label={L["end.seal"]} onPressed={() => { g.seal("keeper"); g.cheer(); g.pose({ crest: true }); setStep(4); }} />
         </>
       )}
       {step === 4 && (
         <div className="keeper slip" data-theme="folio">
           <span className="jadwal" aria-hidden="true" />
           <h2 className="keeper-title">{L["end.page"]}</h2>
-          <div className="keeper-sky" data-theme="night"><Constellation lit={lit} /></div>
-          <p className="keeper-kept"><span>{L["ui.kept"]}</span> <b className="t-figure">{kept}</b></p>
-          <ol className="keeper-learned">{["end.r1", "end.r2", "end.r3", "end.r4", "end.r5"].map((id, i) => <li key={id} style={{ animationDelay: `${i * 250}ms` }}>{L[id]}</li>)}</ol>
-          <div className="keeper-seals">
-            {seals.map((s) => (
-              <figure key={s} className="keeper-seal"><WaxSeal kind={s} size={84} /><figcaption>{L[s === "honest" ? "t45.seal" : s === "detective" ? "c56.seal" : "end.seal"]}</figcaption></figure>
-            ))}
+          <div className="keeper-cols">
+            <div className="keeper-col">
+              <div className="keeper-sky" data-theme="night"><Constellation lit={lit} /></div>
+              <p className="keeper-kept"><span>{L["ui.kept"]}</span> <b className="t-figure">{kept}</b></p>
+              <div className="keeper-seals">
+                {seals.map((s) => (
+                  <figure key={s} className="keeper-seal"><WaxSeal kind={s} size={72} /><figcaption>{L[s === "honest" ? "t45.seal" : s === "detective" ? "c56.seal" : "end.seal"]}</figcaption></figure>
+                ))}
+              </div>
+            </div>
+            <ol className="keeper-learned">{["end.r1", "end.r2", "end.r3", "end.r4", "end.r5"].map((id, i) => <li key={id} style={{ animationDelay: `${i * 250}ms` }}>{L[id]}</li>)}</ol>
           </div>
           <div className="keeper-acts">
             <a className="stamp" href="/explore?area=nile-delta">{L["end.map"]}</a>

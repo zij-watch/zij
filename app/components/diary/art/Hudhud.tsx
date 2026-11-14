@@ -86,11 +86,13 @@ function Body({ fly, stone, book, uid }: { fly?: boolean; stone?: boolean; book?
       {fly ? (
         <>
           {/* in flight: the far wing behind, the body stretched out, the near wing in front, feet tucked */}
-          <g clipPath={`url(#${far})`}>
-            <path className="hh-ink" d="M10 10H80V70H10Z" />
-            <path className="hh-bar" d="M26 26L40 18M33 35L49 25M41 45L58 33M49 55L64 43" />
+          <g className="hh-wing-far">
+            <g clipPath={`url(#${far})`}>
+              <path className="hh-ink" d="M10 10H80V70H10Z" />
+              <path className="hh-bar" d="M26 26L40 18M33 35L49 25M41 45L58 33M49 55L64 43" />
+            </g>
+            <path className="hh-line hh-none" d="M54 63C47 45 38 30 23 17C36 22 53 30 64 45C66.6 51 64.6 59 60 65Z" />
           </g>
-          <path className="hh-line hh-none" d="M54 63C47 45 38 30 23 17C36 22 53 30 64 45C66.6 51 64.6 59 60 65Z" />
           <g clipPath={`url(#${tail})`} transform="translate(-4 -3) rotate(-14 37 77)">
             <path className="hh-ink" d="M0 60H50V110H0Z" />
             <path className="hh-bar is-wide" d="M21.6 82.6L30.6 97.4" />
@@ -98,11 +100,13 @@ function Body({ fly, stone, book, uid }: { fly?: boolean; stone?: boolean; book?
           <path className="hh-buff hh-line" d="M30 75C34 63 50 56 68 58C80 59.6 85.6 66 84 73C81 81 63 85.6 47 84.4C38 83.8 30.6 80.6 30 75Z" />
           <path className="hh-belly" d="M40 82.4C50 85.4 64 84.6 74 80C64 82 50 82.6 40 82.4Z" />
           <path className="hh-hatch" d="M42 80.6L48 83.4M48 81.2L55 84M55 81.6L62 84M62 81L69 82.8" />
-          <g clipPath={`url(#${nearw})`}>
-            <path className="hh-ink" d="M40 10H95V80H40Z" />
-            <path className="hh-bar" d="M52 60L68 68M56 50L72 58M62 41L77 48M69 32L82 38" />
+          <g className="hh-wing-near">
+            <g clipPath={`url(#${nearw})`}>
+              <path className="hh-ink" d="M40 10H95V80H40Z" />
+              <path className="hh-bar" d="M52 60L68 68M56 50L72 58M62 41L77 48M69 32L82 38" />
+            </g>
+            <path className="hh-line hh-none" d="M48 68C54 51 66 35 87 22C77 37 73 51 71 63C65 69.6 56 71.6 48 68Z" />
           </g>
-          <path className="hh-line hh-none" d="M48 68C54 51 66 35 87 22C77 37 73 51 71 63C65 69.6 56 71.6 48 68Z" />
           <path className="hh-ink-line" d="M58 84L61 89M64 83.6L68 88" />
         </>
       ) : (

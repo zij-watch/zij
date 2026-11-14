@@ -19,9 +19,11 @@ export default function Opening() {
     let live = true;
     // he flies in from over the fields and lands on his diary (game.css, .is-opening .hh.is-fly)
     g.pose({ fly: true });
-    g.wait(1600).then(() => {
+    g.wait(2400).then(() => {
       if (!live) return;
-      g.pose({ fly: false });
+      // down on the diary: he turns to face the page (game.css, hh-turn) and raises his crest
+      g.pose({ fly: false, crest: true });
+      g.wait(1400).then(() => { if (live) g.pose({ crest: false }); });
       g.say(["open.hello", "open.straw"]);
       return g.wait(g.still ? 0 : 1800);
     }).then(() => { if (live) setStep(1); });

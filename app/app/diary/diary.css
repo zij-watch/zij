@@ -41,9 +41,14 @@
 /* he breathes: the body barely rises, so he is never a still picture */
 .hh-body { transform-origin: 50% 88%; animation: hh-breathe 3.6s ease-in-out infinite alternate; }
 @keyframes hh-breathe { from { transform: scale(1, 1); } to { transform: scale(1.012, 1.02); } }
-.hh.is-fly .hh-body { animation: hh-wing 0.42s ease-in-out infinite alternate; transform-origin: 50% 60%; }
-@keyframes hh-wing { from { transform: translateY(-2px) scaleY(1.04); } to { transform: translateY(3px) scaleY(0.92); } }
-.hh.is-step { animation: hh-step var(--dur-sheet) var(--ease-ink); }
+/* in flight: the body rises on each downstroke, and each wing beats from its own shoulder */
+.hh.is-fly .hh-body { animation: hh-bob 0.36s ease-in-out infinite alternate; transform-origin: 50% 60%; }
+@keyframes hh-bob { from { transform: translateY(3px); } to { transform: translateY(-3px); } }
+.hh-wing-far, .hh-wing-near { transform-box: view-box; }
+.hh-wing-far { transform-origin: 60px 62px; animation: hh-beat-far 0.36s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate; }
+.hh-wing-near { transform-origin: 60px 66px; animation: hh-beat-near 0.36s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate; }
+@keyframes hh-beat-far { from { transform: rotate(6deg) scaleY(1); } to { transform: rotate(-48deg) scaleY(0.7); } }
+@keyframes hh-beat-near { from { transform: rotate(-8deg) scale(1); } to { transform: rotate(62deg) scale(0.92, 0.8); } }.hh.is-step { animation: hh-step var(--dur-sheet) var(--ease-ink); }
 @keyframes hh-step { 0% { transform: translate(0, 0); } 40% { transform: translate(0, -11px) rotate(-3deg); } 100% { transform: translate(0, 0); } }
 
 /* ================================================================ the satellites and their rings */

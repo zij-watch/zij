@@ -5,7 +5,7 @@
 // between chapters: the lamp goes out and lights up within a scene, the camera tilts between the
 // sky and the desk. Progress is kept in the browser (lib/diary/progress.ts) so a visitor can carry on.
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ComponentType } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
 import type { GameData } from "@/lib/diary/game";
 import { useRemembered } from "@/lib/remember";
 import { veilReady } from "@/lib/veil";
@@ -35,6 +35,41 @@ const subscribeMotion = (cb: () => void) => {
 };
 const noop = () => () => {};
 const readStill = () => window.matchMedia(motionQuery).matches || /[?&]still\b/.test(window.location.search);
+
+/**
+ * The play area never scrolls: whatever a step shows is fitted to the room between the running head
+ * and Roro's corner. When a step is taller (or wider) than that room, it is drawn a little smaller,
+ * eased, around its centre. A level drawn over the whole scene (.lv-full) is left as it is.
+ */
+function Fit({ children }: { children: ReactNode }) {
+  const outer = useRef<HTMLDivElement>(null);
+  const inner = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  useLayoutEffect(() => {
+    const o = outer.current, i = inner.current;
+    if (!o || !i) return;
+    const measure = () => {
+      if (i.querySelector(".lv-full")) { setScale(1); return; }
+      const cs = getComputedStyle(o);
+      const availH = o.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      const availW = o.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      const h = i.offsetHeight, w = Math.max(i.offsetWidth, i.scrollWidth);
+      if (!h || !w) return;
+      const s = Math.max(0.45, Math.min(1, availH / h, availW / w));
+      setScale((prev) => (Math.abs(prev - s) < 0.01 ? prev : s));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(o);
+    ro.observe(i);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div className="dd-level" ref={outer}>
+      <div className="dd-fit" ref={inner} style={scale < 1 ? { transform: `scale(${scale})` } : undefined}>{children}</div>
+    </div>
+  );
+}
 
 export default function Game({ data, chapters, keep = true, startAt = 0 }: { data: GameData; chapters: ChapterDef[]; keep?: boolean; startAt?: number }) {
   const L = data.lines;
@@ -154,7 +189,7 @@ export default function Game({ data, chapters, keep = true, startAt = 0 }: { dat
         <div className={`dd${still ? " is-still" : ""}`} data-theme="night">
           <RunningHead words={data.runningHead} current={level} sealAlt="Zij" kept={progress.stars.reduce((a, b) => a + b, 0)} keptLabel={L["ui.kept"]} />
           <Stage scene={def.scene} still={still} dark={dark} guide={
-            <div className={`dd-guide${resume ? " is-away" : ""}${level === 0 ? " is-opening" : ""}${level === 0 && !landed && !pose.fly ? " is-waiting" : ""}`}>
+            <div className={`dd-guide${resume ? " is-away" : ""}${level === 0 ? " is-opening" : ""}${level === 0 && !landed && !pose.fly ? " is-waiting" : ""}${level === 0 && landed && !resume ? " is-landed" : ""}`}>
               <Hudhud key={`hh-${stepKey}`} className={stepKey ? "is-step" : ""} crest={pose.crest} tilt={pose.tilt} fly={pose.fly} stone={pose.stone} label={L["ui.hudhud"]} />
               <Note key={`note-${noteKey}`} lines={note} still={still} names={{ modis: L["ui.modis"], viirs: L["ui.viirs"], mona: L["ui.mona"] }} />
             </div>
@@ -176,9 +211,9 @@ export default function Game({ data, chapters, keep = true, startAt = 0 }: { dat
               </div>
             ) : (
               <>
-                <div className="dd-level" key={chapter}>
+                <Fit key={chapter}>
                   {client && lit && <Level />}
-                </div>
+                </Fit>
                 {phase === "end" && (
                   <LevelEnd
                     level={level}

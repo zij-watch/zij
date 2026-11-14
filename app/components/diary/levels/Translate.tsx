@@ -16,7 +16,7 @@ import { closeness, errAt, fmt } from "@/lib/diary/game";
 import { Chart, HowClose } from "../art/Chart";
 import DiaryBook, { type Bar } from "../art/DiaryBook";
 import { Envelope, IllusTag, RumourSlip } from "../art/Things";
-import Translator, { Balance, Gear, TwoFires, Volvelle, YearLever } from "../art/Translator";
+import Translator, { Balance, Gear, TwoFires, Volvelle } from "../art/Translator";
 import { useGame } from "../engine/context";
 import { Choice, SealPress, Task } from "../engine/Parts";
 
@@ -59,9 +59,12 @@ function FakeJump({ onDone }: { onDone: () => void }) {
   return (
     <>
       {stage === "join" && <Task id="t41.task" />}
-      <div className="lv-bookzone">
+      {stage === "rumour" && <Task id="t41.task.false" />}
+      <div className="lv-split">
+      <div className="lv-main lv-bookzone">
         <DiaryBook title={L["ui.diary"]} bars={bars} max={max} copying={joined} label={L["ui.diary"]} />
       </div>
+      <div className="lv-side">
       {stage === "join" && (
         <button type="button" className="stamp is-next" disabled={joined} onClick={() => { setJoined(true); g.wait(2200).then(() => setStage("why")); }}>{L["t41.join"]}</button>
       )}
@@ -78,18 +81,17 @@ function FakeJump({ onDone }: { onDone: () => void }) {
       )}
       {(stage === "rumour" || stage === "struck") && (
         <>
-          {stage === "rumour" && <Task id="t41.task.false" />}
-          <div className="lv-row">
-            <RumourSlip text={L["t41.rumour"]} struck={stage === "struck"} stamp={L["t41.false"]} />
-            {stage === "rumour" && (
-              <button type="button" className="stamp is-next" onClick={() => {
-                setStage("struck");
-                g.wait(2400).then(() => { g.say("t41.language"); return g.wait(1800); }).then(onDone);
-              }}>{L["t41.false"]}</button>
-            )}
-          </div>
+          <RumourSlip text={L["t41.rumour"]} struck={stage === "struck"} stamp={L["t41.false"]} />
+          {stage === "rumour" && (
+            <button type="button" className="stamp is-next" onClick={() => {
+              setStage("struck");
+              g.wait(2400).then(() => { g.say("t41.language"); return g.wait(1800); }).then(onDone);
+            }}>{L["t41.false"]}</button>
+          )}
         </>
       )}
+      </div>
+      </div>
     </>
   );
 }
@@ -141,14 +143,18 @@ function Magic({ onDone }: { onDone: () => void }) {
   return (
     <>
       {!reached && <Task id="t43.task" />}
-      <div className="lv-row lv-bench">
-        <div className={reached ? "" : "is-next"}>
-          <Translator closeness={closeness(errAt(data.kCurve, k))} labels={scaleLabels(L)} k={k} dialAngle={k * 18} dialProps={dialProps(k, setK, L["t43.dial"])} />
+      <div className="lv-split is-even">
+        <div className="lv-main">
+          <div className={`lv-trwrap${reached ? "" : " is-dial"}`}>
+            <Translator closeness={closeness(errAt(data.kCurve, k))} labels={scaleLabels(L)} k={k} dialAngle={k * 18} dialProps={dialProps(k, setK, L["t43.dial"])} />
+          </div>
         </div>
-        <Chart years={c.years} max={c.max} label={L["t43.learns"]} lines={[
-          { kind: "viirs", label: L["ui.viirs"], values: c.viirs },
-          { kind: "guess", label: L["t43.guess"], values: c.modis.map((m) => m * k) },
-        ]} />
+        <div className="lv-side">
+          <Chart years={c.years} max={c.max} label={L["t43.learns"]} lines={[
+            { kind: "viirs", label: L["ui.viirs"], values: c.viirs },
+            { kind: "guess", label: L["t43.guess"], values: c.modis.map((m) => m * k) },
+          ]} />
+        </div>
       </div>
     </>
   );
@@ -181,7 +187,8 @@ function Gears({ onDone }: { onDone: () => void }) {
   return (
     <>
       {seated < 4 && <Task id="t44.task" />}
-      <div className="lv-row lv-bench">
+      <div className="lv-split is-even">
+      <div className="lv-main lv-geared">
         <Translator
           closeness={closeness(err)}
           labels={scaleLabels(L)}
@@ -198,23 +205,25 @@ function Gears({ onDone }: { onDone: () => void }) {
           ))}
         </div>
       </div>
-      {seated > 0 && (
+      <div className="lv-side">
+      <Chart years={c.years} max={c.max} label={L["t43.learns"]} lines={[
+        { kind: "viirs", label: L["ui.viirs"], values: c.viirs },
+        { kind: "guess", label: L["t43.guess"], values: guess },
+      ]} />
+      {seated > 0 && seated < 4 && (
         <div className="lv-trial slip" data-theme="folio" key={seated}>
           <p className="t-eyebrow">{L[`t44.g${seated}`]}</p>
           <div className="lv-trialart">
             {seated === 1 && <Balance tip={-9} />}
             {seated === 2 && <Volvelle months={months} turn={9} />}
             {seated === 3 && <TwoFires />}
-            {seated === 4 && <YearLever at={1} />}
           </div>
+          <IllusTag text={L["ui.illus"]} />
         </div>
       )}
-      <Chart years={c.years} max={c.max} label={L["t43.learns"]} lines={[
-        { kind: "viirs", label: L["ui.viirs"], values: c.viirs },
-        { kind: "guess", label: L["t43.guess"], values: guess },
-      ]} />
-      {seated > 0 && seated < 4 && <IllusTag text={L["ui.illus"]} />}
       {seated === 4 && <Choice question={L["t44.fair"]} options={[{ id: "t45.fair" }, { id: "t45.notfair" }]} onPick={() => onDone()} />}
+      </div>
+      </div>
     </>
   );
 }
@@ -248,7 +257,10 @@ function Exam({ onDone }: { onDone: () => void }) {
   return (
     <>
       {env === "none" && <Task id="t45.task" />}
-      <ol className="lv-cards">
+      {env === "sealed" && <Task id="t45.task.env" />}
+      {env === "open" && !sealed && <Task id="t45.task.seal" />}
+      <div className={`lv-split${env === "none" ? " is-one" : ""}`}>
+      <ol className="lv-main lv-cards">
         {data.hide.map((h) => {
           const up = turned.includes(h.year), down = hidden === h.year;
           return (
@@ -269,9 +281,8 @@ function Exam({ onDone }: { onDone: () => void }) {
           );
         })}
       </ol>
-      {env === "sealed" && <Task id="t45.task.env" />}
       {env !== "none" && (
-        <div className="lv-row lv-envelope">
+        <div className="lv-side lv-envelope">
           <button type="button" className={`plain${env === "sealed" ? " is-next" : ""}`} onClick={() => { if (env === "sealed") { setEnv("open"); g.say("t45.close"); g.cheer(); } }} disabled={env === "open"} aria-label={L["t45.envelope"]}>
             <Envelope label={L["t45.envelope"]} open={env === "open"} />
           </button>
@@ -282,14 +293,12 @@ function Exam({ onDone }: { onDone: () => void }) {
               <HowClose closeness={closeness(data.needle.outOfTime)} labels={labels} />
             </div>
           )}
+          {env === "open" && !sealed && (
+            <SealPress kind="honest" label={L["t45.seal"]} onPressed={() => { setSealed(true); g.seal("honest"); onDone(); }} />
+          )}
         </div>
       )}
-      {env === "open" && !sealed && (
-        <>
-          <Task id="t45.task.seal" />
-          <SealPress kind="honest" label={L["t45.seal"]} onPressed={() => { setSealed(true); g.seal("honest"); onDone(); }} />
-        </>
-      )}
+      </div>
     </>
   );
 }
@@ -313,9 +322,11 @@ function OneDiary() {
     <>
       {!cranked && <Task id="t46.task.crank" />}
       {cranked && !done && <Task id="t46.task.lever" />}
-      <div className="lv-onebook">
+      <div className="lv-split">
+      <div className="lv-main lv-onebook">
         <DiaryBook title={L["ui.diary"]} bars={bars} max={max} bands label={L["ui.diary"]} />
       </div>
+      <div className="lv-side">
       {!cranked && (
         <button type="button" className="catchword is-next" onClick={() => { setCranked(true); g.cheer(); g.say("t46.band"); }}>{L["t46.crank"]}</button>
       )}
@@ -340,6 +351,8 @@ function OneDiary() {
           <button type="button" className="catchword is-next" onClick={() => g.finish()}>{L["ui.next"]}</button>
         </div>
       )}
+      </div>
+      </div>
     </>
   );
 }
