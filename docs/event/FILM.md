@@ -1,15 +1,47 @@
 # The demo film
 
-A 29.5 second film, 1920 x 1080, 30 frames a second, drawn from the real app one frame at a time. Nothing in it is a screen recording.
+A 29.5 second film, 1920 x 1080, 30 frames a second, drawn from the real app one frame at a time. Nothing in it is a screen recording. There are two versions of it, telling the same story to the same times:
+
+- **v1**, `/studio/film`: seven scenes, one sheet after another, joined by cuts, the ink rule and the paper slide.
+- **v2**, `/studio/film/v2`: one continuous camera take across a board, with no cuts and no fades (see [The second version: the board](#the-second-version-the-board)).
 
 | File | What it is |
 |---|---|
-| `app/film/film.mp4` | The film. With music if `app/film/music.mp3` exists, silent otherwise. |
-| `app/film/film-silent.mp4` | The same picture with no sound. |
-| `app/film/thumbnail.jpg` | One frame of the film, 1280 x 720. |
-| `app/film/stills/` | Still frames at full size, for looking at before a whole render. |
+| `app/film/film-v2-final.mp4` | **The film to upload**: v2 with music, effects and the ambience bed, no voice. |
+| `app/film/film-v2-final-voice.mp4` | The same with the voice-over. |
+| `app/film/film-final.mp4`, `film-final-voice.mp4` | v1, the same two ways, in case v2 is not used. |
+| `app/film/film-silent.mp4`, `film-v2-silent.mp4` | The picture with no sound, as rendered. The sound is put on these (see [Sound](#sound)). |
+| `app/film/film.mp4`, `film-v2.mp4` | The renderer's own output: the silent picture, or with `app/film/music.mp3` if that exists. |
+| `app/film/audio/` | The voice-over (`voiceover.wav`), its cleaned and placed copy, and the four masters. |
+| `app/film/thumbnail.jpg`, `thumbnail-v2.jpg` | One frame of the film, 1280 x 720. |
+| `app/film/stills/`, `stills-v2/` | Still frames at full size, for looking at before a whole render. |
+| `app/film/zij-demo30.en.srt`, `.vtt`, `.ass` | The captions, as a separate track (see [Captions](#captions)). |
 
 The renderer's output stays out of git (`app/film/.gitignore`): render it again from the steps below.
+
+## Captions
+
+The captions go to YouTube as a separate track. They are not burned into the picture: v1 has no caption strip, and v2 has none either.
+
+Their one source is `docs/event/zij-demo30.en.srt`. It holds the voice-over's words and timings, transcribed locally with whisper.cpp (large-v3-turbo). Each sentence starts as he says it. Where a sentence crosses a scene boundary, it is held to the next scene's start or split there, so that every caption lies inside one scene. That makes nine captions. Four of them start 0.15 to 0.9 s after his words: captions 3, 4, 6 and 8. Every run of the renderer writes three files from it to `app/film/`, with the same times, the same lines and the same line breaks:
+
+- `zij-demo30.en.srt`: plain, the source byte for byte (the renderer checks this).
+- `zij-demo30.en.vtt`: WebVTT, each cue at `line:92%,end align:center`, so its bottom sits 8% above the bottom of the frame.
+- `zij-demo30.en.ass`: for YTSubConverter (`.ass` to YouTube's `.ytt`). Times New Roman (YouTube cannot use the app's faces), not bold, 54 px on a 1920 x 1080 script. Ink `#1E1A15` on a box of paper `#F6EDD8` at 85% opacity, no outline, no shadow. Bottom centre, 8% above the bottom.
+
+How YTSubConverter reads the `.ass`, from its source, and what the file does about it:
+
+- **The box.** Its colour is taken from `OutlineColour` when `BorderStyle` is 3 and `Outline` is above 0, so the style has `Outline 1`: it is the box's padding, not an outline round the letters. `BackColour` is only the shadow's colour, and `Shadow` is 0.
+- **The position.** `MarginV` is ignored, and a line is placed by its `\pos`, so every line carries `{\an2\pos(960,994)}`.
+- **The size.** YouTube gives the `Default` style its standard size, so the 54 px is a guide for other players.
+- **The font.** The name is passed on as written. If YouTube does not offer Times New Roman, the player falls back to Roboto.
+
+Placed this low, the box covers no paper's heading and none of the map's key area in any scene of either version. This was checked by burning the `.ass` onto rendered frames with libass.
+
+- In v1's scene 6 the box lies over the lower part of the brief's calendar.
+- On v2, paper 1's legend is at the top of its chart, so the box never reaches it.
+- On v2's paper 4 the box overlaps the bottom of Results' "This month so far" figure.
+- On v2's paper 6 it overlaps the lower rows of the brief's calendar.
 
 ## How it is made
 
@@ -18,19 +50,19 @@ The renderer's output stays out of git (`app/film/.gitignore`): render it again 
 - Every motion is a function of `t` (`app/lib/film/timeline.ts`). There are no CSS transitions or animations (the film's stylesheet switches off the app's own inside the film), no timers, and no random numbers without a seed. The wood and the paper are painted from fixed seeds.
 - React draws the frame from `t`. Then each scene sets by hand what the app's own components animate with timers: the bars of the chart (the chart is found by its element, its animation is off, and its values are set for the frame), the map's camera, the rows of the calendar, the strokes of the Seal.
 - The map's camera is set for each frame with `jumpTo`, along a path eased with one curve. Each frame waits for the map's `idle` event (every tile loaded, label fades finished) and for the atlas's detail cells.
-- The last second is still: the end card stops moving at 28.5 s. The last caption ends at 29.3 s, so its strip fades out over the 0.15 s before that; from 29.3 s every frame is the same. The page says when that is (`__film.stillFrom`, the later of 28.5 s and the last caption's end); the renderer photographs that frame once and repeats it, then photographs the page's very last frame again and prints how closely it matches.
+- In v1 the last second is still: the end card stops moving at 28.5 s, and from then on every frame is the same. The page says when that is (`__film.stillFrom`). The renderer photographs that frame once and repeats it. Then it photographs the page's very last frame again and prints how closely the two match.
 
 Before any frame is taken, the renderer checks the words against the film and the data, and stops if one fails:
 
 - every caption lies inside one scene;
-- the caption that says "from 77% to 14%" gives the numbers `method.json` holds: the season error of raw MODIS and of M4, each leaving one year out, rounded (76.51% and 14.15%);
+- a caption that quotes the error ("N% to M%") gives the numbers `method.json` holds: the season error of raw MODIS and of M4, each leaving one year out, rounded (76.51% and 14.15%). The captions follow the voice-over, which does not quote it, so today none does;
 - the counter on screen runs between the same two numbers.
 
-`app/scripts/film/render.mjs` opens the page in headless Chrome over the DevTools protocol, steps `t` by 1/30 s and takes a JPEG screenshot of every frame at quality 92. Frames are photographed at twice the size (3840 x 2160) and scaled to 1920 x 1080 with Lanczos, so charts and maps are sharp. Then ffmpeg:
+`app/scripts/film/render.mjs` opens the page in headless Chrome over the DevTools protocol. It steps `t` by 1/30 s and takes a JPEG screenshot of every frame at quality 92. Frames are photographed at twice the size (3840 x 2160) and scaled to 1920 x 1080 with Lanczos, so charts and maps are sharp. Chrome runs with `--run-all-compositor-stages-before-draw`, so a screenshot never shows a tile that has not been rastered yet. Then ffmpeg:
 
-1. One mp4 per scene, the same settings for all seven: `libx264`, `-crf 18`, `-pix_fmt yuv420p`, 30 fps, BT.709.
-2. The scenes are joined with the concat demuxer and `-c copy`.
-3. Sound is added last with `-c:v copy` (AAC, a short fade in and a two second fade out), cut at 29.5 s.
+1. One mp4 per piece, the same settings for all: `libx264`, `-crf 18`, `-pix_fmt yuv420p`, 30 fps, BT.709. A piece is a scene in v1 and about five seconds in v2.
+2. The pieces are joined with the concat demuxer and `-c copy`.
+3. Sound is added last with `-c:v copy`, by `scripts/film/sound.mjs` (see [Sound](#sound)).
 4. `ffprobe` checks that each file is 1920 x 1080 and 29.5 s long, and never over 29.9.
 
 A transition belongs to the scene it opens, so it is inside that scene's file; nothing is blended between files.
@@ -43,16 +75,28 @@ From `app/`, with Node 22 or later, Chrome, ffmpeg and ffprobe:
     pnpm start --port 3111
     node scripts/film/render.mjs --stills 2.3,7.3,9.6,12.3,16.5,19.7,23.6,27.3
     node scripts/film/render.mjs
+    node scripts/film/render.mjs --film v2 --stills 0.3,6.2,18.2,2.6,8.6,16.2,19.6,29.0
+    node scripts/film/render.mjs --film v2 --thumb 16.9
+    npx tsx scripts/film/sound.mjs --story D:/Zij/zij-story
 
-`--scenes 4,5` renders those scenes again and joins everything; `--thumb 9.9` sets the thumbnail's time; `--keep` keeps the frames. Scene 5 needs the network: its satellite picture comes from NASA GIBS.
+Other options:
 
-To look at it by hand, open `/studio/film?t=12.3`. The arrow keys step one frame, with Shift one second.
+- `--parts 4,5` renders those pieces again and joins everything.
+- `--thumb 9.9` sets the thumbnail's time.
+- `--keep` keeps the frames.
+- `--captions` runs the checks and writes the three caption files, and nothing else.
+
+Scene 5 needs the network: its satellite picture comes from NASA GIBS.
+
+To look at it by hand, open `/studio/film?t=12.3` or `/studio/film/v2?t=12.3`. The arrow keys step one frame, with Shift one second.
 
 ### The address
 
 The area and the day are in the address, like every view of the app: `/studio/film?poly=...&day=YYYY-MM-DD`. With neither, the page goes to the film's own: a polygon over the rice country of the northern Nile Delta (30.50 to 31.80 E, 30.60 to 31.40 N) and 20 October 2023, a day of the straw burning with 157 VIIRS and 26 MODIS detections in the polygon. The downloads in scene 6 read the same address, so the CSV and the calendar picture are the drawn area's. The brief is the Nile Delta preset's: it is the app's own page at `/brief?area=nile-delta`, held in a frame on the desk, with the film's small stylesheet put into it (no buttons, no ground behind the sheet, nothing that moves).
 
 ## The scenes
+
+The scenes are the same in both versions: what each paper shows, and when. Below is v1, where each scene is its own sheet. For how v2 lays the same stories on one board, see [The second version: the board](#the-second-version-the-board).
 
 | | Seconds | What happens | Drawn by |
 |---|---|---|---|
@@ -64,9 +108,75 @@ The area and the day are in the address, like every view of the app: `/studio/fi
 | 6 | 22.2 to 25.0 | Take it. The Nile Delta's season brief slides out; the drawn area's monthly CSV and calendar picture are stamped. | `/brief?area=nile-delta`, `Downloads` |
 | 7 | 25.0 to 29.5 | End card. The Seal is written with the brush, then "Team Zij · zij.watch", then the credits in one small line. The end card holds from 28.5 s. | the landing page's Seal |
 
-Transitions, three kinds only: a cut (1 to 2, 4 to 5), the ink rule (into 3 and into 7: a double rule is drawn across, then travels down the frame with the next sheet behind it), and the paper slide (the calendar, the map sheet, Results, the brief).
+In v1, transitions are of three kinds only: a cut (1 to 2, 4 to 5), the ink rule (into 3 and into 7: a double rule is drawn across, then travels down the frame with the next sheet behind it), and the paper slide (the calendar, the map sheet, Results, the brief).
 
 Motion: one easing curve for every move, the design system's `ease-lamp`; one spring for every arrival, critically damped so nothing bounces (the design system allows no bounce). Every scene has a slow push-in from 1.00 to 1.03 on the sheets, with the desk moving less and the lamp's light drifting between them. One exception to the one curve: the Seal's strokes keep the pace the landing page gives them.
+
+## The second version: the board
+
+v2 is one continuous camera take with no cuts and no fades. Everything in it is a function of `t` (`app/lib/film/board.ts`), as in v1.
+
+**The board.** The landing page's night desk, darkened under a lamp. Seven papers are pinned on it, each turned less than 1.5 degrees, each with a drop shadow and a brass pin. They lie on a path that is not straight: papers 1 to 4 along the top, then down to 5, and back left through 6 to 7. The board is about 3.8 frames wide and 2.2 tall.
+
+A brass thread runs from pin to pin, 1 to 7. Between neighbours it arcs above the papers' top edges, so it never lies across a heading. From 4 down to 5 it loops round the right of the board. It is drawn ahead of the camera, its end a little under half a stretch in front.
+
+| Paper | Story | Scene | Camera glides in | Story starts |
+|---|---|---|---|---|
+| 1 | The jump: the seasons as recorded, the key at the top, MODIS then VIIRS, the two halves named. A slip at its corner: "Team Zij · Harmonization of MODIS and VIIRS Hot Spots". | 0.0 to 6.4 | 0.6 to 1.8 s | 1.33 s |
+| 2 | The link: the lever, the seasons on one scale with their ranges and median; the calendar beside it, its rows stamped | 6.4 to 10.6 | 5.65 to 6.7 s | 6.28 s |
+| 3 | The proof: the validation chart's bars; the counter card from 77% to 14% | 10.6 to 14.0 | 9.85 to 10.9 s | 10.48 s |
+| 4 | Any area: the map flies to the Nile Delta, the cursor draws the polygon, Results and the verdict | 14.0 to 18.4 | 13.25 to 14.3 s | 13.88 s |
+| 5 | Any day: the day's slip, the hotspots drop, NASA's picture of the day | 18.4 to 22.2 | 17.65 to 18.7 s | 18.28 s |
+| 6 | Take it: the CSV and the calendar picture stamped on a sheet, the Nile Delta's brief beside it | 22.2 to 25.0 | 21.45 to 22.5 s | 22.08 s |
+| 7 | The Seal card: the Seal written with the brush, "Team Zij · zij.watch", the credit line | 25.0 to 29.5 | 24.25 to 25.3 s | 24.88 s |
+
+Each paper's story starts when the camera is 70% of the way there, and each paper is in focus during its scene.
+
+**The camera.** One path through nine keys: the wide shot, each paper in focus, and the end.
+
+- **Keys.** In focus, one world pixel is one pixel of the frame, and the camera turns with the paper by 0.6 of its angle. The wide shot fits the board into 1,800 px. The end key fits it into 1,640 px, with room for the thread's loop, drawn 15% towards the Seal card.
+- **Path.** Position runs on a centripetal Catmull-Rom spline. Zoom (in log) and roll are eased from key to key.
+- **Time.** Time is remapped so the camera never stops dead and never starts suddenly. On each paper it drifts at a crawl. Each glide from paper to paper takes 1.05 s: the crawl is blended across, plus a smooth sin² rise and fall in speed. While gliding the camera zooms out by up to 12%.
+- **Opening.** The wide shot lasts 0 to 0.6 s, then the camera pushes into paper 1.
+- **End.** From 27.7 s the camera pulls back from the Seal card until all seven papers and the whole thread are in frame. It dips out a further 9% past the board and settles at 29.2 s with the card still in focus. It does not move after that.
+
+**Depth and light.** The layers move at different rates. The desk moves 0.965 times as fast as the papers, and the pins and thread 1.012 times. The lamp's light and its warm glow follow the camera 0.45 s behind. Each paper's shadow is cast away from the lamp, 9 to 18 px long, and the thread's shadow is cast the same way.
+
+Papers other than the one in focus are softened. The blur starts 320 px from the middle of the frame and grows to 4.5 px over the next 900 px. Focus passes from paper to paper over each glide.
+
+**Motion blur.** Only on frames where the camera moves more than 2 px per frame; settled frames get none (on a paper the camera crawls at under 0.3 px per frame). Such a frame is 12 photographs spread evenly over 1/60 s from `t`, a 180 degree shutter, each standing for its 1/720 s slice. On its own, twelve sharp copies still show as a comb on fast text. So the renderer's second page, the darkroom, smears each photograph along the way the picture slides in its slice (`slideAt` in `board.ts`, an affine field from the camera). This happens on the GPU (WebGL 2, a tap every 3/4 of a pixel). The twelve smears meet without a gap; they are summed in a float buffer, divided, and saved at JPEG quality 92. 239 of the 885 frames have it.
+
+**Sharpness.** Papers are laid out at their in-focus size and photographed at twice the size, like v1. The maps are drawn at the sheet's own pixel size (1572 x 712). While the camera travels they are not redrawn: they move with their paper as pictures.
+
+**The titles on the papers.** Each of papers 1 to 6 carries a short title in ink as its heading:
+
+1. "As recorded"
+2. "One record, 2000 to today"
+3. "Tested on unseen years"
+4. "Any area"
+5. "Any day"
+6. "Take it with you"
+
+The titles are set in Cormorant Garamond 600 at 56 px on screen when the paper is in focus. Each is inked in left to right over 0.45 s from the paper's story start (the camera 70% arrived) and stays on the paper. The Seal card carries "Team Zij · zij.watch" and the credit line. The captions are not in the picture: they are only in the caption files. Paper 1's legend sits at the top of its chart, under the title.
+
+**Rendering.** v2 is encoded in six pieces of about five seconds each and joined, with the same settings as v1. There is no held last second: the camera rests from 29.2 s, but every frame is photographed. The hotspots' ink blots have no blend mode on the board, unlike v1. In v2 the blend mode forced a render surface the size of the papers' layer, larger than the GPU takes, and Chrome dropped the layers above it from the frame.
+
+## Sound
+
+`app/scripts/film/sound.mjs` puts the sound on the rendered silent films. It runs with tsx because it reads the films' own timelines, which are TypeScript:
+
+    npx tsx scripts/film/sound.mjs --story D:/Zij/zij-story
+
+It follows the registration film's sound (`zij-story/narration/DIRECTION.md`): a quiet ambience bed under every second, the music under the voice, about -14 LUFS integrated and at most -1 dBTP. No AI-generated audio of any kind. Every file, its author and its licence: [AUDIO_CREDITS.md](AUDIO_CREDITS.md).
+
+- **Music.** The registration film's track, "Arabic" by Kulakovka (Pixabay Content License): its last section, back-timed so the final note is struck at 28.95 s and rings out over the last half-second. It fades to silence by 29.5 s.
+- **Bed.** The lamp's flame (Freesound, CC0), about 22 dB under the music.
+- **Effects.** Quiet and few, placed from the timelines, never by ear (each film's event list is written to `app/film/work/sound/events-v1.txt` and `events-v2.txt`).
+  - In v2 the times come from `lib/film/board.ts`: soft air on each camera glide (`TRAVELS`); a faint thread rasp along it; a tick when the thread reaches each pin (6.2, 10.4, 13.8, 18.2, 22.0 and 24.8 s, from `threadDrawn`); a quill for each title at its paper's story start, for the verdict, and for the team and credit lines; the polygon drawn; stamps for the calendar's rows, the verdict's badge and the two files; paper slides for Results and the day's slip; and the Seal's brush.
+  - In v1 the times come from `lib/film/timeline.ts` (`T`): the same kinds of sound at its own beats.
+  - Sources: recordings from the registration film's folder (CC0), plus two sounds synthesised with ffmpeg (the thread, the tick).
+- **Voice.** Only in the `-voice` files: the voice-over, cleaned lightly (a high-pass at 80 Hz, a gentle de-noise), played 3% faster with `atempo` (no change of pitch). It is placed at 0.15 s, so his last word ends at 29.03 s. He speaks for 29.75 s, longer than the 28.5 s asked for, so the 3% (under the 5% allowed) is what fits it; nothing is cut. The music sits 13 dB under him and comes back up for its final note as he finishes.
+- **Master.** Each mix is set to -14 LUFS and limited below -1 dBTP, then checked again after AAC encoding (320 kbps, 48 kHz). The picture is copied (`-c:v copy`), and every file is checked with ffprobe for 29.5 s, never over 29.9.
 
 ## Sources
 
@@ -89,15 +199,23 @@ Every chart, map and number is a real component fed the exported data. Nothing w
 | The Seal and its brush strokes | `app/public/landing.html`, where `scripts/build-landing.mjs` puts them. The landing's keyframes are worked out for the frame's time instead of run as CSS animations. |
 | The desk | The landing page's wood (`landing-src/landing.js`, `paintWood`), copied to `app/lib/film/wood.ts`, in the Night colours |
 | The paper | `components/Paper.tsx` |
-| The captions | `docs/event/zij-demo30.en.srt`, parsed by `app/lib/film/srt.ts`: the words and the times are the file's. Eight captions, each inside its scene. |
+| The captions | `docs/event/zij-demo30.en.srt`, parsed by `app/lib/film/srt.ts`: the words and the times are the file's. Eight captions, each inside its scene. Since the voice-over, they are its words and timings, transcribed locally (whisper.cpp). A separate track for both versions. |
 | "error falls from 77% to 14%" | The caption file's words, checked against `method.json` before every render |
 | "Data: NASA FIRMS · Imagery: NASA GIBS · Map: Natural Earth" | The credits the app gives on its map (`components/Explore.tsx`, `lib/capture.ts`), as text |
 | Type | Cormorant Garamond and Amiri, bundled with the app |
 | Fire data | NASA FIRMS active fire detections, MODIS Collection 6.1 and VIIRS 375 m |
 
-What the film adds that is not in the app: the desk and the lamp's light, the names over the chart's two halves and the line between them, the brass cursor, each hotspot's drop and blot of ink before it lands (the landed mark is the app's), the counter, the caption strip, the line "Team Zij · Harmonization of MODIS and VIIRS Hot Spots" and the end card's credit line.
+What the film adds that is not in the app:
 
-Captions are set in Cormorant Garamond at 58 px on a strip of paper in the lower third, inside a 5% margin, and inked in from the left over 250 ms. The strip is there only while a caption is: it fades in over 0.15 s as its caption begins and out over the 0.15 s before it ends, so between captions the desk is clear.
+- the desk and the lamp's light;
+- the names over the chart's two halves, and the line between them;
+- the brass cursor;
+- each hotspot's drop and blot of ink before it lands (the landed mark is the app's);
+- the counter;
+- the line "Team Zij · Harmonization of MODIS and VIIRS Hot Spots";
+- the end card's credit line;
+- in v2, the board's pins and thread, and the papers' titles;
+- the sound (see [Sound](#sound)).
 
 ## What is not in it
 
@@ -109,11 +227,16 @@ No faces, names or voices of people. No NASA logos: NASA is named in words only,
 |---|---|
 | `app/app/studio/film/page.tsx` | The page: reads the captions, the validation chart, the Seal and the two numbers on the server |
 | `app/app/studio/film/film.css` | The frame, the desk, the light, the sheets |
-| `app/components/film/Film.tsx` | The clock, `seek(t)`, the desk, the captions |
-| `app/components/film/Record.tsx`, `Proof.tsx`, `Atlas.tsx`, `Take.tsx`, `EndCard.tsx` | Scenes 1 and 2, 3, 4 and 5, 6, 7 |
-| `app/components/film/kit.tsx` | Sheets, the ink rule, text inked in |
-| `app/lib/film/timeline.ts` | The scenes, every beat's time, the one curve and the one spring |
-| `app/lib/film/srt.ts`, `wood.ts` | The caption file's reader; the desk's wood |
-| `app/scripts/film/render.mjs` | The renderer |
+| `app/components/film/Film.tsx` | v1: the clock, `seek(t)`, the desk |
+| `app/components/film/Record.tsx`, `Proof.tsx`, `Atlas.tsx`, `Take.tsx`, `EndCard.tsx` | v1: scenes 1 and 2, 3, 4 and 5, 6, 7 |
+| `app/components/film/kit.tsx` | Both: the film's handle, sheets, the ink rule, text inked in |
+| `app/lib/film/timeline.ts` | Both: the scenes, every beat's time, the one curve and the one spring |
+| `app/lib/film/srt.ts`, `wood.ts` | Both: the caption file's reader; the desk's wood |
+| `app/app/studio/film/v2/page.tsx`, `board.css` | v2: the page (it reads what v1's does) and the board's styles |
+| `app/components/film/board/Board.tsx` | v2: the clock, `seek(t)`, the desk, the layers, the pins and thread, the lamp |
+| `app/components/film/board/Charts.tsx`, `Maps.tsx`, `Cards.tsx`, `Title.tsx` | v2: papers 1 to 3, 4 and 5, 6 and 7; a paper's title |
+| `app/lib/film/board.ts` | v2: the papers' places, the camera and its time, focus, the lamp, the thread, each paper's beats |
+| `app/scripts/film/render.mjs` | The renderer, the checks and the caption files |
+| `app/scripts/film/sound.mjs` | The sound: music, bed, effects, voice, the masters and the final files |
 
-No existing file of the app was changed.
+Outside the film's own files, one file of the app changed: `scripts/build-landing.mjs` now writes `public/landing.html` and `public/landing/reference/landing.js` with LF line endings. Together with the new `.gitattributes`, a build on Windows no longer rewrites the committed files.

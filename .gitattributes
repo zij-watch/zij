@@ -1,0 +1,6 @@
+# Written by the app's build (scripts/build-landing.mjs and scripts/copy-worker.mjs, run before every
+# dev and build). On Windows (core.autocrlf) the build writes them with LF or mixed line endings;
+# as text with LF they compare equal to what is committed, so a build leaves git status clean.
+app/public/landing.html text eol=lf
+app/public/landing/reference/landing.js text eol=lf
+app/public/vendor/maplibre/*.mjs text eol=lf

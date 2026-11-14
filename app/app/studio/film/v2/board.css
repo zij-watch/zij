@@ -1,0 +1,56 @@
+/* The board (/studio/film/v2): the night desk with seven papers pinned on it, seen through one
+   camera. Loaded after film.css, whose frame, captions-free pieces and "nothing moves by itself"
+   rules it shares. Each layer's transform is the camera's (lib/film/board.ts). */
+
+.board-layer { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; pointer-events: none; }
+.board-desk { position: absolute; max-width: none; }
+
+/* A paper: placed on the board in world pixels; it turns about its pin. Its shadow is cast away
+   from the lamp (--sx, --sy, set each frame). */
+.board-paper { position: absolute; color: var(--ink); }
+.board .board-paper .paper-back {
+  filter: drop-shadow(var(--sx) var(--sy) 14px color-mix(in srgb, var(--shadow) 72%, transparent))
+    drop-shadow(calc(var(--sx) * 0.12) calc(var(--sy) * 0.12) 2px color-mix(in srgb, var(--shadow) 55%, transparent));
+}
+
+/* A paper's title, in ink, inked in left to right (the size is set from TITLE_PX and the sheet's
+   scale). Paper 1's key sits under it, at the top of the chart. */
+.board-title { margin: 2px 0 14px; padding: 0; border: 0; font-family: var(--font-display); font-weight: 600; line-height: 1.12; letter-spacing: normal; color: var(--ink); font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1, "onum" 0; }
+.board-title span { display: block; width: max-content; }
+.board-key.key { margin: 0 0 2px; }
+
+/* Paper 1's corner slip: the team and the challenge. */
+.board-corner { position: absolute; left: -70px; top: -50px; width: max-content; padding: 8px 18px; rotate: -0.8deg; font: 600 25px/32px var(--font-display); letter-spacing: 0.05em; color: var(--ink-muted); }
+
+/* The map sheets: the title across the top, the map under it. */
+.board-mapsheet { width: 1600px; height: 890px; padding: 22px 30px 0; box-sizing: border-box; }
+.board-mapsheet .board-title { margin: 0; }
+.board-mapsheet .film-map { inset: auto; left: 14px; top: 110px; width: 1572px; height: 766px; }
+
+/* The hotspots' ink blots, without a blend mode: on the board a blended element forces a render
+   surface the size of the papers' layer, larger than the GPU takes, and the layers above it are
+   dropped from the frame. */
+.board .film-blot { mix-blend-mode: normal; }
+
+/* Paper 6's sheet, on which the files are stamped, and paper 7, the Seal card. */
+.board-take { width: 100%; height: 100%; padding: 26px 34px; box-sizing: border-box; }
+.board-sealcard { width: 1180px; height: 730px; padding: 34px 40px; box-sizing: border-box; text-align: center; }
+.board-seal.film-seal { position: absolute; left: 50%; top: 111px; width: 420px; margin-left: -210px; }
+.board-team { position: absolute; left: 0; right: 0; top: 497px; margin: 0 auto; width: max-content; font: 600 56px/64px var(--font-display); letter-spacing: 0.05em; color: var(--ink); font-variant-numeric: lining-nums; }
+.board-credit { position: absolute; left: 0; right: 0; top: 581px; margin: 0 auto; width: max-content; font: 400 28px/38px var(--font-text); letter-spacing: 0.02em; color: var(--ink-muted); }
+
+/* Pins and the thread, a layer above the papers. */
+.board-thread { position: absolute; left: 0; top: 0; overflow: visible; max-width: none; }
+.board-thread-line { fill: none; stroke: color-mix(in srgb, var(--brass) 85%, var(--flame)); stroke-width: 3; stroke-linecap: round; }
+.board-thread-shadow { fill: none; stroke: var(--shadow); stroke-width: 3.5; stroke-linecap: round; opacity: 0.45; filter: blur(2px); }
+.board-pin {
+  position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, var(--flame) 0, color-mix(in srgb, var(--brass) 80%, var(--flame)) 26%, color-mix(in srgb, var(--brass) 55%, var(--shadow)) 72%, color-mix(in srgb, var(--brass) 30%, var(--shadow)) 100%);
+  box-shadow: 3px 5px 3px -1px color-mix(in srgb, var(--shadow) 75%, transparent), 6px 9px 9px -2px color-mix(in srgb, var(--shadow) 40%, transparent);
+}
+.board-pin.is-small { width: 18px; height: 18px; margin: -9px 0 0 -9px; }
+
+/* The lamp: its light falls off around where it stands, and glows warm near it. */
+.board-light, .board-glow { position: absolute; inset: -90px; pointer-events: none; }
+.board-light { mix-blend-mode: multiply; }
+.board-glow { mix-blend-mode: screen; }

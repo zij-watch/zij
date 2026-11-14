@@ -15,10 +15,10 @@ import { frame, ruledOut, Sheet, shown, useFilm, useReady, useT } from "./kit";
 
 interface Saved { name: string; blob: Blob }
 
-const BRIEF_URL = `/brief?area=${PRESET}`;
-const BRIEF = { w: 820, right: 34, bottom: 40 }; // the page, and room inside the frame for its shadow
+export const BRIEF_URL = `/brief?area=${PRESET}`;
+export const BRIEF = { w: 820, right: 34, bottom: 40 }; // the page, and room inside the frame for its shadow
 /** What the film changes in the brief's own page: no buttons, no ground behind the sheet, nothing that moves. */
-const BRIEF_STYLE = `
+export const BRIEF_STYLE = `
   *, *::before, *::after { transition: none !important; animation: none !important; caret-color: transparent !important; }
   html, body { background: transparent !important; overflow: hidden !important; margin: 0 !important; }
   nextjs-portal { display: none !important; }
@@ -29,7 +29,7 @@ const BRIEF_STYLE = `
 `;
 
 /** Press the Downloads page's buttons and keep what they would have saved. Nothing reaches the disk. */
-async function catchDownloads(root: HTMLElement, labels: string[]): Promise<Saved[]> {
+export async function catchDownloads(root: HTMLElement, labels: string[]): Promise<Saved[]> {
   const saved: Saved[] = [];
   const made = new Map<string, Blob>();
   const createObjectURL = URL.createObjectURL;

@@ -4,7 +4,35 @@
 // a frame, and the pieces of paper the scenes are laid out with.
 
 import { createContext, useContext, useEffect, useRef, type CSSProperties, type ReactNode, type Ref } from "react";
-import { clamp, HEIGHT, INK, move, RULE, WIDTH } from "@/lib/film/timeline";
+import type { Cue } from "@/lib/film/srt";
+import { clamp, HEIGHT, INK, move, RULE, SCENES, WIDTH } from "@/lib/film/timeline";
+import type { ProofNumbers } from "./Proof";
+
+/** What a film page gives the renderer (scripts/film/render.mjs), as window.__film. */
+export interface FilmHandle {
+  fps: number; duration: number; frames: number; width: number; height: number;
+  scenes: typeof SCENES; cues: Cue[];
+  /** The counter's two ends, read from method.json on the server. */
+  proof: ProofNumbers | null;
+  /** From this time to the end every frame is the same (the first film). */
+  stillFrom?: number;
+  /** Pieces the film is encoded in, if not one per scene (the board). */
+  chunks?: { n: number; name: string; from: number; to: number }[];
+  /** A frame that needs motion blur is the mean of this many pictures, 1/120 s apart (the board). */
+  /** Motion blur: a frame that needs it is the mean of this many pictures, spread evenly over `shutter` seconds from t. */
+  subframes?: number;
+  shutter?: number;
+  blurAt?: (t: number) => boolean;
+  /** How the picture slides between t and t + dt: [a, b, c, e, f, g], d(p) = [a·x + b·y + c, e·x + f·y + g] in frame pixels. */
+  slideAt?: (t: number, dt: number) => number[];
+  /** Resolves when everything the film draws is loaded. */
+  ready: Promise<void>;
+  /** Draw the frame for time t (seconds). Resolves with what could not be waited for, if anything. */
+  seek: (t: number) => Promise<{ t: number; warnings: string[] }>;
+}
+declare global {
+  interface Window { __film?: FilmHandle }
+}
 
 /** Work a scene does by hand for a frame (a chart, a map, an SVG it did not draw itself). */
 export type Driver = (t: number) => void | Promise<void>;

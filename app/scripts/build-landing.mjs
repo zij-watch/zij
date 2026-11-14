@@ -526,6 +526,9 @@ const stamp = createHash("sha1").update(js).update(read("../landing-src/addition
 html = html.replace('/landing/additions.css"', `/landing/additions.css?v=${stamp}"`).replace('/landing/reference/landing.js"', `/landing/reference/landing.js?v=${stamp}"`).replace('/landing/life.js"', `/landing/life.js?v=${stamp}"`);
 if (/fonts\.g(oogleapis|static)|\.\.\//.test(html)) throw new Error("build-landing: an outside or relative reference is left in the page");
 
-writeFileSync(here("../public/landing.html"), html);
-writeFileSync(here("../public/landing/reference/landing.js"), js);
+// Written with LF line endings whatever the sources were checked out with (.gitattributes), so a
+// build on Windows leaves the committed files as they are. The stamp above is unchanged by this.
+const lf = (text) => text.replace(/\r\n/g, "\n");
+writeFileSync(here("../public/landing.html"), lf(html));
+writeFileSync(here("../public/landing/reference/landing.js"), lf(js));
 console.log(`landing: ${years} seasons, jump x${times} in ${firstViirs.year}, boxed autumn ${odd.y} (${oddPct}% ${odd.v < median ? "below" : "above"}), ${Math.round(loyo("raw"))}% -> ${Math.round(loyo("M4"))}%, Delta ${Math.round(delta)}%`);
