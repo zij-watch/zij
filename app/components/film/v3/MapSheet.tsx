@@ -46,7 +46,7 @@ const rect = (a: [number, number], b: [number, number]): [number, number][] => [
 
 interface Marks { viirs: { r: number; opacity: number; stroke: number }; modis: { r: number; stroke: number; opacity: number; halo: number } }
 
-export function MapSheet({ area, country, shape, day, dayResult, b, fitMs }: { area: Area; country: string; shape: Polygon; day: string; dayResult: DayResult; b: Beats; fitMs: number }) {
+export function MapSheet({ area, country, shape, day, dayResult, b, fitMs, tagText = "fitted in your browser", coverageAt }: { area: Area; country: string; shape: Polygon; day: string; dayResult: DayResult; b: Beats; fitMs: number; tagText?: string; coverageAt?: number }) {
   const t = useT();
   const { warn } = useFilm();
   const idle = useIdle();
@@ -140,11 +140,11 @@ export function MapSheet({ area, country, shape, day, dayResult, b, fitMs }: { a
         <i className="film-cursor" aria-hidden="true"
           style={{ ...shown(t, B.cursor, closeAt + 0.4), left: penX, top: penY - 18 * penLift, opacity: Math.min(1, penSet * 4) * (1 - penLift), transform: `translate(-50%, -50%) scale(${(1 + 0.9 * (1 - penSet) + 0.25 * penLift).toFixed(4)})` }} />
 
-        <p className="v3-coverage" style={{ opacity: Math.min(1, move(t, B.cursor - 0.3, 0.3)) }}>Today: Egypt, Portugal, Argentina</p>
+        <p className="v3-coverage" style={{ opacity: Math.min(1, move(t, coverageAt ?? B.cursor - 0.3, 0.3)) }}>Today: Egypt, Portugal, Argentina</p>
 
         {/* Fitted in the browser: the time the page took to fit the box, measured as it loaded. */}
         <p className="v3-fit-tag" style={{ ...shown(t, b.tag), left: project(view, BOX[0][0], BOX[0][1])[0] + 4, top: project(view, BOX[0][0], BOX[0][1])[1] - 58, opacity: Math.min(1, arrive(t, b.tag) * 4), transform: `scale(${(1 + 0.12 * (1 - arrive(t, b.tag))).toFixed(4)})` }}>
-          fitted in your browser · {(fitMs / 1000).toFixed(fitMs < 1000 ? 2 : 1)} s
+          {tagText} · {(fitMs / 1000).toFixed(fitMs < 1000 ? 2 : 1)} s
         </p>
 
         {/* The marks on their way down: the app's own two marks, larger and lighter, each with its blot of ink. */}

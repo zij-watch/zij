@@ -19,7 +19,7 @@ const F = 712;
 const Y = (v: number) => F - v * 0.2;
 const X0 = 120, X1 = 1220;
 
-export function Finale({ area, b, findings, seal }: { area: Area; b: Beats; findings: Findings; seal: string }) {
+export function Finale({ area, b, findings, seal }: { area: Area; b: Beats; findings: Findings; seal: string | null }) {
   const t = useT();
   const holder = useRef<HTMLDivElement>(null);
   const s = area.seasons;
@@ -95,12 +95,12 @@ export function Finale({ area, b, findings, seal }: { area: Area; b: Beats; find
         since {findings.sinceYear}: {pct(findings.since)}
       </p>
 
-      <div className="v3-sealblock" style={{ visibility: t < b.seal ? "hidden" : undefined, opacity: clamp(land * 4), transform: `scale(${(1 + 0.12 * (1 - land)).toFixed(4)})` }}>
+      {seal !== null && <div className="v3-sealblock" style={{ visibility: t < b.seal ? "hidden" : undefined, opacity: clamp(land * 4), transform: `scale(${(1 + 0.12 * (1 - land)).toFixed(4)})` }}>
         <div ref={holder} className="film-seal v3-seal" dangerouslySetInnerHTML={{ __html: seal }} />
         <p className="v3-site">zij.watch</p>
         <p className="v3-credit">Data: NASA FIRMS · Imagery: NASA GIBS · Map: Natural Earth</p>
         <p className="v3-credit is-made">Animated from real data with AI-assisted code</p>
-      </div>
+      </div>}
     </Paper>
   );
 }

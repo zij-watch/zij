@@ -12,7 +12,9 @@ v1 and v2 tell the same story to the same times; v3 tells a shorter one, to its 
 |---|---|
 | `app/film/film-v3-final.mp4` | **The final cut**: v3 with music and effects, no voice. |
 | `app/film/film-v3-final-voice.mp4` | The same with Yassen's voice-over, once it is recorded (`app/film/audio/voiceover-v3.*`). |
-| `app/film/YOUTUBE_DESCRIPTION.txt` | The description to paste on YouTube: the film in a paragraph, "Animated from real data with AI-assisted code", and every data and audio credit. |
+| `app/film/film-v3.1-final.mp4` | **v3.1**, to Yassen's take, with his voice (see [v3.1](#v31-to-yassens-take)). |
+| `app/film/zij-demo30-v3.1.en.srt`, `.vtt`, `.ass` | v3.1's captions: his ten. |
+| `app/film/YOUTUBE_DESCRIPTION.txt` | The description for v3.1: the film in a paragraph, every data and audio credit, and how the film was made. v3's is `YOUTUBE_DESCRIPTION-v3.txt`. |
 | `app/film/film-v2-final.mp4`, `film-v2-final-voice.mp4` | v2, without and with the second cut's voice-over. |
 | `app/film/film-final.mp4`, `film-final-voice.mp4` | v1, the same two ways. |
 | `app/film/film-silent.mp4`, `film-v2-silent.mp4`, `film-v3-silent.mp4` | The picture with no sound, as rendered. The sound is put on these (see [Sound](#sound)). |
@@ -194,6 +196,28 @@ v3 (`/studio/film/v3`) is the final cut, on the same desk, lamp and render pipel
 
 **The box.** From 30.55 E, 31.38 N to 31.75 E, 30.65 N, over the rice country of the northern Delta: the address is `/studio/film/v3?poly=30.55,31.38;31.75,31.38;31.75,30.65;30.55,30.65&day=2023-10-20`. The verdict is the app's own: it speaks of the month so far (November 2026).
 
+## v3.1: to Yassen's take
+
+v3.1 (`/studio/film/v31`, `app/lib/film/v31.ts`) tells v3's story to the voice-over Yassen recorded, with his own wording ("model", "On unseen years, error drops from 77 to 14%", "responders"). v3 is kept as it is. The film is 29.8 s and still from 29.5 s.
+
+**Voice and captions.** His take is `app/film/audio/voiceover-v3.*`. `app/scripts/film/v31-voice.mjs` takes 0.1 s out of each of the nine silences between his lines (inside the silence, found with `silencedetect`), moves the whole so his first word starts at about 0.5 s, and writes `app/film/audio/v31-voice-placed.wav`; nothing else changes, not the speed and not the pitch. The ten captions are his, renumbered 1 to 10, his words exactly, a line over 42 characters split in two, and their times moved with the voice (`docs/event/zij-demo30-v3.1.en.srt`; the renderer writes `app/film/zij-demo30-v3.1.en.srt`, `.vtt` and `.ass`). whisper.cpp then gives the placed voice's word times, and `app/scripts/film/v31-timing.mjs` writes `docs/event/zij-demo30-v3.1-timing.json`, to which every beat is keyed. Until the take is in, the word times are planned from his captions' times.
+
+| Shot | His lines | What happens |
+|---|---|---|
+| Opening | (0 to 0.5 s) | NASA GIBS true colour of the Nile Delta on 20 October 2023 fills the frame, pushing in slowly; that day's fire dots appear. No frame, no desk. |
+| 1 | "In 2012, NASA's fire record jumps tenfold." | The camera pulls back: it is a printed photo with a white border, lying on the desk with a soft shadow. On its border, in ink, "Team Zij · Cairo" and under it "Harmonization of MODIS and VIIRS Hot Spots" (readable for over 2 s). The fire dots lift off the photo and fly into the record sheet beside it, two to each season, and the bars grow where they land: the MODIS years on "fire record", the VIIRS years leaping on "tenfold" (162 and 1,609). A brass string runs from a tack on the photo to a tack on the sheet. |
+| 2 | "The fires didn't change. The satellite did." | The camera goes in on the sheet: the ink circle round the leap on "satellite", "MODIS 1 km" and "VIIRS 375 m"; a still beat after "did". |
+| 3 to 5 | "So we built a model ... margin." | Along the string to the machine (v3's): "NASA FIRMS · MODIS + VIIRS" on its input, the four stages from "model" on, the dial sweeping from 77% to 14% on "77 to 14", the margins glowing on "margin". |
+| 6, 7 | "Draw any area: Zij fits it live, and tells responders if this season's normal." | Along the string to the real app: the box on "Draw any area", "fitted live in your browser" with the fit time measured on the page, on "live"; the verdict with its rank among 26 years on "tells"; the day's fires; "Today: Egypt, Portugal, Argentina". |
+| 8 to 10 | "And it reveals what the split record hid: ... has halved since 2018." | Along the string to the findings sheet: the raw halves flash behind the harmonized line on "split"; "after the 2004 ban: +97%" on "ban"; "since 2018: −53%" lands on "halved". |
+| End | | From 28.0 s the sheets slide together along the string and stack on the findings sheet; the string pulls tight; the cover closes over them and the Seal is brushed onto it with the landing page's brush (its own strokes, faster), then "zij.watch" and "Data: NASA FIRMS · Imagery: NASA GIBS · Map: Natural Earth". Still for the last 0.3 s. |
+
+**Style.** No round pins: the string is held by small flat brass tacks, one continuous brass string through the film, each stretch drawn in just ahead of the camera. No dark team box: the team lives on the photo's border. Rubric red only for fire. No line about how the film was made in the picture; it is in the YouTube description.
+
+**Checks.** As v3: 162 and 1,609, 77% and 14%, +97% and −53%, the verdict's rank, all from the data files; every caption inside its shot; at most 29.8 s; -14 LUFS and -1 dBTP. Rendered on the laptop's RTX 5060 (`render.mjs --high-gpu`, which starts Chrome with `--force_high_performance_gpu`): about twice as fast on the motion-blurred frames as the integrated GPU.
+
+**Sound.** The voice at -16 LUFS; the music a quiet bed 18 dB under it, ducked about 6 dB more while he speaks, its final note at 29.2 s; the lamp's bed; small effects on the beats (the moves, the flight, the leap, the circle, the four stages, the dial, the box, the badge, the arrow, the stamp, the sheets sliding, the cover, the brush). `npx tsx scripts/film/sound.mjs --films v31`.
+
 ## Sound
 
 `app/scripts/film/sound.mjs` puts the sound on the rendered silent films. It runs with tsx because it reads the films' own timelines, which are TypeScript:
@@ -277,6 +301,8 @@ No faces, names or voices of people. No NASA logos: NASA is named in words only,
 | `app/components/film/v3/RecordSheet.tsx`, `Machine.tsx`, `MapSheet.tsx`, `Finale.tsx` | v3: L1 and L2, L3 and L4, L5, L6 |
 | `app/scripts/film/v3-timing.mjs` | v3: the words' times (planned, or from whisper) and the captions from them |
 | `app/lib/film/v3.ts` | v3: the script, the surfaces, every beat from the words' times, the camera and its glides, focus, the lamp, the captions, the box |
+| `app/app/studio/film/v31/`, `app/components/film/v31/`, `app/lib/film/v31.ts` | v3.1: the page, the photo, the record sheet with the flight, the book, the camera and the beats (the machine, the app and the findings are v3's) |
+| `app/scripts/film/v31-voice.mjs`, `v31-timing.mjs` | v3.1: the placed voice and its word times; the timing file and the captions |
 | `app/scripts/film/render.mjs` | The renderer, the checks and the caption files |
 | `app/scripts/film/sound.mjs` | The sound: music, bed, effects, voice, the masters and the final files |
 

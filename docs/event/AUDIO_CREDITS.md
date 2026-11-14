@@ -1,6 +1,6 @@
 # Audio credits: the demo film
 
-Every sound in the demo film (`app/film/film-final*.mp4`, `film-v2-final*.mp4`, `film-v3-final*.mp4`), where it comes from, who made it and under what licence. No AI-generated audio of any kind. The music and the recorded effects are the ones the registration film already uses (the `zij-story` folder, `assets/music/` and `assets/sfx/`, listed in its `assets/SOURCES.csv` and `CREDITS.md`). The rest were synthesised for this film with ffmpeg's own sources and filters. `app/scripts/film/sound.mjs` builds the mix; FILM.md says how.
+Every sound in the demo film (`app/film/film-final*.mp4`, `film-v2-final*.mp4`, `film-v3-final*.mp4`, `film-v3.1-final.mp4`), where it comes from, who made it and under what licence. No AI-generated audio of any kind. The music and the recorded effects are the ones the registration film already uses (the `zij-story` folder, `assets/music/` and `assets/sfx/`, listed in its `assets/SOURCES.csv` and `CREDITS.md`). The rest were synthesised for this film with ffmpeg's own sources and filters. `app/scripts/film/sound.mjs` builds the mix; FILM.md says how.
 
 ## Voice
 
@@ -11,6 +11,8 @@ Every sound in the demo film (`app/film/film-final*.mp4`, `film-v2-final*.mp4`, 
 Cleaned lightly: a high-pass at 80 Hz, a gentle de-noise (6 dB, `afftdn`). It is played 3% faster with `atempo`, so the pitch does not change. It is only in the `-voice` files of v1 and v2.
 
 The final cut (v3) has its own script. Its voice-over is Yassen's too, recorded for it as `app/film/audio/voiceover-v3.*`, cleaned the same way and played at most 5% faster; it is only in `film-v3-final-voice.mp4`. Until that file exists there is no v3 voice version.
+
+v3.1 uses the same take, placed: each of the nine silences between his lines is 0.1 s shorter and his first word starts at about 0.5 s (`app/scripts/film/v31-voice.mjs`). No change of speed or pitch. It is in `film-v3.1-final.mp4`.
 
 ## Music
 

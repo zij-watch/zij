@@ -46,6 +46,7 @@ const FILMS = {
   v1: { path: "/studio/film", name: "film", stills: "stills", work: "work", thumb: "thumbnail.jpg", source: "zij-demo30-v2.en.srt", captions: "v2-captions" },
   v2: { path: "/studio/film/v2", name: "film-v2", stills: "stills-v2", work: join("work", "v2"), thumb: "thumbnail-v2.jpg", source: "zij-demo30-v2.en.srt", captions: "v2-captions" },
   v3: { path: "/studio/film/v3", name: "film-v3", stills: "stills-v3", work: join("work", "v3"), thumb: "thumbnail-v3.jpg", source: "zij-demo30.en.srt", captions: "" },
+  v31: { path: "/studio/film/v31", name: "film-v3.1", stills: "stills-v3.1", work: join("work", "v3.1"), thumb: "thumbnail-v3.1.jpg", source: "zij-demo30-v3.1.en.srt", captions: "", base: "zij-demo30-v3.1.en" },
 };
 const FILM = FILMS[option("film", "v1")];
 if (!FILM) throw new Error(`--film must be one of ${Object.keys(FILMS).join(", ")}`);
@@ -71,7 +72,7 @@ async function openChrome() {
     "--headless=new", "--remote-debugging-port=0", `--user-data-dir=${profile}`, "--no-first-run", "--no-default-browser-check",
     "--hide-scrollbars", "--run-all-compositor-stages-before-draw", "--mute-audio", "--force-color-profile=srgb", "--window-size=1920,1080",
     "--disable-background-timer-throttling", "--disable-renderer-backgrounding", "--disable-backgrounding-occluded-windows",
-    "--ignore-gpu-blocklist", "--enable-gpu", "about:blank",
+    "--ignore-gpu-blocklist", "--enable-gpu", ...(flag("high-gpu") ? ["--force_high_performance_gpu"] : []), "about:blank",
   ], { stdio: ["ignore", "ignore", "pipe"] });
   const endpoint = await new Promise((done, fail) => {
     let text = "";
@@ -142,6 +143,8 @@ async function openFilm(chrome) {
     if (Date.now() - started > 180000) throw new Error(`The film was not ready after 3 minutes (waiting for: ${state.waiting ?? "the page"})`);
     await sleep(500);
   }
+  const gpu = (await chrome.send("SystemInfo.getInfo")).gpu;
+  console.log(`  GPU: ${gpu.devices.filter((d) => d.active).map((d) => d.deviceString || d.vendorString).join(", ") || gpu.devices.map((d) => d.deviceString).join(", ")}`);
   const about = await evaluate(`window.__film.ready.then(() => ({ fps: __film.fps, duration: __film.duration, frames: __film.frames, width: __film.width, height: __film.height,
     scenes: __film.scenes, cues: __film.cues, proof: __film.proof, stillFrom: __film.stillFrom ?? null, chunks: __film.chunks ?? null, subframes: __film.subframes ?? 1, shutter: __film.shutter ?? 0, facts: __film.facts ?? null }))`);
   const seek = (t) => evaluate(`window.__film.seek(${t})`);
@@ -319,7 +322,7 @@ function check({ cues, scenes, proof, facts }) {
   const error = (model) => method.models.all_areas.find((r) => r.model === model && r.scheme === "LOYO")?.season_err_abs_pct;
   const raw = Math.round(error("raw")), zij = Math.round(error("M4"));
   // A caption that quotes the error must quote method.json; the captions follow the voice-over, which may not quote it.
-  const said = cues.map((c) => c.lines.join(" ").match(/(\d+)% to (\d+)%/)).find(Boolean);
+  const said = cues.map((c) => c.lines.join(" ").match(/(\d+)%? to (\d+)%/)).find(Boolean);
   if (!said) console.log(`  no caption quotes the error; the counter on screen is checked against method.json (${raw}% to ${zij}%)`);
   else if (Number(said[1]) !== raw || Number(said[2]) !== zij) problems.push(`the caption says ${said[1]}% to ${said[2]}%, method.json gives ${raw}% to ${zij}%`);
   else console.log(`  the caption's ${said[1]}% to ${said[2]}% matches method.json (raw ${error("raw")}%, M4 ${error("M4")}%, leaving one year out)`);
@@ -409,10 +412,10 @@ function writeCaptions(cues, { w, h }) {
   const files = { srt, vtt, ass };
   const dir = join(OUT, FILM.captions);
   mkdirSync(dir, { recursive: true });
-  for (const [ext, text] of Object.entries(files)) writeFileSync(join(dir, `${CAPTIONS}.${ext}`), text);
+  for (const [ext, text] of Object.entries(files)) writeFileSync(join(dir, `${FILM.base ?? CAPTIONS}.${ext}`), text);
   const source = readFileSync(join(APP, "..", "docs", "event", FILM.source), "utf8").replace(/^﻿/, "").replace(/\r/g, "").trim();
   const same = source === srt.trim();
-  console.log(`  captions: ${Object.keys(files).map((ext) => `${CAPTIONS}.${ext}`).join(", ")} in ${dir}${same ? "; the .srt is the source, byte for byte" : "; NOTE: the .srt differs from the source in its layout"}`);
+  console.log(`  captions: ${Object.keys(files).map((ext) => `${FILM.base ?? CAPTIONS}.${ext}`).join(", ")} in ${dir}${same ? "; the .srt is the source, byte for byte" : "; NOTE: the .srt differs from the source in its layout"}`);
 }
 
 // ---------------------------------------------------------------- the run
