@@ -27,7 +27,6 @@ export interface AppState {
   timeline: boolean; // the day scrubber along the bottom
   recorded: boolean; // the Seasons tab shows what the satellites recorded, not the harmonized record
   tour: number | null; // the step of the tour, 1 to 6
-  sky: boolean; // the satellite basemap shows the chosen day's sky (clouds and smoke), not the cloud-free picture
 }
 
 export const LAYERS = ["viirs", "modis", "outlines"] as const;
@@ -78,7 +77,6 @@ export function parseState(params: URLSearchParams): AppState {
     timeline: params.get("timeline") === "1",
     recorded: params.get("seasons") === "recorded",
     tour: /^[1-6]$/.test(params.get("tour") ?? "") ? Number(params.get("tour")) : null,
-    sky: params.get("sky") === "1",
     year: /^\d{4}$/.test(params.get("year") ?? "") ? Number(params.get("year")) : null,
   };
 }
@@ -95,6 +93,7 @@ export function useAppState(): [AppState, (patch: Partial<AppState>, quiet?: boo
     (patch: Partial<AppState>, quiet = false) => {
       const next = new URLSearchParams(quiet ? window.location.search : params.toString());
       next.delete("mode"); // Simple and Expert are gone: Results shows everything
+      next.delete("sky"); // the satellite basemap is always cloud-free
       const { shape, ...rest } = patch;
       if (shape !== undefined) {
         for (const [key, value] of Object.entries(shapeParams(shape))) {

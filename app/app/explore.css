@@ -46,10 +46,6 @@ body:has(.explore) .credits { display: none; }
   background-image: linear-gradient(155deg, transparent 46%, var(--ground) 46.5%), repeating-linear-gradient(0deg, transparent 0 5px, color-mix(in srgb, var(--lapis) 35%, transparent) 5px 6px);
 }
 .basemap-tile:hover:not(:disabled) { border-color: var(--brass); }
-.sky { flex: none; display: flex; flex-direction: column; padding: 0 12px 2px; }
-.sky .lever { min-height: 36px; font-size: 15px; gap: 10px; }
-.sky .lever .track { width: 40px; }
-.sky-date { margin-top: -6px; padding-bottom: 2px; font-size: 13px; line-height: 16px; color: var(--ink-muted); }
 /* The credit: one line of small type on a scrap of paper, no bar. */
 .map-credit {
   margin: 0 0 2px; min-width: 0; padding: 1px 7px; font-size: 12px; line-height: 16px; color: var(--ink);
@@ -258,7 +254,6 @@ body:has(.explore) .credits { display: none; }
   .area-menu.is-docked .area-menu-notch { display: none; }
   .basemap { left: auto; right: var(--edge); top: calc(var(--strip) + var(--edge)); bottom: auto; flex-direction: row-reverse; align-items: flex-start; max-width: calc(100% - 16px); }
   .basemap-tile, .basemap-tile:hover:not(:disabled) { width: 46px; height: 46px; }
-  .basemap .sky { position: absolute; right: 0; top: 54px; }
   .map-credit { position: fixed; z-index: 3; left: var(--edge); top: calc(var(--strip) + var(--edge) + 46px); max-width: calc(100% - 80px); font-size: 10.5px; line-height: 13px; }
   .has-timeline .basemap { top: calc(var(--strip) + var(--edge) + 120px); bottom: auto; }
   .has-timeline .map-credit { top: calc(var(--strip) + var(--edge) + 166px); }
