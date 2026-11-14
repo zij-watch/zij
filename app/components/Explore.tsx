@@ -25,9 +25,9 @@ import { monthSpan } from "@/lib/format";
 import type { DayHotspot } from "@/lib/hotspots/day";
 import { satelliteThumb } from "@/lib/map/style";
 import { forgetArea, saveArea, useSavedAreas } from "@/lib/presets";
-import { remember, useRemembered } from "@/lib/remember";
-import { TOUR, tourState } from "@/lib/tour";
-import { shapeParams, useAppState } from "@/lib/url";
+import { recall, remember, useRemembered } from "@/lib/remember";
+import { CLEAN, TOUR_AREA } from "@/lib/tour";
+import { shapeParams, useAppState, type AppState } from "@/lib/url";
 import { areaVerdict, dayVerdicts } from "@/lib/verdict";
 import AreaMenu, { type Insets } from "./AreaMenu";
 import GoToDialog from "./GoToDialog";
@@ -37,6 +37,7 @@ import Panel, { paperId, ResultPaper } from "./Panel";
 import Paper from "./Paper";
 import { FactsPapers, Seal } from "./Shell";
 import Timeline, { daysBetween, shortDate } from "./Timeline";
+import Tour from "./Tour";
 import { Pop, Tip, TooltipProvider } from "./ui";
 
 // MapLibre is the heaviest script on the page. It is loaded on its own, after the first text.
@@ -47,6 +48,7 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 const monthWords = (ym: string) => `${MONTHS[Number(ym.slice(5, 7)) - 1]} ${ym.slice(0, 4)}`;
 const addDays = (iso: string, n: number) => new Date(Date.parse(iso) + n * 86400000).toISOString().slice(0, 10);
 const HINT = "zij.hint.v1";
+const TOURED = "zij.tour.v1";
 const STRIP = 44;
 
 /** Last day of a YYYY-MM month, not after `cap`. */
@@ -136,21 +138,38 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // The tour. A link may carry only the step (?tour=1): the step's own state is then put in place.
-  const tourStep = state.tour ? TOUR[state.tour - 1] : null;
-  const tourApplied = useRef<number | null>(null);
+  // The tour (lib/tour.ts): on the first visit to the bare map, from Help, or from a link with ?tour=1.
+  // It takes the page over, so what was on screen is kept and put back when it is left.
+  const [tour, setTour] = useState<number | null>(null);
+  const beforeTour = useRef<AppState | null>(null);
+  const live = useRef({ state, update });
+  live.current = { state, update };
+  const startTour = useCallback(() => {
+    beforeTour.current = { ...live.current.state, tour: null };
+    setDrawMode(null);
+    setHelpMenu(false);
+    setTour(0);
+  }, []);
+  const tourTo = useCallback((wanted: Partial<AppState>) => {
+    setDrawMode(null);
+    live.current.update({ ...CLEAN, ...wanted });
+  }, []);
+  const endTour = useCallback((finished: boolean) => {
+    const before = beforeTour.current ?? CLEAN;
+    remember(TOURED, 1);
+    remember(HINT, 1);
+    setDrawMode(null);
+    setTour(null);
+    // Seen to the end from an empty map: an area is left open, so there is something to hold.
+    live.current.update(finished && !before.area && !before.shape ? { ...CLEAN, area: TOUR_AREA } : before);
+  }, []);
   useEffect(() => {
-    if (!state.tour || tourApplied.current === state.tour) return;
-    tourApplied.current = state.tour;
-    setDrawMode(null);
-    update(tourState(state.tour));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.tour]);
-  const goTour = (step: number | null) => {
-    tourApplied.current = step;
-    setDrawMode(null);
-    update(step ? tourState(step) : { tour: null });
-  };
+    const now = live.current.state;
+    const asked = now.tour !== null;
+    if (!asked && (recall(TOURED, null) !== null || now.area || now.shape)) return;
+    const timer = setTimeout(startTour, asked ? 200 : 900);
+    return () => clearTimeout(timer);
+  }, [startTour]);
 
   // Presets.
   const shapeKey = state.shape ? JSON.stringify(state.shape) : "";
@@ -326,10 +345,8 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
     // A phone: the tools and the credit lie along the top, the menu and Results along the bottom.
     if (docked) return { top: STRIP + 96, left: 8, right: 8, bottom: (columnShown ? Math.round(h * 0.46) : 0) + 128 };
     const column = columnShown ? Math.round(wide ? w / 2 : w <= 1180 ? 380 : 440) + 24 : 0;
-    // During the tour its card sits at the top left: on a wide screen the area and its menu keep clear of it.
-    const tour = state.tour && w >= 1300 ? 440 : 0;
-    return { top: STRIP + 8, left: 64 + tour, right: column + 8, bottom: 16 + (timelineShown ? 96 : 0) };
-  }, [screen, docked, columnShown, wide, timelineShown, state.tour]);
+    return { top: STRIP + 8, left: 64, right: column + 8, bottom: 16 + (timelineShown ? 96 : 0) };
+  }, [screen, docked, columnShown, wide, timelineShown]);
   const fitPadding = useMemo(() => {
     // Room above the area for its menu, which is about 100 px tall.
     const menu = docked ? 0 : 120;
@@ -404,10 +421,10 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
     const timer = setTimeout(() => {
       const element = target ? document.getElementById(target) : null;
       if (element) element.scrollIntoView({ block: "start", behavior: "smooth" });
-      else if (state.tour) column.current?.scrollTo({ top: 0, behavior: "smooth" });
+      else if (tour !== null) column.current?.scrollTo({ top: 0, behavior: "smooth" });
     }, 650);
     return () => clearTimeout(timer);
-  }, [target, panelArea?.id, state.tour, columnShown]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [target, panelArea?.id, tour, columnShown]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // The selection the area's menu stands on.
   const selection: Shape | null = shapeKey ? state.shape : areaEntry ? areaEntry.box : null;
@@ -433,11 +450,11 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
     </>
   );
 
-  const showHint = !hintRead && !hasSelection && !drawMode && !state.tour;
+  const showHint = !hintRead && !hasSelection && !drawMode && tour === null;
 
   return (
     <TooltipProvider delayDuration={350}>
-    <div className={`explore panel-${columnShown ? state.panel : "closed"}${timelineShown ? " has-timeline" : ""}${state.basemap === "satellite" ? " is-satellite" : ""}${state.tour ? " has-tour" : ""}`}>
+    <div className={`explore panel-${columnShown ? state.panel : "closed"}${timelineShown ? " has-timeline" : ""}${state.basemap === "satellite" ? " is-satellite" : ""}`}>
       <header className="strip">
         <a className="brand" href="/"><Seal /><h1 className="sr-only">Zij: fire on one scale</h1></a>
         <p className="readout">
@@ -450,7 +467,7 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
           <Pop open={helpMenu} onOpenChange={setHelpMenu} side="bottom" align="end" label="Help"
             trigger={<button type="button" className={`nav-menu${helpMenu ? " is-open" : ""}`} aria-label="Help: the tour, and how it works">Help <Icon name="chevron" size={16} /></button>}>
             <div className="menu">
-              <button type="button" onClick={() => { setHelpMenu(false); goTour(1); }}>Take the 60-second tour</button>
+              <button type="button" onClick={startTour}>Take the tour</button>
               <Link className="menu-link" href={`/how-it-works${q}`} onClick={() => setHelpMenu(false)}>How it works</Link>
             </div>
           </Pop>
@@ -480,7 +497,7 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
         </div>
         <div className="tool-group slip" role="group" aria-label="Tools">
           <Pop open={drawMenu} onOpenChange={setDrawMenu} side="right" align="start" label="Draw or choose an area"
-            trigger={<button type="button" className={drawMenu || drawMode ? "is-active" : ""} aria-label="Draw or choose an area"><Icon name="draw" /></button>}>
+            trigger={<button type="button" data-tour="draw" className={drawMenu || drawMode ? "is-active" : ""} aria-label="Draw or choose an area"><Icon name="draw" /></button>}>
             <div className="menu draw-menu">
               <p className="plate-mark">Draw</p>
               <button type="button" className={drawMode === "box" ? "is-active" : ""} onClick={() => startDraw("box")}>A box</button>
@@ -546,21 +563,6 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
           } : null}
           clearLabel={shapeKey ? "Clear the drawn area" : "Deselect the area"} onClear={() => update({ shape: null, area: null, month: null, day: null, days: null })} />
       )}
-      {tourStep && state.tour && (
-        <Paper as="section" kind="card" seed={`tour-${state.tour}`} className="tour" aria-label="Tour" aria-live="polite">
-          <span className="pin" style={{ left: "50%", top: 12 }} aria-hidden="true" />
-          <p className="plate-mark">Tour · {state.tour} of {TOUR.length}</p>
-          <h2>{tourStep.title}</h2>
-          <p>{tourStep.text}</p>
-          <div className="tour-acts">
-            <button type="button" className="catchword" disabled={state.tour === 1} onClick={() => goTour(state.tour! - 1)}>Back</button>
-            {state.tour < TOUR.length
-              ? <button type="button" className="stamp" onClick={() => goTour(state.tour! + 1)}>Next</button>
-              : tourStep.link && <Link className="stamp" href={tourStep.link.href}>{tourStep.link.label}</Link>}
-            <button type="button" className="catchword tour-skip" onClick={() => goTour(null)}>{state.tour < TOUR.length ? "Skip the tour" : "End the tour"}</button>
-          </div>
-        </Paper>
-      )}
       {progress && <p className="map-progress slip" role="status">{progress}</p>}
       {toast && <p className="toast slip" role="status">{toast}</p>}
 
@@ -592,6 +594,10 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
         <Timeline days={tlDays} day={day} counts={tlCounts}
           note={!dayArea ? "Choose an area to see its hotspots" : !range ? "Loading the hotspots…" : null}
           onDay={(next) => update({ day: next, days: null }, true)} onClose={() => update({ timeline: false })} />
+      )}
+
+      {tour !== null && (
+        <Tour step={tour} onStep={setTour} onEnd={endTour} onState={tourTo} map={map} areas={index?.areas ?? []} insets={insets} touch={coarse} />
       )}
     </div>
     </TooltipProvider>

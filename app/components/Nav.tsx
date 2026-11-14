@@ -37,7 +37,7 @@ export default function Nav() {
           <Pop open={help} onOpenChange={setHelp} side="bottom" align="end" label="Help"
             trigger={<button type="button" className={`nav-menu${help ? " is-open" : ""}${pathname === "/how-it-works" ? " is-current" : ""}`} aria-label="Help: the tour, and how it works">Help <Icon name="chevron" size={16} /></button>}>
             <div className="menu">
-              <Link className="menu-link" href="/explore?tour=1" onClick={() => setHelp(false)}>Take the 60-second tour</Link>
+              <Link className="menu-link" href="/explore?tour=1" onClick={() => setHelp(false)}>Take the tour</Link>
               <Link className="menu-link" href={withQuery("/how-it-works")} aria-current={pathname === "/how-it-works" ? "page" : undefined} onClick={() => setHelp(false)}>How it works</Link>
             </div>
           </Pop>

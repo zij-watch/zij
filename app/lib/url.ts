@@ -26,7 +26,7 @@ export interface AppState {
   panel: "open" | "wide" | "closed"; // the Results column, when there are results: closed means folded away
   timeline: boolean; // the day scrubber along the bottom
   recorded: boolean; // the Seasons tab shows what the satellites recorded, not the harmonized record
-  tour: number | null; // the step of the tour, 1 to 6
+  tour: number | null; // ?tour=1 in a link starts the tour of Explore; it is not kept in the address
 }
 
 export const LAYERS = ["viirs", "modis", "outlines"] as const;
