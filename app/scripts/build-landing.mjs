@@ -465,8 +465,8 @@ js = swap(js, "  function drawThread(t) {", `  function threadsOverRecord() {
 // the slanted line that leads every stroke. It writes زيج, right to left, each letter in the order
 // a hand writes it: the ز (down the stem and round the hook, then its dot), the ي (its stem, the
 // ring, then both dots together), the ج (along the top, down the diagonal, along the foot, then
-// the bar and its dot), in about a second and a quarter. The dots come one by one, each as its
-// letter is finished.
+// the bar and its dot), in about two and a quarter seconds (PACE below). The dots come one by one,
+// each as its letter is finished.
 //
 // Each shape has a mask of its own, so a stroke can only uncover its own shape: no stroke shows a
 // piece of a dot or of its neighbour on the way past. A stroke is one parallelogram per straight
@@ -530,9 +530,12 @@ for (const part of SEAL_PARTS.filter((p) => p.runs)) {
 // and lands softly on its last (the first and last run take 5/3 as long for their length, which is
 // what keeps the speed the same across each corner). A dot is pressed as its letter is finished, so
 // the dots come one by one: the ز's after its hook, the ي's pair after its ring, the ج's last.
+// PACE stretches the times set out in SEAL_PARTS: the opening is unhurried, a hand writing carefully.
 const round3 = (v) => Math.round(v * 1000) / 1000;
+const PACE = 1.8;
 let sealClock = 0;
-const SEAL_TIMED = SEAL_PARTS.map((part) => {
+const SEAL_TIMED = SEAL_PARTS.map((part0) => {
+  const part = { ...part0, gap: part0.gap * PACE, dur: part0.dur && part0.dur * PACE };
   sealClock += part.gap;
   if (part.stamp) return { ...part, at: round3(sealClock) };
   const n = part.runs.length;
@@ -546,7 +549,7 @@ const SEAL_TIMED = SEAL_PARTS.map((part) => {
   });
   return { ...part, runs };
 });
-const SEAL_END = round3(sealClock + 0.16);
+const SEAL_END = round3(sealClock + 0.24);
 const SEAL_WRITTEN = `<svg class="seal-written" viewBox="46 144 287 246" width="287" height="246" role="img" aria-label="Zij · زيج" style="--seal-end:${SEAL_END}s">
         <defs>
 ${SEAL_TIMED.map((part, i) => (part.stamp ? "" : `          <mask id="seal-pen-${i}" maskUnits="userSpaceOnUse" x="20" y="120" width="340" height="300">
@@ -571,7 +574,13 @@ const edits = [
   ['<link rel="stylesheet" href="materials.css">', '<link rel="stylesheet" href="/landing/reference/materials.css">\n<link rel="stylesheet" href="/landing/additions.css">', "materials.css"],
   ['<script src="landing.js"></script>', `<script>window.ZIJ_TABLE = ${JSON.stringify(table)};</script>\n<script src="/landing/reference/landing.js"></script>\n<script src="/landing/life.js"></script>`, "the script"],
   ['<p class="line">Satellites do the watching.<br>We make the tables.</p>', '<p class="line">1,000 years ago, a zij charted the sky.<br>Ours charts a safer Earth.</p>', "the hero's line"],
-  ['<h1><img src="../logo/zij-seal-night.svg" alt="Zij · زيج" width="287" height="246"></h1>', `<h1 style="--seal-end:${SEAL_END}s">${SEAL_WRITTEN}</h1>`, "the hero's seal"],
+  ['<h1><img src="../logo/zij-seal-night.svg" alt="Zij · زيج" width="287" height="246"></h1>', `<h1>${SEAL_WRITTEN}</h1>`, "the hero's seal"],
+  // the words under the seal take their times from it (additions.css, the entrance)
+  ['<div class="hero" id="hero">', `<div class="hero" id="hero" style="--seal-end:${SEAL_END}s">`, "the hero"],
+  // The entrance (additions.css): set before anything is drawn, so the first frame already waits.
+  // Only with motion; landing.js lets it in, and should it never run, this does after nine seconds.
+  ['<meta name="viewport" content="width=device-width, initial-scale=1">', `<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>(function () { var r = document.documentElement; if (/[?&](still|wallpaper)\\b/.test(location.search) || matchMedia('(prefers-reduced-motion: reduce)').matches) return; r.classList.add('intro'); setTimeout(function () { r.classList.add('go'); }, 9000); })();</script>`, "the head"],
   ["from 25 years of NASA satellite records.", `from ${years} years of NASA satellite records.`, "the dek"],
   ['<a class="catchword begin" id="begin" href="#ch-1">Begin reading</a>', '<a class="catchword enter" href="/explore">Open the map</a>\n      <a class="scroll-cue" id="begin" href="#record" aria-label="Scroll down to the record"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v15M5 13l7 7 7-7"/></svg></a>', "the hero's link"],
   ["Over the Nile Delta, VIIRS sees 11 to 20 times more fire pixels than MODIS, and the gap changes from year to year.", `Over the Nile Delta in autumn, VIIRS on Suomi NPP records ${Math.round(usual[0])} to ${Math.round(usual[usual.length - 1])} times more fire pixels than MODIS on Aqua in most years, and ${Math.round(peak.ratio)} times in ${peak.year}. The gap changes from year to year.`, "the pixel ratio"],

@@ -68,28 +68,28 @@
   // its own distance; and the depth of the ground m metres away, that of the stratum it is painted on
   const strata = [...land.querySelectorAll('canvas.stratum')].map((k) => ({ k, from: +k.dataset.from, d: depthAt(+k.dataset.as) }));
   const groundDepth = (m) => { for (const s of strata) if (m >= s.from) return s.d; return strata.length ? strata[strata.length - 1].d : 1; };
-  // The page paints its land on one canvas (the wallpaper paints strata), so here it moves as one,
-  // as if it all stood about 70 m away; what stands on it moves with it and is no layer of its own.
+  // Under reduced motion landing.js paints the land on one canvas; nothing moves then, but should a
+  // landing.js without strata come, the land moves as one, as if it all stood about 70 m away, and
+  // what stands on it moves with it and is no layer of its own.
   const WHOLE = 0.5, whole = !strata.length;
   const CAMP = whole ? WHOLE : groundDepth(92), FOX_DEPTH = whole ? WHOLE : groundDepth(20);
-  function addLayer(node, depth) { if (node) { layers.push([node, depth]); node.style.translate = `${(par.x * depth).toFixed(2)}px ${(par.y * depth).toFixed(2)}px`; } }
+  // Each layer glides to where the pointer leans it by a transition of its own (.leans, additions.css):
+  // the browser runs it off the page's main thread, so the depth stays smooth while the page is busy
+  // painting. A new target takes over from wherever the glide has got to.
+  function addLayer(node, depth) { if (node) { layers.push([node, depth]); node.style.translate = `${(par.x * depth).toFixed(2)}px ${(par.y * depth).toFixed(2)}px`; if (!still) node.classList.add('leans'); } }
   const offsetOf = (depth) => [par.x * depth, par.y * depth];
   function steer() {
     const on = pointer.in && awake();
     par.tx = on ? -(pointer.x / G.W - 0.5) * 2 * REACH : 0;
     par.ty = on ? -(pointer.y / G.H - 0.5) * REACH : 0;
-    if (!par.raf && !still) { par.t = 0; par.raf = requestAnimationFrame(glide); }
+    // set at most once a frame; where the layers are headed is where the scene is taken to be
+    if (!par.raf && !still) par.raf = requestAnimationFrame(lean);
   }
-  function glide() {
-    // timed by the clock, not the frame's own time (which can be earlier than the event that asked
-    // for it); the first step counts as one frame
-    const now = performance.now(), dt = par.t ? clamp(now - par.t, 0, 64) : 16; par.t = now;
-    const f = 1 - Math.exp(-dt / 420);
-    par.x = lerp(par.x, par.tx, f); par.y = lerp(par.y, par.ty, f);
-    const done = Math.abs(par.x - par.tx) < 0.02 && Math.abs(par.y - par.ty) < 0.02;
-    if (done) { par.x = par.tx; par.y = par.ty; }
+  function lean() {
+    par.raf = 0;
+    if (Math.abs(par.x - par.tx) < 0.02 && Math.abs(par.y - par.ty) < 0.02) return;
+    par.x = par.tx; par.y = par.ty;
     for (const [n, d] of layers) n.style.translate = `${(par.x * d).toFixed(2)}px ${(par.y * d).toFixed(2)}px`;
-    par.raf = done ? 0 : requestAnimationFrame(glide);
   }
   const moved = [];
   addEventListener('pointermove', (e) => {

@@ -505,8 +505,9 @@
   // metres away it stands on row y0 + P·h/m, and a metre there is P/m px (P the camera's focal
   // length, h the eye's height above the sand).
   const LAND = { top: 0.5, bottom: 1.8, y0: 0.79, h: 3 };   // top: high enough for the smoke to thin out on the sky
-  // The wallpaper paints the land in strata, so that each can move by its own distance when the
-  // pointer moves, the near ground more than the far (the wallpaper's life.js moves them). Each holds
+  // The land is painted in strata, so that each can move by its own distance when the pointer moves,
+  // the near ground more than the far (life.js moves them), as in the wallpaper. Under reduced motion
+  // nothing moves, so it is painted in one canvas. Each holds
   // what stands from `from` metres away out to the next stratum; it is painted from row `row` (a share
   // of the view's height, clear above the tallest thing it holds) down to just below the screen; and it
   // moves as if it stood `as` metres away. Far to near: the escarpment, the far dunes and the burning
@@ -514,6 +515,7 @@
   // the acacia; the ground at your feet.
   const STRATA = [{ from: 1400, row: 0.5, as: 3000 }, { from: 400, row: 0.6, as: 750 }, { from: 130, row: 0.66, as: 220 }, { from: 50, row: 0.64, as: 80 }, { from: 20, row: 0.68, as: 30 }, { from: 0, row: 0.84, as: 14 }];
   const strata = [];   // their canvases, made once
+  const layered = wallpaper || !still;
   let landKey = '';
   function paintLand() {
     const box = $('land'), cv = $('land-canvas'), V = $('view').clientHeight, sw = box.clientWidth;
@@ -523,14 +525,14 @@
     const top = LAND.top * V, bot = (wallpaper ? 1.14 : LAND.bottom) * V;
     box.style.top = n1(top) + 'px'; box.style.height = n1(bot - top) + 'px';
     const s = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(9e6 / (sw * (bot - top))));
-    // what is being painted on: the one canvas, or in the wallpaper the stratum of the thing in hand
+    // what is being painted on: the one canvas, or the stratum of the thing in hand
     let c, cs = s, li = 0;
     const layers = [];
-    if (wallpaper) {
+    if (layered) {
       cv.style.display = 'none';
       if (!strata.length) for (const S of STRATA) { const k = document.createElement('canvas'); k.className = 'stratum'; k.dataset.from = S.from; k.dataset.as = S.as; box.insertBefore(k, $('far-a')); strata.push(k); }
       STRATA.forEach((S, i) => {
-        const k = strata[i], kt = S.row * V, h = bot - kt, ks = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(3e6 / (sw * h)));
+        const k = strata[i], kt = S.row * V, h = bot - kt, ks = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt((wallpaper ? 3e6 : 4.5e6) / (sw * h)));   // the page's reach further down, to the yard
         k.width = Math.round(sw * ks); k.height = Math.round(h * ks);
         Object.assign(k.style, { left: '0px', top: n1(kt - top) + 'px', width: sw + 'px', height: n1(h) + 'px' });
         const g = k.getContext('2d'); g.setTransform(ks, 0, 0, ks, 0, -kt * ks);
@@ -542,7 +544,7 @@
       c = cv.getContext('2d');
       c.setTransform(s, 0, 0, s, 0, -top * s);   // drawn in the sky's own px, rows from its top
     }
-    // in the wallpaper, paint what stands m metres away on its stratum
+    // in strata, paint what stands m metres away on its stratum
     const stratumFor = (m) => { if (!layers.length) return; while (li < layers.length - 1 && m < layers[li].from) li++; c = layers[li].g; cs = layers[li].ks; };
     const X = (f) => f * sw, y0 = LAND.y0 * V, P = 0.95 * V, mid = X(0.5);
     const sz = clamp(sw / (1.5 * V), 0.5, 1);   // on a narrow screen things are drawn a little smaller
@@ -566,7 +568,7 @@
     };
     const line = (pts, close) => { const p = new Path2D(); pts.forEach(([x, y], i) => (i ? p.lineTo(x, y) : p.moveTo(x, y))); if (close) p.closePath(); return p; };
     // a shape's soft shadow, cast up and to the left onto the land already painted, never the sky
-    // (in the wallpaper, onto its own stratum and the one behind it, where most of it falls)
+    // (in strata, onto its own stratum and the one behind it, where most of it falls)
     const castOnto = (p, dx, dy, blur, a) => {
       const onto = layers.length ? [layers[li], layers[li - 1]].filter(Boolean) : [{ g: c, ks: cs }];
       for (const { g, ks } of onto) {
@@ -1677,7 +1679,24 @@
   const strokeP = (c, d, col, w) => { c.strokeStyle = col; c.lineWidth = w; c.stroke(toPath(d)); };
   const tok = (n) => parseFloat(getComputedStyle(root).getPropertyValue('--' + n)) || 0;
   let roomQueued = false;
-  function paintRoomSoon() { if (roomQueued || still || wallpaper) return; roomQueued = true; setTimeout(() => { roomQueued = false; paintRoom(); }, 0); }
+  // While the opening plays its entrance (see "the entrance" below), the room is not painted: no one
+  // sees it until the page is scrolled, and its painting is the longest work on the page. Done in the
+  // middle of the entrance, it would stall the seal as it is written. It is painted once the entrance
+  // has played, or as soon as the reader starts to scroll.
+  const entrance = root.classList.contains('intro') && !still && !wallpaper;
+  let roomHeld = entrance && scrollY < 4, roomWanted = false;
+  const heldWork = [];
+  const afterEntrance = (fn) => { if (roomHeld) heldWork.push(fn); else fn(); };
+  function paintRoomSoon() {
+    if (roomHeld) { roomWanted = true; return; }
+    if (roomQueued || still || wallpaper) return; roomQueued = true; setTimeout(() => { roomQueued = false; paintRoom(); }, 0);
+  }
+  function releaseRoom() {
+    if (!roomHeld) return;
+    roomHeld = false;
+    heldWork.splice(0).forEach((fn) => fn());
+    if (roomWanted) paintRoomSoon();
+  }
   function paintRoom() {
     const g = G; if (!g || still) return;
     const geo = [g.W, g.V, g.E, g.M, g.planeH, g.Ww, g.Hw2].join();
@@ -2520,14 +2539,14 @@
     });
   })();
 
-  // paper is painted while the page is idle, one sheet at a time, long before it is needed; a sheet
-  // that comes near first is painted then
+  // paper is painted while the page is idle, one sheet at a time, long before it is needed (once the
+  // opening has played its entrance); a sheet that comes near first is painted then
   const paperIO = new IntersectionObserver((entries) => { for (const e of entries) if (e.isIntersecting) paintPaper(e.target); }, { rootMargin: '100% 0px' });
   document.querySelectorAll('.desk .sheet').forEach((s) => paperIO.observe(s));
   const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 60));
   const paperQueue = [...document.querySelectorAll('.desk .sheet')];
   const paintNext = () => { const s = paperQueue.shift(); if (!s) return; paintPaper(s); idle(paintNext, { timeout: 1500 }); };
-  idle(paintNext, { timeout: 1500 });
+  afterEntrance(() => idle(paintNext, { timeout: 1500 }));
   const closeIO = new IntersectionObserver((entries) => { if (entries.some((e) => e.isIntersecting) && !closingPainted) requestAnimationFrame(paintClosing); }, { rootMargin: '100% 0px' });
   closeIO.observe(closing);
 
@@ -2653,12 +2672,13 @@
   // what the room's canvases wait for: pictures of the desk's things and the lantern, the dial, the
   // Kufic face for the inscription (plaster and wood come below, once the first frame is up). The
   // wallpaper never shows the room, so it makes none of them.
-  if (!still && !wallpaper) {
+  if (!still && !wallpaper) afterEntrance(() => {
     Promise.all([...$('desk-props').querySelectorAll('.prop')].map((el) => svgPicture(el.querySelector('svg'), 0.15).then((p) => p && { el, ...p }))).then((ps) => ready('props', ps.filter(Boolean)));
     Promise.all([svgPicture(lantern.querySelector('svg.body'), 0.1), svgPicture(lantern.querySelector('.flame-wrap svg'), 0.1)]).then(([body, flame]) => { if (body && flame) ready('lantern', { body, flame }); });
     const dial = new Image(); dial.src = '/landing/assets/marks/dial-night.svg'; dial.decode().then(() => ready('dial', dial), () => {});
     if (document.fonts) document.fonts.load('600 46px "Reem Kufi"', 'الزيج الحاكمي').then((f) => ready('kufi', f.length > 0), () => {});
-  }
+  });
+
   addEventListener('scroll', kick, { passive: true });
   let resizeQueued = false;
   addEventListener('resize', () => { if (resizeQueued) return; resizeQueued = true; requestAnimationFrame(() => { resizeQueued = false; measure(); paintSkyNow(); if (closingPainted) paintClosing(); kick(); }); });
@@ -2667,8 +2687,9 @@
   addEventListener('load', () => { measure(); kick(); });
   kick();
 
-  // textures that take a moment are made after the first frame is on screen
-  requestAnimationFrame(() => setTimeout(async () => {
+  // textures that take a moment are made after the first frame is on screen (and, while the opening
+  // plays its entrance, after that)
+  afterEntrance(() => requestAnimationFrame(() => setTimeout(async () => {
     if (wallpaper) return;
     const wood = await toURL(paintWood(1400, 1800, 8), 'image/jpeg', 0.88);
     if (wood) {
@@ -2683,5 +2704,35 @@
       document.querySelectorAll('.desk [data-ink]').forEach(inkLayout);
       if (blots.every((b) => b.mask && b.bloom)) root.classList.add('ink-ready');
     }
-  }, 30));
+  }, 30)));
+
+  // ---- the entrance ----
+  // The page's head marks the opening 'intro' (scripts/build-landing.mjs): the scene and its words
+  // wait, unseen, while the sky and the land are painted, the faces load and the page is laid out.
+  // Then 'go' lets them in (additions.css): the night fades up, the seal is written, and the words
+  // follow it one by one. Everything waits for that work to finish first, so that nothing on screen
+  // jumps as the faces swap or the scene is painted, and the seal, which is written by the main
+  // thread, is written while the page has nothing else to do. Scrolling lets everything in at once.
+  if (entrance) {
+    const ENTRANCE_MS = 5600;   // from 'go' to the last of the words (additions.css)
+    const within = (p, ms) => Promise.race([p, new Promise((r) => setTimeout(r, ms))]);
+    const loaded = new Promise((r) => (document.readyState === 'complete' ? r() : addEventListener('load', r, { once: true })));
+    let went = false;
+    const go = () => {
+      if (went) return; went = true;
+      root.classList.add('go');
+      const idleRelease = () => idle(releaseRoom, { timeout: 1500 });
+      setTimeout(idleRelease, ENTRANCE_MS);
+    };
+    // the reader is on the move: everything in, and the room painted now
+    const moving = () => { go(); releaseRoom(); ['wheel', 'touchstart', 'keydown'].forEach((t) => removeEventListener(t, moving)); removeEventListener('scroll', scrolled); };
+    const scrolled = () => { if (scrollY > 4) moving(); };
+    ['wheel', 'touchstart', 'keydown'].forEach((t) => addEventListener(t, moving, { passive: true }));
+    addEventListener('scroll', scrolled, { passive: true });
+    if (scrollY > 4) moving();
+    // after the handlers above that measure and paint again once the faces and the page have loaded
+    Promise.all([within(document.fonts ? document.fonts.ready : Promise.resolve(), 3000), within(loaded, 4000)])
+      .then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
+      .then(() => setTimeout(go, 80));
+  }
 })();

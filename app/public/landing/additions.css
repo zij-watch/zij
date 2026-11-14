@@ -131,6 +131,9 @@
 .fox .rim { fill: none; stroke: color-mix(in srgb, var(--ink) 70%, var(--lapis)); stroke-width: 1; stroke-linecap: round; opacity: 0.5; }
 .fox .eye { fill: color-mix(in srgb, var(--ink) 55%, var(--brass)); }
 .still .shower, .still .passes, .still .fox { display: none; }
+/* depth: each layer of the scene glides to where the pointer leans it (life.js sets its translate) */
+:root { --glide: translate 1.1s cubic-bezier(0.22, 0.61, 0.36, 1); }
+.leans { transition: var(--glide); }
 
 /* The thread from the spool, drawn again over the record and its findings (build-landing.mjs):
    cut to the section's box, over the sheet and its ink, never in the way of a click. */
@@ -146,6 +149,12 @@
 
 /* The opening line is longer than the reference's: it may wrap where the screen is narrow. */
 @media (max-width: 900px) { #hero .line { white-space: normal; text-wrap: balance; } }
+/* The sentence under it is one line, a little narrower than the line above it: sized from the
+   line's own size (the reference's .hero .line), so the two keep their proportion at every size.
+   Where the screen is narrow it wraps again. */
+@media (min-width: 901px) {
+  #hero .dek { max-width: none; white-space: nowrap; font-size: max(16px, calc(min(3.5vw, 6svh) * 0.39)); }
+}
 
 /* The seal of the opening: written in with a reed pen, then it breathes a warm glow, the light of
    the lamp held behind it. Only opacity and transform move, so the glow costs nothing to animate;
@@ -157,7 +166,7 @@
   content: ""; position: absolute; z-index: -1; pointer-events: none;
   left: calc(var(--seal) * -0.32); top: -32%; width: calc(var(--seal) * 1.85); height: 164%;
   background: radial-gradient(closest-side, color-mix(in srgb, var(--flame) 14%, transparent), color-mix(in srgb, var(--brass) 5%, transparent) 58%, transparent);
-  animation: seal-breathe 5s ease-in-out var(--seal-end, 1.4s) infinite alternate both;
+  animation: seal-breathe 5s ease-in-out calc(var(--seal-start, 0s) + var(--seal-end, 1.4s)) infinite alternate both;
 }
 /* The seal is written right to left, as زيج (build-landing.mjs sets out the strokes and their
    times). A stroke is the pen's runs, each a line as wide as the nib in a frame slanted to the
@@ -166,8 +175,8 @@
    Everything rests in its last frame, so without animation the seal is there. */
 .hero h1 .seal-written { display: block; height: var(--seal); width: auto; aspect-ratio: 287 / 246; overflow: visible; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--flame) 20%, transparent)); }
 .seal-written .seal-ink { fill: var(--ink); }
-.seal-written .seal-pen { fill: none; stroke: white; stroke-width: 1; stroke-dasharray: 1; stroke-dashoffset: 0; animation: seal-write var(--dur, 0.2s) var(--ease, linear) var(--at, 0s) both; }
-.seal-written .seal-stamp { transform-box: fill-box; transform-origin: center; animation: seal-stamp 0.26s cubic-bezier(0.2, 0.8, 0.25, 1) var(--at, 0s) both; }
+.seal-written .seal-pen { fill: none; stroke: white; stroke-width: 1; stroke-dasharray: 1; stroke-dashoffset: 0; animation: seal-write var(--dur, 0.2s) var(--ease, linear) calc(var(--seal-start, 0s) + var(--at, 0s)) both; }
+.seal-written .seal-stamp { transform-box: fill-box; transform-origin: center; animation: seal-stamp 0.4s cubic-bezier(0.2, 0.8, 0.25, 1) calc(var(--seal-start, 0s) + var(--at, 0s)) both; }
 @keyframes seal-write { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 @keyframes seal-stamp { 0% { opacity: 0; transform: scale(1.1); } 32% { opacity: 1; } 100% { opacity: 1; transform: scale(1); } }
 /* the chapters' letters share the brush: their dots, and the wet tip of their strokes */
@@ -200,3 +209,26 @@
 }
 .ab-ink .ab-settle { fill: white; opacity: 0; animation: ab-settle 0.35s ease-out var(--at, 1s) forwards; }
 @keyframes ab-settle { to { opacity: 1; } }
+
+/* ---------------------------------------------------------------- the entrance
+   The page's head marks the opening 'intro' (with motion, and the script there to finish it): until
+   landing.js has painted the scene, the faces have loaded and the page is laid out, the night is the
+   bare sky and the words are not shown, so nothing is seen to jump. Then landing.js adds 'go': the
+   scene fades up, the seal is written into it, and the words follow, one by one. Only opacity and a
+   small rise move, which the browser runs off the main thread; the seal's pen waits for 'go' too.
+   Scrolling lets everything in at once. Without the script nothing is hidden: the head's mark is
+   only set by a script, and it lets everything in by itself after nine seconds. */
+.intro .hero { --seal-start: 0.7s; }
+.intro .sky > * { opacity: 0.001; }   /* not 0: the browser rasters what is all but invisible, so the scene is ready to show */
+.intro.go .sky > * { opacity: 1; transition: opacity 1.9s cubic-bezier(0.33, 0, 0.2, 1), var(--glide); }
+.intro:not(.go) .hero > * { opacity: 0.001; }
+.intro:not(.go) .seal-written .seal-pen, .intro:not(.go) .seal-written .seal-stamp, .intro:not(.go) .hero h1::before { animation-play-state: paused; }
+/* the line as the pen lifts from the seal, the sentence after it, then the ways in */
+.intro.go .hero > .line { animation: intro-rise 1.5s cubic-bezier(0.22, 0.61, 0.36, 1) calc(var(--seal-start) + var(--seal-end, 1.4s) - 0.2s) both; }
+.intro.go .hero > .dek { animation: intro-rise 1.5s cubic-bezier(0.22, 0.61, 0.36, 1) calc(var(--seal-start) + var(--seal-end, 1.4s) + 0.45s) both; }
+.intro.go .hero > a { animation: intro-in 1.3s ease-out calc(var(--seal-start) + var(--seal-end, 1.4s) + 1.1s) both; }
+/* the seal's glow comes up only once the seal is written, and then breathes as it always does */
+.intro.go .hero h1::before { animation: seal-glow-in 1.6s ease-out calc(var(--seal-start) + var(--seal-end, 1.4s)) both, seal-breathe 5s ease-in-out calc(var(--seal-start) + var(--seal-end, 1.4s) + 1.6s) infinite alternate forwards; }
+@keyframes seal-glow-in { from { opacity: 0; transform: scale(0.9); } to { opacity: 0.2; transform: scale(0.96); } }
+@keyframes intro-rise { from { opacity: 0.001; translate: 0 14px; } to { opacity: 1; translate: 0 0; } }
+@keyframes intro-in { from { opacity: 0.001; } to { opacity: 1; } }
