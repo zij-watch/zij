@@ -1,33 +1,42 @@
 "use client";
 
-// The third film's first surface (lib/film/v3.ts): the record sheet, one paper that changes in
-// place. The chart is the app's own SeriesChart, fed the Nile Delta's exported seasons.
-//   0.0   the seasons as recorded: MODIS to 2011, VIIRS from 2012; the bars leap at 2012
-//   4.5   an ink circle round 2012, and the two sensors named
-//   8.0   the trials written in beside the chart, each error ticking in turn, M4 underlined
-//   14.5  the bars become the harmonized record, with its band; the Nile Delta's own error
-// Every number comes from method.json (on the server, app/studio/film/v3/page.tsx).
+// L1 and L2 of the third film (lib/film/v3.ts): the record sheet.
+//   L1  NASA GIBS true colour of the Nile Delta on 20 October 2023, that day's fire dots inking in;
+//       the picture folds down into the record chart, the Delta's raw seasons are drawn, and the
+//       bars leap at 2012 on "tenfold" (162 and 1,609, from the data)
+//   L2  an ink circle round 2012; "MODIS 1 km" and "VIIRS 375 m" on the two halves
+// The chart is the app's own SeriesChart; the picture is the app's own MapView on its satellite
+// basemap, which is NASA GIBS's corrected reflectance for that day.
 
-import { useMemo, useRef } from "react";
+import dynamic from "next/dynamic";
+import type { Map as MapLibreMap } from "maplibre-gl";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Area } from "@/lib/data";
-import { arrive, clamp, lerp, move } from "@/lib/film/timeline";
-import { V3 } from "@/lib/film/v3";
+import type { DayResult } from "@/lib/dayData";
+import { arrive, clamp, move } from "@/lib/film/timeline";
+import type { Beats } from "@/lib/film/v3";
+import type { DayHotspot } from "@/lib/hotspots/day";
+import { fitBox } from "@/lib/map/atlas/camera";
 import { COLOURS } from "@/lib/tokens";
 import { ResultPaper } from "../../Panel";
 import Paper from "../../Paper";
 import SeriesChart from "../../SeriesChart";
 import { Lever } from "../../ui";
-import { axisTop, chartIn, mixHex, useSeasons } from "../board/Charts";
-import { inked, Sheet, shown, useDriver, useReady, useT } from "../kit";
+import { axisTop, chartIn, useSeasons } from "../board/Charts";
+import { mapProps, useIdle } from "../board/Maps";
+import { inked, Sheet, useDriver, useFilm, useReady, useT } from "../kit";
 
-export interface Trial { label: string; pct: number }
+const MapView = dynamic(() => import("../../MapView"), { ssr: false });
 
 const noop = () => {};
-const B = V3;
-const CHART_K = 1.55;
-const PAD = 34; // the chart's room above it, for the MODIS and VIIRS marks (film.css, .film-chart)
+const NONE: DayHotspot[] = [];
+const NO_AREAS: never[] = [];
+const PAD = 34; // the chart's room above it (film.css, .film-chart)
+const CARD = { x: 120, y: 64, w: 1560, k: 2 }; // the chart card on the sheet: 780 wide, shown at twice its size
+const PICTURE = { w: 1560, h: 812 };
+/** The Nile Delta, the app's preset box. */
+const DELTA: [number, number, number, number] = [29.8, 30.0, 32.3, 31.6];
 
-/** An ellipse drawn by hand: a little more than once round, starting up and to the left, slightly uneven. */
 function inkRing(cx: number, cy: number, rx: number, ry: number): string {
   const points: string[] = [];
   const turns = 1.08, n = 120, start = -2.2;
@@ -39,142 +48,129 @@ function inkRing(cx: number, cy: number, rx: number, ry: number): string {
   return `M${points.join(" L")}`;
 }
 
-interface Geo { x: number[]; step: number; foot: number; high: number; top2012: number }
+interface Geo { x: number[]; step: number; foot: number; high: number; top: number[] }
 
-export function RecordSheet({ area, trials, areaError }: { area: Area; trials: Trial[]; areaError: number }) {
+export function RecordSheet({ area, b, day, dayResult }: { area: Area; b: Beats; day: string; dayResult: DayResult }) {
   const t = useT();
+  const { warn } = useFilm();
+  const idle = useIdle();
   const sheet = useRef<HTMLDivElement>(null);
-  const modisMark = useRef<HTMLParagraphElement>(null);
-  const viirsMark = useRef<HTMLParagraphElement>(null);
+  const halves = useRef<(HTMLParagraphElement | null)[]>([]);
   const divide = useRef<HTMLElement>(null);
   const ring = useRef<SVGPathElement>(null);
-  const sensors = useRef<HTMLDivElement>(null);
-  const tops = useRef<{ recorded?: number; one?: number }>({});
+  const numbers = useRef<(HTMLParagraphElement | null)[]>([]);
+  const top = useRef<number | undefined>(undefined);
   const geo = useRef<Geo | null>(null);
   const r = useSeasons(area);
-  const recorded = t < B.flip;
-  useReady("record", true);
+  const [map, setMap] = useState<MapLibreMap | null>(null);
+  const [settled, setSettled] = useState(false);
+  const applied = useRef(-1);
+  const last = r.nModis - 1, first = r.nModis; // 2011 and 2012
+  const view = useMemo(() => fitBox(DELTA, PICTURE.w, PICTURE.h, 30), []);
 
-  useDriver((time) => {
+  // That day's fires, inked in over the first second, in the order the satellites saw them.
+  const dots = useMemo(() => [...dayResult.view.hotspots].sort((a, c) => a.time_utc.localeCompare(c.time_utc) || a.longitude - c.longitude), [dayResult]);
+  const inkedCount = (time: number) => Math.round(dots.length * clamp((time - b.dots[0]) / (b.dots[1] - b.dots[0])));
+  const count = inkedCount(t);
+  const shown = useMemo(() => (count === 0 ? NONE : dots.slice(0, count)), [dots, count]);
+
+  const onMap = useCallback((m: MapLibreMap) => {
+    m.on("error", (event) => warn(`picture: ${event.error?.message ?? "error"}`));
+    setMap(m);
+  }, [warn]);
+  useEffect(() => {
+    if (!map) return;
+    let live = true;
+    idle(map, "picture").then(() => live && setSettled(true));
+    return () => {
+      live = false;
+    };
+  }, [map, idle]);
+  useReady("record", settled);
+
+  useDriver(async (time) => {
+    if (map && time < b.fold[1] && inkedCount(time) !== applied.current) {
+      applied.current = inkedCount(time);
+      await idle(map, "picture");
+    }
     const chart = chartIn(sheet.current);
     if (!chart) return;
-    const c = COLOURS, d = r.s;
+    const c = COLOURS;
     const raw = r.rows.map((i) => ({ value: r.raw(i), itemStyle: { color: r.converted(i) ? c.lapis : c.rubric } }));
-    // The two states' axes, each measured once with its full bars; the recorded one also gives the
-    // places the marks, the dashed divide and the ink circle are drawn at.
-    if (tops.current.recorded === undefined) {
+    if (top.current === undefined) {
       chart.setOption({ animation: false, yAxis: { max: null }, series: [{ id: "bars", data: raw }, { id: "band", data: [] }] });
-      tops.current.recorded = axisTop(chart);
-      chart.setOption({ animation: false, yAxis: { max: tops.current.recorded } });
+      top.current = axisTop(chart);
+      chart.setOption({ animation: false, yAxis: { max: top.current } });
       chart.getZr().flush();
       const px = (k: number, v: number) => chart.convertToPixel({ seriesId: "bars" }, [k, v]);
       const x = r.rows.map((_, k) => px(k, 0)[0]);
-      geo.current = { x, step: x[1] - x[0], foot: px(0, 0)[1], high: px(0, tops.current.recorded)[1], top2012: px(r.nModis, raw[r.nModis].value)[1] };
+      geo.current = { x, step: x[1] - x[0], foot: px(0, 0)[1], high: px(0, top.current)[1], top: raw.map((bar, k) => px(k, bar.value)[1]) };
     }
-    if (tops.current.one === undefined) {
-      chart.setOption({ animation: false, yAxis: { max: null }, series: [{ id: "bars", data: d.value.map((v) => ({ value: v })) }, { id: "band", data: r.rows.map((i, k) => [k, d.lo[i], d.hi[i]]) }] });
-      tops.current.one = axisTop(chart);
-    }
-    if (time < B.flip) {
-      const grown = (k: number) => (k < r.nModis ? move(time, B.modis + k * B.modisEvery, B.modisFor) : arrive(time, B.viirs + (k - r.nModis) * B.viirsEvery));
-      chart.setOption({ animation: false, yAxis: { max: tops.current.recorded }, series: [{ id: "bars", data: raw.map((bar, k) => ({ ...bar, value: bar.value * grown(k) })) }, { id: "band", data: [] }] });
-    } else {
-      const k1 = move(time, B.flip, B.settle), k2 = move(time, B.whiskers, 0.5), k3 = move(time, B.median, 0.3);
-      chart.setOption({
-        animation: false,
-        yAxis: { max: tops.current.one },
-        series: [
-          {
-            id: "bars",
-            data: r.rows.map((i) => ({ value: lerp(r.raw(i), d.value[i], k1), itemStyle: { color: r.converted(i) ? mixHex(c.lapis, c.rubric, k1) : c.rubric } })),
-            markLine: { lineStyle: { opacity: k3 }, label: { opacity: k3 } },
-          },
-          { id: "band", data: r.rows.map((i, k) => (d.lo[i] === null || d.hi[i] === null ? [k, null, null] : [k, lerp(d.value[i], d.lo[i] as number, k2), lerp(d.value[i], d.hi[i] as number, k2)])) },
-        ],
-      });
-    }
+    // The MODIS years drawn one after another; on "tenfold" the VIIRS years leap.
+    const each = (b.modis[1] - b.modis[0]) / r.nModis;
+    const grown = (k: number) => (k < r.nModis ? move(time, b.modis[0] + k * each, Math.max(0.12, each * 2)) : arrive(time, b.leap + (k - r.nModis) * 0.03, 0.5));
+    chart.setOption({ animation: false, yAxis: { max: top.current }, series: [{ id: "bars", data: raw.map((bar, k) => ({ ...bar, value: bar.value * grown(k) })) }, { id: "band", data: [] }] });
     chart.getZr().flush();
 
     const g = geo.current!;
-    const place = (element: HTMLElement | null, first: number, last: number) => {
+    const place = (element: HTMLElement | null, from: number, to: number) => {
       if (!element) return;
-      element.style.left = `${g.x[first] - g.step * 0.41}px`;
-      element.style.width = `${g.x[last] - g.x[first] + g.step * 0.82}px`;
+      element.style.left = `${g.x[from] - g.step * 0.41}px`;
+      element.style.width = `${g.x[to] - g.x[from] + g.step * 0.82}px`;
     };
-    place(modisMark.current, 0, r.nModis - 1);
-    place(viirsMark.current, r.nModis, r.rows.length - 1);
+    place(halves.current[0], 0, last);
+    place(halves.current[1], first, r.rows.length - 1);
     if (divide.current) {
-      divide.current.style.left = `${(g.x[r.nModis - 1] + g.x[r.nModis]) / 2}px`;
+      divide.current.style.left = `${(g.x[last] + g.x[first]) / 2}px`;
       divide.current.style.top = `${g.high + PAD}px`;
-      divide.current.style.height = `${(g.foot - g.high) * move(time, B.divide, 0.3)}px`;
+      divide.current.style.height = `${(g.foot - g.high) * move(time, b.leap - 0.25, 0.25)}px`;
     }
-    // The ink circle: round the 2012 bar, from above its top down past the year under it.
-    const cx = g.x[r.nModis], top = g.top2012 + PAD - 34, bottom = g.foot + PAD + 34;
-    const rx = g.step * 1.05, ry = (bottom - top) / 2, cy = (top + bottom) / 2;
+    // The two numbers over 2011 and 2012.
+    [last, first].forEach((k, j) => {
+      const element = numbers.current[j];
+      if (!element) return;
+      // 2011's over its bar; 2012's ends at its bar's right edge, clear of 2013's taller bar.
+      element.style.left = `${j === 0 ? g.x[k] : g.x[k] + g.step * 0.42}px`;
+      element.style.transform = j === 0 ? "translateX(-50%)" : "translateX(-100%)";
+      element.style.top = `${PAD + g.foot - (g.foot - g.top[k]) * grown(k) - 34}px`;
+    });
+    // The ink circle takes in the leap: 2011 and 2012, with their numbers.
+    const cx = (g.x[last] + g.x[first]) / 2, ringTop = g.top[first] + PAD - 78, bottom = g.foot + PAD + 30;
     if (ring.current) {
-      ring.current.setAttribute("d", inkRing(cx, cy, rx, ry));
-      ring.current.style.strokeDashoffset = String(1 - move(time, B.circle, B.circleFor));
-      // Once the bars are on one scale there is no jump left to circle: the ring stays, faint.
-      ring.current.style.opacity = String(lerp(0.88, 0.4, move(time, B.flip, 0.6)));
-    }
-    if (sensors.current) {
-      sensors.current.style.opacity = String(1 - move(time, B.flip, 0.5));
-      sensors.current.style.left = `${cx - rx - 18}px`;
-      sensors.current.style.top = `${cy - 58}px`;
+      ring.current.setAttribute("d", inkRing(cx, (ringTop + bottom) / 2, g.step * 1.45, (bottom - ringTop) / 2));
+      ring.current.style.strokeDashoffset = String(1 - move(time, b.circle, 0.6));
     }
   });
 
-  // The trials: each row is written, then its error ticks from the row above's to its own.
-  const rows = useMemo(() => trials.map((trial, k) => ({ ...trial, at: B.row + k * B.rowEvery, from: k === 0 ? 0 : trials[k - 1].pct })), [trials]);
-  const most = Math.max(...trials.map((trial) => trial.pct));
-  const last = rows[rows.length - 1];
-
+  const fold = move(t, b.fold[0], b.fold[1] - b.fold[0]);
+  const fmt = (v: number) => Math.round(v).toLocaleString("en-US");
   return (
     <Paper as="div" kind="sheet" seed="v3-record" className="v3-record">
-      <p className="v3-corner" style={inked(t, B.corner, 0.4)}>Team Zij · Harmonization of MODIS and VIIRS Hot Spots</p>
-      <Sheet ref={sheet} className="film-seasons v3-seasons" x={34} y={78} w={780} k={CHART_K} style={{ ["--film-lever" as string]: move(t, B.lever, B.leverFor) }}>
+      <Sheet ref={sheet} className="film-seasons v3-seasons" x={CARD.x} y={CARD.y} w={780} k={CARD.k}>
         <ResultPaper letter="ه" id="v3-record-chart" title={<>Nile Delta · Seasons · {r.seasonWords}</>}
-          extra={<Lever label="Which record" off="As recorded" on="On one scale" checked={!recorded} onChange={noop} />}>
-          {recorded
-            ? <ul className="key board-key"><li><i className="key-modis" aria-hidden="true" />MODIS, as recorded</li><li><i className="key-viirs" aria-hidden="true" />VIIRS, as recorded</li></ul>
-            : <ul className="key board-key"><li><i className="key-viirs" aria-hidden="true" />on one scale, VIIRS terms</li><li><i className="key-whisker" aria-hidden="true" />likely range</li><li><i className="key-dashed" aria-hidden="true" />median {r.b0}–{r.b1}</li></ul>}
+          extra={<Lever label="Which record" off="As recorded" on="On one scale" checked={false} onChange={noop} />}>
+          <ul className="key board-key"><li><i className="key-modis" aria-hidden="true" />MODIS, as recorded</li><li><i className="key-viirs" aria-hidden="true" />VIIRS, as recorded</li></ul>
           <div className="film-chart">
-            <SeriesChart area={area} fromYear={Number(r.from.slice(0, 4))} toYear={Number(r.to.slice(0, 4))} normal={r.normal} recorded={recorded} />
-            <p ref={modisMark} className="film-half is-modis" style={inked(t, B.modisLabel)}>
-              <b>MODIS</b> {r.modisYears[0]}–{r.modisYears[r.modisYears.length - 1]}
-            </p>
-            <p ref={viirsMark} className="film-half is-viirs" style={inked(t, B.viirsLabel)}>
-              <b>VIIRS</b> {r.viirsYears[0]}–{r.viirsYears[r.viirsYears.length - 1]}
-            </p>
-            <i ref={divide} className="film-divide" style={t < B.divide ? { visibility: "hidden" } : undefined} aria-hidden="true" />
-            <svg className="v3-ring" aria-hidden="true" style={t < B.circle ? { visibility: "hidden" } : undefined}>
+            <SeriesChart area={area} fromYear={Number(r.from.slice(0, 4))} toYear={Number(r.to.slice(0, 4))} normal={r.normal} recorded />
+            <p ref={(e) => void (halves.current[0] = e)} className="film-half is-modis" style={inked(t, b.sensors[0], 0.3)}><b>MODIS</b> 1 km</p>
+            <p ref={(e) => void (halves.current[1] = e)} className="film-half is-viirs" style={inked(t, b.sensors[1], 0.3)}><b>VIIRS</b> 375 m</p>
+            <i ref={divide} className="film-divide" style={t < b.leap - 0.25 ? { visibility: "hidden" } : undefined} aria-hidden="true" />
+            <p ref={(e) => void (numbers.current[0] = e)} className="v3-number is-modis" style={inked(t, b.modis[1] - 0.1, 0.2)}>{fmt(r.raw(r.rows[last]))}</p>
+            <p ref={(e) => void (numbers.current[1] = e)} className="v3-number is-viirs" style={inked(t, b.numbers, 0.2)}>{fmt(r.raw(r.rows[first]))}</p>
+            <svg className="v3-ring" aria-hidden="true" style={t < b.circle ? { visibility: "hidden" } : undefined}>
               <path ref={ring} pathLength={1} strokeDasharray="1 1" />
             </svg>
-            <div ref={sensors} className="v3-sensors">
-              <p className="is-modis" style={inked(t, B.modisSensor, B.sensorFor)}>MODIS, 1 km</p>
-              <p className="is-viirs" style={inked(t, B.viirsSensor, B.sensorFor)}>VIIRS, 375 m</p>
-            </div>
           </div>
         </ResultPaper>
       </Sheet>
 
-      <div className="v3-trials">
-        <p className="v3-trials-note" style={inked(t, B.trials, 0.45)}>Error of a season total, tested on years the model never saw</p>
-        {rows.map((row) => {
-          const tick = move(t, row.at + B.rowInk * 0.6, B.tickFor);
-          const value = Math.round(lerp(row.from, row.pct, tick));
-          return (
-            <div key={row.label} className="v3-trial" style={shown(t, row.at)}>
-              <span className="v3-trial-label" style={inked(t, row.at, B.rowInk)}>{row.label}</span>
-              <b className="v3-trial-value">{String(value).split("").map((digit, k) => <i key={k}>{digit}</i>)}%</b>
-              <i className="v3-trial-bar" style={{ width: `${((100 * lerp(row.from, row.pct, tick)) / most).toFixed(2)}%`, opacity: clamp((t - row.at) / 0.1) }} aria-hidden="true" />
-              {row === last && <i className="v3-underline" style={{ width: `${(100 * move(t, B.underline, B.underlineFor)).toFixed(2)}%` }} aria-hidden="true" />}
-            </div>
-          );
-        })}
+      {/* The Delta from space, folding down into the chart. */}
+      <div className="v3-picture" aria-hidden="true"
+        style={{ left: CARD.x, top: CARD.y, width: PICTURE.w, height: PICTURE.h, visibility: fold >= 1 ? "hidden" : undefined,
+          transform: `perspective(2600px) rotateX(${(88 * fold).toFixed(3)}deg)` }}>
+        <MapView {...mapProps} basemap="satellite" date={day} areas={NO_AREAS} selected={null} tags={false} shape={null} hotspots={shown} view={view} onMap={onMap} />
+        <i className="v3-picture-shade" style={{ opacity: 0.75 * fold }} />
       </div>
-
-      <p className="v3-area-error" style={inked(t, B.areaError, 0.4)}>Nile Delta error: {areaError}%</p>
     </Paper>
   );
 }

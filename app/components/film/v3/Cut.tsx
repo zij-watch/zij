@@ -1,8 +1,9 @@
 "use client";
 
-// The third film (/studio/film/v3): three surfaces in close shots on the night desk, joined by two
-// short camera glides (lib/film/v3.ts, docs/event/FILM.md). The same handle as the board's: the
-// renderer seeks each frame, and asks for motion blur only on the glides.
+// The third film (/studio/film/v3): six shots on four surfaces on the night desk, every beat keyed
+// to a word of the voice-over (lib/film/v3.ts, docs/event/FILM.md). The same handle as the board's:
+// the renderer seeks each frame, asks for motion blur only on the camera's glides, and checks the
+// numbers on screen (window.__film.facts) before any frame is taken.
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { flushSync } from "react-dom";
@@ -13,38 +14,37 @@ import type { Polygon } from "@/lib/fit/cells";
 import { CHUNKS } from "@/lib/film/board";
 import type { Cue } from "@/lib/film/srt";
 import { clamp, DURATION, FPS, FRAMES, HEIGHT, lerp, move, PRESET, WIDTH } from "@/lib/film/timeline";
-import { BLUR, blurAt, blurOf, camAt, lampAt, layerTransform, pinAt, SCENES_V3, shadowOf, slideAt, STILL_V3, SURFACES, V3, type Cam, type Surface } from "@/lib/film/v3";
+import { BLUR, blurOf, lampAt, layerTransform, makeCut, pinAt, shadowOf, SURFACES, type Cam, type Surface, type Timing } from "@/lib/film/v3";
 import { useAppState } from "@/lib/url";
+import { areaVerdict, standing } from "@/lib/verdict";
 import { TooltipProvider } from "../../ui";
 import { Desk } from "../board/Board";
-import { SealCard } from "../board/Cards";
 import { FilmContext, frame, type Driver, type FilmHandle } from "../kit";
-import type { ProofNumbers } from "../Proof";
+import { Finale, type Findings } from "./Finale";
+import { Machine, type Trials } from "./Machine";
 import { MapSheet } from "./MapSheet";
-import { RecordSheet, type Trial } from "./RecordSheet";
+import { RecordSheet } from "./RecordSheet";
 
-interface Loaded { delta: Area; drawn: Area; country: string; shape: Polygon; day: string; dayResult: DayResult }
+interface Loaded { delta: Area; drawn: Area; country: string; shape: Polygon; day: string; dayResult: DayResult; fitMs: number }
 
 const PARTS = ["data", "fonts", "desk", "record", "map"];
 const DESK_F = 0.965, PIN_F = 1.012;
 
-function OnDesk({ surface, i, cam, lamp, t, children }: { surface: Surface; i: number; cam: Cam; lamp: [number, number]; t: number; children: ReactNode }) {
-  const [sx, sy] = shadowOf(i, cam, lamp);
-  const blur = blurOf(i, t, cam) / cam.z;
+function OnDesk({ surface, blur, shadow, children }: { surface: Surface; blur: number; shadow: [number, number]; children: ReactNode }) {
   return (
     <section className="board-paper"
       style={{
         left: surface.x, top: surface.y, width: surface.w, height: surface.h,
         transformOrigin: `${surface.pin[0]}px ${surface.pin[1]}px`, transform: `rotate(${surface.rot}deg)`,
         filter: blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none",
-        ["--sx" as string]: `${sx.toFixed(2)}px`, ["--sy" as string]: `${sy.toFixed(2)}px`,
+        ["--sx" as string]: `${shadow[0].toFixed(2)}px`, ["--sy" as string]: `${shadow[1].toFixed(2)}px`,
       } as CSSProperties}>
       {children}
     </section>
   );
 }
 
-export default function Cut({ cues, seal, proof, trials, areaError }: { cues: Cue[]; seal: string; proof: ProofNumbers | null; trials: Trial[]; areaError: number }) {
+export default function Cut({ cues, seal, timing, trials, findings }: { cues: Cue[]; seal: string; timing: Timing; trials: Trials; findings: Findings }) {
   const [state] = useAppState();
   const [t, setT] = useState(0);
   const [loaded, setLoaded] = useState<Loaded | null>(null);
@@ -53,6 +53,7 @@ export default function Cut({ cues, seal, proof, trials, areaError }: { cues: Cu
   const drivers = useRef(new Set<Driver>());
   const parts = useRef(new Map<string, boolean>());
   const warnings = useRef<string[]>([]);
+  const cut = useMemo(() => makeCut(timing), [timing]);
   const [gate] = useState(() => {
     let resolve = () => {};
     const promise = new Promise<void>((r) => (resolve = r));
@@ -83,10 +84,25 @@ export default function Cut({ cues, seal, proof, trials, areaError }: { cues: Cu
     return { t: at, warnings: [...warnings.current] };
   }, []);
 
+  // The numbers the film shows, read back from what it loaded, for the renderer's checks.
+  const facts = useMemo(() => {
+    if (!loaded) return null;
+    const s = loaded.delta.seasons, k12 = s.year.indexOf(2012), k11 = s.year.indexOf(2011);
+    const m = loaded.drawn.this_month;
+    const own = m.value_to_date !== null && m.to_date_values ? standing(m.value_to_date, m.to_date_values) : null;
+    return {
+      tenfold: { modis2011: s.modis[k11], viirs2012: s.viirs[k12] },
+      error: { raw: trials.raw, zij: trials.zij, factor: trials.factor },
+      ban: findings.ban, since: findings.since,
+      rank: { computed: own?.rank ?? null, sentence: areaVerdict(loaded.drawn)?.sentence ?? null },
+      fitMs: loaded.fitMs,
+    };
+  }, [loaded, trials, findings]);
+
   useEffect(() => {
-    const handle: FilmHandle = {
-      fps: FPS, duration: DURATION, frames: FRAMES, width: WIDTH, height: HEIGHT, scenes: SCENES_V3, cues, chunks: CHUNKS, proof, stillFrom: STILL_V3,
-      subframes: BLUR.subframes, shutter: BLUR.shutter, blurAt, slideAt,
+    const handle: FilmHandle & { facts: unknown; timing: Timing } = {
+      fps: FPS, duration: DURATION, frames: FRAMES, width: WIDTH, height: HEIGHT, scenes: cut.scenes, cues, chunks: CHUNKS, proof: { raw: trials.raw, zij: trials.zij, areas: 0, train: [0, 0] },
+      subframes: BLUR.subframes, shutter: BLUR.shutter, blurAt: cut.blurAt, slideAt: cut.slideAt, facts, timing,
       ready: gate.promise.then(() => seek(0)).then(() => { document.documentElement.dataset.film = "ready"; }),
       seek,
     };
@@ -95,7 +111,7 @@ export default function Cut({ cues, seal, proof, trials, areaError }: { cues: Cu
     return () => {
       delete window.__film;
     };
-  }, [seek, cues, gate, proof]);
+  }, [seek, cues, gate, cut, facts, timing, trials]);
 
   const shapeKey = state.shape && !Array.isArray(state.shape) ? JSON.stringify(state.shape) : "";
   const day = state.day;
@@ -106,10 +122,15 @@ export default function Cut({ cues, seal, proof, trials, areaError }: { cues: Cu
     const shape = JSON.parse(shapeKey) as Polygon;
     (async () => {
       const [delta, drawn] = await Promise.all([loadArea(PRESET), resolveDrawn(shape)]);
+      // The fit, timed as Explore runs it once the country's cells are in memory: from the drawn
+      // shape to the area's document (its months, seasons and verdict), in the browser.
+      const started = performance.now();
+      await resolveDrawn(shape);
+      const ms = performance.now() - started;
       if (drawn.status !== "ok") throw new Error(drawn.status === "two-countries" ? `The drawn area touches ${drawn.countries.join(" and ")}.` : `The drawn area is outside the regions Zij has processed (${COVERED}).`);
       const dayResult = await loadDay(drawn.area, day);
       if (!dayResult.covered) throw new Error("Single hotspots are not shipped for this area.");
-      if (live) setLoaded({ delta, drawn: drawn.area, country: drawn.country, shape, day, dayResult });
+      if (live) setLoaded({ delta, drawn: drawn.area, country: drawn.country, shape, day, dayResult, fitMs: ms });
     })().catch((error: Error) => live && setProblem(error.message));
     return () => {
       live = false;
@@ -142,16 +163,19 @@ export default function Cut({ cues, seal, proof, trials, areaError }: { cues: Cu
   }, [seek, gate]);
 
   const context = useMemo(() => ({ t, drive, ready, warn }), [t, drive, ready, warn]);
-  const cam = camAt(t);
-  const lamp = lampAt(t, cam);
-  const lampUp = move(t, 0, V3.lampUp);
+  const b = cut.beats;
+  const cam: Cam = cut.camAt(t);
+  const lamp = lampAt(cut, t, cam);
+  const lampUp = move(t, 0, 0.35);
 
   const content = (i: number): ReactNode => {
     if (!loaded) return null;
-    if (i === 0) return <RecordSheet area={loaded.delta} trials={trials} areaError={areaError} />;
-    if (i === 1) return <MapSheet area={loaded.drawn} country={loaded.country} shape={loaded.shape} day={loaded.day} dayResult={loaded.dayResult} />;
-    return <SealCard seal={seal} team="Zij · zij.watch" at={{ seal: V3.seal, team: V3.team, credit: V3.credit }} />;
+    if (i === 0) return <RecordSheet area={loaded.delta} b={b} day={loaded.day} dayResult={loaded.dayResult} />;
+    if (i === 1) return <Machine area={loaded.delta} b={b} trials={trials} />;
+    if (i === 2) return <MapSheet area={loaded.drawn} country={loaded.country} shape={loaded.shape} day={loaded.day} dayResult={loaded.dayResult} b={b} fitMs={loaded.fitMs} />;
+    return <Finale area={loaded.delta} b={b} findings={findings} seal={seal} />;
   };
+  const team = t < b.team[1] ? 1 - move(t, b.team[1] - 0.15, 0.15) : 0;
 
   return (
     <FilmContext.Provider value={context}>
@@ -162,7 +186,9 @@ export default function Cut({ cues, seal, proof, trials, areaError }: { cues: Cu
               <Desk />
             </div>
             <div className="board-layer board-papers" data-theme="folio" style={{ transform: layerTransform(cam) }}>
-              {SURFACES.map((surface, i) => <OnDesk key={surface.n} surface={surface} i={i} cam={cam} lamp={lamp} t={t}>{content(i)}</OnDesk>)}
+              {SURFACES.map((surface, i) => (
+                <OnDesk key={surface.n} surface={surface} blur={blurOf(cut, i, t, cam) / cam.z} shadow={shadowOf(i, cam, lamp)}>{content(i)}</OnDesk>
+              ))}
             </div>
             <div className="board-layer board-pins" style={{ transform: layerTransform(cam, PIN_F) }}>
               {SURFACES.map((surface) => {
@@ -174,7 +200,8 @@ export default function Cut({ cues, seal, proof, trials, areaError }: { cues: Cu
               style={{ background: `radial-gradient(1750px 1300px at ${(lamp[0] + 90).toFixed(1)}px ${(lamp[1] + 90).toFixed(1)}px, #fff 0%, color-mix(in srgb, var(--flame) 14%, #fff) 26%, color-mix(in srgb, var(--wood) 22%, #fff) 56%, color-mix(in srgb, var(--wood) 42%, #fff) 80%, color-mix(in srgb, var(--wood) 56%, #fff) 100%)` }} />
             <div className="board-glow" aria-hidden="true"
               style={{ background: `radial-gradient(1050px 800px at ${(lamp[0] + 90 - 168).toFixed(1)}px ${(lamp[1] + 90 - 126).toFixed(1)}px, color-mix(in srgb, var(--flame) 24%, transparent), color-mix(in srgb, var(--flame) 7%, transparent) 55%, transparent 76%)` }} />
-            <div className="film-layer film-dark" style={{ opacity: lerp(0.62, 0, lampUp) }} aria-hidden="true" />
+            <div className="film-layer film-dark" style={{ opacity: lerp(0.5, 0, lampUp) }} aria-hidden="true" />
+            {team > 0 && <div className="v3-team" style={{ opacity: team }}><p>Team Zij · Cairo</p><p className="v3-challenge">Harmonization of MODIS and VIIRS Hot Spots</p></div>}
             {(addressProblem ?? problem) && <p className="film-problem" role="alert">{addressProblem ?? problem}</p>}
           </div>
         </div>

@@ -1,34 +1,78 @@
-/* The third film (/studio/film/v3): three surfaces in close shots. Loaded after film.css and the
-   board's stylesheet, whose desk, papers, pins and lamp it shares. Nothing that matters is drawn
-   in the bottom 220 px of the frame, where YouTube's caption box sits. */
+/* The third film (/studio/film/v3), the final cut: four surfaces on the night desk. Loaded after
+   film.css and the board's stylesheet, whose desk, papers, pins and lamp it shares. Nothing that
+   carries the story is drawn in the bottom 200 px of the frame, where YouTube's caption box sits. */
 
-/* A. The record sheet. */
+.v3-team { position: absolute; left: 64px; bottom: 56px; margin: 0; padding: 10px 20px; color: var(--ground); background: color-mix(in srgb, var(--shadow) 60%, transparent); border-radius: 2px; }
+.v3-team p { margin: 0; font: 600 30px/38px var(--font-display); letter-spacing: 0.05em; }
+.v3-team .v3-challenge { font: 400 24px/32px var(--font-text); letter-spacing: 0.02em; opacity: 0.9; }
+.v3-input { font: 600 24px/1 var(--font-display); fill: var(--ink); letter-spacing: 0.03em; }
+.v3-coverage { position: absolute; left: 24px; top: 20px; margin: 0; padding: 6px 14px; font: 600 24px/30px var(--font-display); color: var(--ink); background: color-mix(in srgb, var(--ground) 88%, transparent); border-radius: 2px; box-shadow: var(--shadow-card); }
+.v3-small { font: 400 20px/1 var(--font-text); fill: var(--ink-muted); }
+
+/* L1, L2: the record sheet, and the Delta from space folding down into it. */
 .v3-record { width: 100%; height: 100%; }
-.v3-corner { position: absolute; left: 40px; top: 22px; margin: 0; width: max-content; font: 600 25px/32px var(--font-display); letter-spacing: 0.05em; color: var(--ink-muted); }
-.v3-seasons .result .chart { height: 300px; }
+.v3-seasons .result .chart { height: 215px; }
+.v3-picture { position: absolute; transform-origin: 50% 100%; overflow: hidden; border-radius: 2px; box-shadow: var(--shadow-card); background: #000; }
+.v3-picture .map { position: absolute; inset: 0; }
+.v3-picture-shade { position: absolute; inset: 0; background: var(--shadow); pointer-events: none; }
 .v3-ring { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.v3-ring path { fill: none; stroke: var(--ink); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-.v3-sensors { position: absolute; transform: translateX(-100%); text-align: right; }
-.v3-sensors p { margin: 0 0 4px; width: max-content; margin-left: auto; font: 600 23px/30px var(--font-display); letter-spacing: 0.04em; }
-.v3-sensors .is-modis { color: var(--lapis); }
-.v3-sensors .is-viirs { color: var(--rubric); }
+.v3-ring path { fill: none; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.9; }
+.v3-number { position: absolute; margin: 0; transform: translateX(-50%); font: 600 22px/26px var(--font-display); font-variant-numeric: lining-nums; white-space: nowrap; }
+.v3-number.is-modis { color: var(--lapis); }
+.v3-number.is-viirs { color: var(--rubric); }
 
-.v3-trials { position: absolute; left: 1290px; top: 96px; width: 470px; color: var(--ink); }
-.v3-trials-note { margin: 0 0 22px; font: italic 400 26px/34px var(--font-text); color: var(--ink-muted); }
-.v3-trial { position: relative; height: 100px; }
-.v3-trial-label { position: absolute; left: 0; top: 6px; font: 600 40px/48px var(--font-display); letter-spacing: 0.02em; }
-.v3-trial-value { position: absolute; right: 0; top: 0; font: 600 54px/56px var(--font-display); font-variant-numeric: lining-nums tabular-nums; font-feature-settings: "lnum" 1, "tnum" 1; }
-.v3-trial-value i { display: inline-block; width: 0.5em; font-style: normal; text-align: center; }
-.v3-trial-bar { position: absolute; left: 0; top: 64px; height: 12px; border-radius: 2px; background: color-mix(in srgb, var(--rubric) 78%, var(--ink)); }
-.v3-trial:first-of-type .v3-trial-bar { background: var(--lapis); }
-.v3-underline { position: absolute; left: 0; top: 86px; height: 3px; border-radius: 2px; background: var(--ink); }
-.v3-area-error { position: absolute; left: 1290px; top: 730px; margin: 0; width: max-content; font: 600 38px/46px var(--font-display); color: var(--ink); font-variant-numeric: lining-nums; }
+/* L3, L4: the machine. */
+.v3-machine, .v3-finale { width: 100%; height: 100%; }
+.v3-machine-svg, .v3-finale-svg { position: absolute; left: 0; top: 0; overflow: visible; }
+.v3-rail { stroke: color-mix(in srgb, var(--brass) 80%, var(--shadow)); stroke-width: 4; stroke-linecap: round; }
+.v3-ghost { fill: none; stroke: var(--lapis); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.35; }
+.v3-in { fill: var(--lapis); }
+.v3-rim { stroke: color-mix(in srgb, var(--brass) 45%, var(--shadow)); stroke-width: 3; }
+.v3-plate { fill: color-mix(in srgb, var(--ground) 82%, var(--brass)); stroke: color-mix(in srgb, var(--brass) 60%, var(--shadow)); stroke-width: 2; }
+.v3-tick { stroke: color-mix(in srgb, var(--brass) 35%, var(--ink)); stroke-width: 1.6; }
+.v3-rete circle { fill: none; stroke: color-mix(in srgb, var(--brass) 70%, var(--shadow)); stroke-width: 2; }
+.v3-rete .v3-star { fill: var(--brass); stroke: none; }
+.v3-pointer { fill: color-mix(in srgb, var(--brass) 75%, var(--shadow)); }
+.v3-window { fill: var(--ground); stroke: color-mix(in srgb, var(--brass) 70%, var(--shadow)); stroke-width: 4; }
+.v3-glow { fill: none; stroke: var(--flame); stroke-width: 10; filter: blur(4px); }
+.v3-dial-back { fill: var(--ground); stroke: color-mix(in srgb, var(--brass) 70%, var(--shadow)); stroke-width: 3; }
+.v3-needle { stroke: var(--rubric); stroke-width: 4; stroke-linecap: round; }
+.v3-hub { fill: color-mix(in srgb, var(--brass) 70%, var(--shadow)); }
+.v3-dial-value { font: 600 34px/1 var(--font-display); fill: var(--ink); text-anchor: middle; font-variant-numeric: lining-nums tabular-nums; }
+.v3-stage { font: 600 34px/1 var(--font-display); fill: var(--ink); letter-spacing: 0.02em; }
+.v3-trials { font: italic 400 30px/1 var(--font-text); fill: var(--ink-muted); }
+.v3-fire { fill: var(--rubric); }
+.v3-flare { fill: var(--flame); stroke: var(--rubric); stroke-width: 1; }
+.v3-cell { fill: none; stroke: color-mix(in srgb, var(--ink) 35%, transparent); stroke-width: 1; }
+.v3-pixel { fill: var(--rubric); }
+.v3-hand { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
+.v3-hand.is-terra { stroke: var(--lapis); }
+.v3-hand.is-aqua { stroke: color-mix(in srgb, var(--lapis) 50%, var(--brass)); }
+.v3-point { fill: var(--rubric); }
+.v3-fit { stroke: var(--ink); stroke-width: 2.5; stroke-linecap: round; }
+.v3-grid { stroke: color-mix(in srgb, var(--ink) 18%, transparent); stroke-width: 1; stroke-dasharray: 4 6; }
+.v3-viirs { fill: var(--rubric); }
+.v3-converted { fill: color-mix(in srgb, var(--rubric) 78%, var(--ground)); }
+.v3-band { fill: var(--flame); }
+.v3-whisker { stroke: var(--ink); stroke-width: 1.6; }
 
-/* B. The map sheet: the map nearly to its edges. */
+/* L5: the tag on the map. */
+.v3-fit-tag { position: absolute; margin: 0; padding: 6px 14px; transform-origin: 0 100%; font: 600 26px/32px var(--font-display); color: var(--ink); background: var(--ground); box-shadow: var(--shadow-card); border-radius: 2px; white-space: nowrap; }
+.v3 .v3-mapsheet .film-day, .v3 .film-mapsheet .film-day { left: 36px; bottom: 150px; }
 .v3-mapsheet .film-map { inset: 14px; }
-.v3 .film-day { transform-origin: 0 100%; left: 36px; bottom: 150px; }
 
-/* C. The Seal card, set higher than on the board so its credit line is clear of the caption box. */
-.v3 .board-sealcard .board-seal.film-seal { top: 60px; }
-.v3 .board-sealcard .board-team { top: 446px; }
-.v3 .board-sealcard .board-credit { top: 530px; }
+/* L6: what the record hid, and the Seal. */
+.v3-finale-head { position: absolute; left: 120px; top: 150px; margin: 0; font: 600 34px/40px var(--font-display); color: var(--ink); letter-spacing: 0.02em; }
+.v3-axis { stroke: color-mix(in srgb, var(--ink) 50%, transparent); stroke-width: 1.5; }
+.v3-line { fill: none; stroke: var(--rubric); stroke-width: 4.5; stroke-linejoin: round; }
+.v3-dot { fill: var(--rubric); }
+.v3-ban { stroke: var(--brass); stroke-width: 2; stroke-dasharray: 6 6; }
+.v3-arrow { fill: none; stroke: var(--ink); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+.v3-ban-label { position: absolute; margin: 0; white-space: nowrap; font: 400 32px/40px var(--font-text); color: var(--ink); }
+.v3-ban-label b { font: 600 38px/40px var(--font-display); color: var(--rubric); }
+.v3-stamp { position: absolute; margin: 0; padding: 8px 20px; white-space: nowrap; font: 600 44px/50px var(--font-display); letter-spacing: 0.03em; color: var(--rubric); border: 4px double var(--rubric); border-radius: 4px; transform-origin: 50% 50%; background: color-mix(in srgb, var(--ground) 70%, transparent); }
+.v3-sealblock { position: absolute; left: 1290px; top: 110px; width: 450px; text-align: center; transform-origin: 50% 40%; }
+.v3-seal.film-seal { position: relative; left: auto; top: auto; width: 330px; margin: 0 auto; }
+.v3-site { margin: 18px 0 0; font: 600 54px/62px var(--font-display); letter-spacing: 0.05em; color: var(--ink); }
+.v3-credit { margin: 12px 0 0; font: 400 24px/34px var(--font-text); color: var(--ink-muted); }
+.v3-credit.is-made { margin-top: 8px; font-style: italic; }

@@ -12,7 +12,7 @@ import type { Area } from "@/lib/data";
 import type { DayResult } from "@/lib/dayData";
 import { boundsOf, type Polygon } from "@/lib/fit/cells";
 import { arrive, clamp, ease, lerp, move } from "@/lib/film/timeline";
-import { BOX, V3 } from "@/lib/film/v3";
+import { BOX, type Beats } from "@/lib/film/v3";
 import { monthSpan } from "@/lib/format";
 import type { DayHotspot } from "@/lib/hotspots/day";
 import { fitBox, type Box, type View } from "@/lib/map/atlas/camera";
@@ -25,7 +25,6 @@ import { shown, useDriver, useFilm, useReady, useT } from "../kit";
 
 const MapView = dynamic(() => import("../../MapView"), { ssr: false });
 
-const B = V3;
 const MAP = { w: 1772, h: 972 };
 const COLUMN = { w: 464, k: 1.4 };
 const NONE: DayHotspot[] = [];
@@ -47,7 +46,7 @@ const rect = (a: [number, number], b: [number, number]): [number, number][] => [
 
 interface Marks { viirs: { r: number; opacity: number; stroke: number }; modis: { r: number; stroke: number; opacity: number; halo: number } }
 
-export function MapSheet({ area, country, shape, day, dayResult }: { area: Area; country: string; shape: Polygon; day: string; dayResult: DayResult }) {
+export function MapSheet({ area, country, shape, day, dayResult, b, fitMs }: { area: Area; country: string; shape: Polygon; day: string; dayResult: DayResult; b: Beats; fitMs: number }) {
   const t = useT();
   const { warn } = useFilm();
   const idle = useIdle();
@@ -58,6 +57,7 @@ export function MapSheet({ area, country, shape, day, dayResult }: { area: Area;
   const applied = useRef("");
   const kept = COLUMN.w * COLUMN.k;
   const view = useMemo(() => fitFree(boundsOf(shape), 150, kept), [shape, kept]);
+  const B = { press: b.box[0], dragFor: b.box[1] - b.box[0], cursor: b.box[0] - 0.35, results: b.results, resultsFor: 0.5, badge: b.badge, verdict: b.verdict, verdictFor: 0.7, drops: b.drops[0], dropsFor: b.drops[1] - b.drops[0] - 0.4, dropFor: 0.4, bloomFor: 0.8, slip: b.drops[0] - 0.25 };
   const closeAt = B.press + B.dragFor;
 
   // The box: pressed at one corner, dragged to the other.
@@ -67,14 +67,14 @@ export function MapSheet({ area, country, shape, day, dayResult }: { area: Area;
     const k = ease(clamp((time - B.press) / B.dragFor));
     const at: [number, number] = [lerp(BOX[0][0], BOX[1][0], k), lerp(BOX[0][1], BOX[1][1], k)];
     return { at, ring: rect(BOX[0], at) };
-  }, [closeAt]);
+  }, [closeAt, B.press, B.dragFor]);
 
   // The day's hotspots in the order the satellites saw them, then west to east; each has its moment.
   const drops = useMemo(() => {
     const sorted = [...dayResult.view.hotspots].sort((a, b) => a.time_utc.localeCompare(b.time_utc) || a.longitude - b.longitude || a.latitude - b.latitude);
     return sorted.map((h, j) => ({ h, at: B.drops + (B.dropsFor * j) / Math.max(1, sorted.length - 1) }));
-  }, [dayResult]);
-  const landedAt = useCallback((time: number) => drops.filter((d) => time >= d.at + B.dropFor).length, [drops]);
+  }, [dayResult, B.drops, B.dropsFor]);
+  const landedAt = useCallback((time: number) => drops.filter((d) => time >= d.at + B.dropFor).length, [drops, B.dropFor]);
   const landedCount = landedAt(t);
   const landed = useMemo(() => (landedCount === 0 ? NONE : drops.slice(0, landedCount).map((d) => d.h)), [drops, landedCount]);
 
@@ -136,9 +136,16 @@ export function MapSheet({ area, country, shape, day, dayResult }: { area: Area;
   return (
     <Paper as="div" kind="sheet" seed="v3-map" className="film-mapsheet v3-mapsheet">
       <div className="film-map">
-        <MapView {...mapProps} basemap="zij" date={day} areas={NO_AREAS} selected={null} tags={false} shape={closed ? shape : null} hotspots={landed} view={view} onMap={onMap} />
+        <MapView {...mapProps} basemap="satellite" date={day} areas={NO_AREAS} selected={null} tags={false} shape={closed ? shape : null} hotspots={landed} view={view} onMap={onMap} />
         <i className="film-cursor" aria-hidden="true"
           style={{ ...shown(t, B.cursor, closeAt + 0.4), left: penX, top: penY - 18 * penLift, opacity: Math.min(1, penSet * 4) * (1 - penLift), transform: `translate(-50%, -50%) scale(${(1 + 0.9 * (1 - penSet) + 0.25 * penLift).toFixed(4)})` }} />
+
+        <p className="v3-coverage" style={{ opacity: Math.min(1, move(t, B.cursor - 0.3, 0.3)) }}>Today: Egypt, Portugal, Argentina</p>
+
+        {/* Fitted in the browser: the time the page took to fit the box, measured as it loaded. */}
+        <p className="v3-fit-tag" style={{ ...shown(t, b.tag), left: project(view, BOX[0][0], BOX[0][1])[0] + 4, top: project(view, BOX[0][0], BOX[0][1])[1] - 58, opacity: Math.min(1, arrive(t, b.tag) * 4), transform: `scale(${(1 + 0.12 * (1 - arrive(t, b.tag))).toFixed(4)})` }}>
+          fitted in your browser · {(fitMs / 1000).toFixed(fitMs < 1000 ? 2 : 1)} s
+        </p>
 
         {/* The marks on their way down: the app's own two marks, larger and lighter, each with its blot of ink. */}
         {marks && (

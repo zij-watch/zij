@@ -1,28 +1,71 @@
 1
-00:00:00,200 --> 00:00:04,400
-NASA satellites have tracked fires for 25 years.
-But in 2012, the record jumps.
+00:00:00,100 --> 00:00:01,767
+In 2012, NASA's fire record
 
 2
-00:00:04,600 --> 00:00:07,900
-The fires didn't change.
-The satellite did.
+00:00:01,767 --> 00:00:02,760
+jumps tenfold.
 
 3
-00:00:08,100 --> 00:00:14,400
-We tested how the two sensors relate,
-on years our model never saw. Error fell from 77% to 14%.
+00:00:02,760 --> 00:00:03,699
+The fires didn't change.
 
 4
-00:00:14,600 --> 00:00:17,400
-Now it's one record, 2000 to today.
+00:00:03,699 --> 00:00:04,960
+The satellite did.
 
 5
-00:00:17,600 --> 00:00:24,400
-Draw any area: Zij tells you
-if this fire season is normal.
+00:00:04,960 --> 00:00:06,323
+So we built a machine
 
 6
-00:00:24,600 --> 00:00:29,300
-Built on NASA FIRMS,
-for the teams who fight fires. Zij.
+00:00:06,323 --> 00:00:08,334
+that learns how both satellites see,
+
+7
+00:00:08,334 --> 00:00:09,360
+area by area.
+
+8
+00:00:09,360 --> 00:00:11,372
+Tested on years it never saw,
+
+9
+00:00:11,372 --> 00:00:13,536
+its error falls from 77% to 14%,
+
+10
+00:00:13,536 --> 00:00:15,960
+and every value shows its margin.
+
+11
+00:00:15,960 --> 00:00:16,854
+Draw any area:
+
+12
+00:00:16,854 --> 00:00:18,792
+Zij fits it live in your browser,
+
+13
+00:00:18,792 --> 00:00:20,246
+and tells emergency teams
+
+14
+00:00:20,246 --> 00:00:21,960
+if this season is normal.
+
+15
+00:00:21,960 --> 00:00:24,334
+And it reveals what the split record hid:
+
+16
+00:00:24,334 --> 00:00:26,261
+in the Delta, detected burning rose
+
+17
+00:00:26,261 --> 00:00:27,343
+after the 2004 ban,
+
+18
+00:00:27,343 --> 00:00:29,177
+and has halved since 2018.

@@ -143,7 +143,7 @@ async function openFilm(chrome) {
     await sleep(500);
   }
   const about = await evaluate(`window.__film.ready.then(() => ({ fps: __film.fps, duration: __film.duration, frames: __film.frames, width: __film.width, height: __film.height,
-    scenes: __film.scenes, cues: __film.cues, proof: __film.proof, stillFrom: __film.stillFrom ?? null, chunks: __film.chunks ?? null, subframes: __film.subframes ?? 1, shutter: __film.shutter ?? 0 }))`);
+    scenes: __film.scenes, cues: __film.cues, proof: __film.proof, stillFrom: __film.stillFrom ?? null, chunks: __film.chunks ?? null, subframes: __film.subframes ?? 1, shutter: __film.shutter ?? 0, facts: __film.facts ?? null }))`);
   const seek = (t) => evaluate(`window.__film.seek(${t})`);
   const blurAt = (t) => (about.subframes > 1 ? evaluate(`window.__film.blurAt(${t})`) : false);
   const slideAt = (t, dt) => evaluate(`window.__film.slideAt ? window.__film.slideAt(${t}, ${dt}) : null`);
@@ -306,7 +306,7 @@ const probe = (file) => JSON.parse(run("ffprobe", ["-v", "error", "-show_entries
  * error method.json holds (raw MODIS and M4, each leaving one year out, rounded), which is also
  * what the counter on screen runs between.
  */
-function check({ cues, scenes, proof }) {
+function check({ cues, scenes, proof, facts }) {
   const problems = [];
   if (cues.length === 0) problems.push("the caption file has no captions");
   for (const cue of cues) {
@@ -324,7 +324,32 @@ function check({ cues, scenes, proof }) {
   else if (Number(said[1]) !== raw || Number(said[2]) !== zij) problems.push(`the caption says ${said[1]}% to ${said[2]}%, method.json gives ${raw}% to ${zij}%`);
   else console.log(`  the caption's ${said[1]}% to ${said[2]}% matches method.json (raw ${error("raw")}%, M4 ${error("M4")}%, leaving one year out)`);
   if (!proof || proof.raw !== raw || proof.zij !== zij) problems.push(`the counter on screen runs ${proof?.raw}% to ${proof?.zij}%, method.json gives ${raw}% to ${zij}%`);
+  if (facts) checkFacts(facts, problems);
   if (problems.length) throw new Error(`Not rendered:\n  ${problems.join("\n  ")}`);
+}
+
+/**
+ * The final cut (v3) states five things the brief names, each read from the data files by the page:
+ * the jump (162 and 1,609 hotspot-days, 2011 and 2012), the error (77% and 14%), the rise after the
+ * 2004 ban (+97%) and the fall since 2018 (-53%), and the verdict's rank among 26 years, which the
+ * sentence on screen must state as the rank worked out again from the drawn area's own numbers.
+ */
+function checkFacts(f, problems) {
+  const want = (name, got, expected) => {
+    if (got !== expected) problems.push(`${name}: the film shows ${got}, the brief says ${expected}`);
+    else console.log(`  ${name}: ${got}, as the brief says`);
+  };
+  want("MODIS season 2011", Math.round(f.tenfold.modis2011), 162);
+  want("VIIRS season 2012", Math.round(f.tenfold.viirs2012), 1609);
+  console.log(`  tenfold: ${(f.tenfold.viirs2012 / f.tenfold.modis2011).toFixed(2)} times`);
+  want("raw MODIS error", f.error.raw, 77);
+  want("Zij error", f.error.zij, 14);
+  want("after the 2004 ban", f.ban, 97);
+  want("since 2018", f.since, -53);
+  const rank = f.rank.computed, sentence = f.rank.sentence ?? "";
+  if (!rank || !sentence.includes(rank) || !/ of 26 years/.test(rank)) problems.push(`the verdict's rank: worked out "${rank}", the sentence says "${sentence}"`);
+  else console.log(`  the verdict's rank: "${rank}", in the sentence and worked out again from the area's numbers`);
+  console.log(`  fitted in the browser in ${(f.fitMs / 1000).toFixed(2)} s`);
 }
 
 // ---------------------------------------------------------------- the caption track

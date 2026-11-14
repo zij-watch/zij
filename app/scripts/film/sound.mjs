@@ -18,12 +18,12 @@
 // the picture copied (-c:v copy), AAC 48 kHz, 29.5 s, mastered to -14 LUFS and at most -1 dBTP.
 
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { BEATS, STORY, THREAD, threadDrawn, TITLE_INK, TRAVELS } from "../../lib/film/board.ts";
 import { DURATION, FILM_QUERY, T } from "../../lib/film/timeline.ts";
-import { GLIDES, TRIALS, V3 } from "../../lib/film/v3.ts";
+import { makeCut } from "../../lib/film/v3.ts";
 
 const APP = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const argv = process.argv.slice(2);
@@ -167,26 +167,21 @@ function firstEvents() {
   ];
 }
 
-/** The third film (lib/film/v3.ts): the two glides, the record sheet's ink, the box, the verdict, the Seal. */
+/** The final cut (lib/film/v3.ts): its beats come from the words' times, as the picture's do. */
+const TIMING = JSON.parse(readFileSync(join(APP, "..", "docs", "event", "zij-demo30-v3-timing.json"), "utf8"));
 function v3Events() {
-  const B = V3, out = [];
-  GLIDES.forEach(([a, b], i) => out.push({ kind: "air", at: a - 0.12, dur: b - a + 0.5, seed: i + 1 }));
-  out.push({ kind: "ink", at: B.corner, dur: 0.4, seed: 1, gain: -5 }); // the corner line
-  out.push({ kind: "ink", at: B.modisLabel, dur: 0.25, seed: 2, gain: -4 }, { kind: "ink", at: B.viirsLabel, dur: 0.25, seed: 3, gain: -4 });
-  out.push({ kind: "draw", at: B.circle, dur: B.circleFor + 0.1 }); // the ink circle round 2012
-  out.push({ kind: "ink", at: B.modisSensor, dur: B.sensorFor, seed: 4, gain: -3 }, { kind: "ink", at: B.viirsSensor, dur: B.sensorFor, seed: 5, gain: -3 });
-  out.push({ kind: "ink", at: B.trials, dur: 0.45, seed: 6, gain: -4 }); // the trials' line
-  TRIALS.forEach((_, k) => out.push({ kind: "ink", at: B.row + k * B.rowEvery, dur: B.rowInk, seed: k, gain: -4 })); // each row written
-  out.push({ kind: "draw", at: B.underline, dur: B.underlineFor + 0.1, gain: -2 }); // M4 underlined
-  out.push({ kind: "pin", at: B.lever }); // the lever
-  out.push({ kind: "ink", at: B.areaError, dur: 0.4, seed: 7, gain: -3 }); // the Nile Delta's error
-  out.push({ kind: "draw", at: B.press, dur: B.dragFor }); // the box
-  out.push({ kind: "slide", at: B.results }); // Results
-  out.push({ kind: "stamp", at: B.badge, gain: -3 }); // the verdict's badge
-  out.push({ kind: "ink", at: B.verdict, dur: B.verdictFor, seed: 8, gain: -3 }); // the verdict
-  out.push({ kind: "slide", at: B.slip, gain: -4 }); // the day's slip
-  out.push({ kind: "brush", at: B.seal, dur: 1.6 }); // the Seal
-  out.push({ kind: "ink", at: B.team, dur: 0.3, seed: 9 }, { kind: "ink", at: B.credit, dur: 0.3, seed: 10, gain: -3 });
+  const { beats: b, glides } = makeCut(TIMING), out = [];
+  glides.forEach(([a, c], i) => out.push({ kind: "air", at: a - 0.12, dur: c - a + 0.5, seed: i + 1, gain: -2 })); // the camera's moves
+  out.push({ kind: "slide", at: b.fold[0], gain: -4 }); // the picture folds down
+  out.push({ kind: "stamp", at: b.leap, gain: -6 }); // the leap on "tenfold"
+  out.push({ kind: "draw", at: b.circle, dur: 0.7 }); // the circle round 2012
+  b.stages.forEach((at, k) => out.push({ kind: "pin", at, seed: k, gain: 2 })); // the machine's four stages
+  out.push({ kind: "thread", at: b.dial[0], dur: b.dial[1] - b.dial[0], seed: 3, gain: 2 }, { kind: "pin", at: b.dial[1], gain: 3 }); // the dial's sweep, and where it lands
+  out.push({ kind: "draw", at: b.box[0], dur: b.box[1] - b.box[0], gain: -3 }); // the box
+  out.push({ kind: "stamp", at: b.badge, gain: -6 }); // the verdict's badge
+  out.push({ kind: "draw", at: b.ban, dur: 0.45, gain: -3 }); // the arrow up from 2004
+  out.push({ kind: "stamp", at: b.stamp }); // the stamp
+  out.push({ kind: "stamp", at: b.seal, gain: 1 }); // the Seal lands
   return out;
 }
 
@@ -298,8 +293,8 @@ console.log(report.join("\n"));
 // The music is a background bed, not a feature, and the effects are quieter than in the first two
 // films (6 dB lower against the music). Without a voice the music is still what carries the
 // loudness: mastered to -14 LUFS it is the loudest thing there is. With a voice (a file at
-// film/audio/voiceover-v3.*, transcribed and placed beforehand: --voice-at, --voice-from,
-// --voice-tempo) the voice is set to -16 LUFS, the music 18 dB under it (-34 LUFS), and ducked a
+// film/audio/voiceover-v3.*, transcribed and placed beforehand by scripts/film/v3-timing.mjs, whose
+// timing file says where its first word goes and how much faster it plays) the voice is set to -16 LUFS, the music 18 dB under it (-34 LUFS), and ducked a
 // further 6 dB or so while the voice speaks (a side-chain compressor keyed by the voice).
 function third() {
   const picture = join(OUT, "film-v3-silent.mp4");
@@ -316,11 +311,14 @@ function third() {
     "[2]volume=-6dB[x];[0][1][x]amix=inputs=3:normalize=0[out]", "-map", "[out]", "-c:a", "pcm_f32le", plain]);
   const mixes = [[plain, ""]];
   if (VOICE_V3) {
-    const tempo = Number(option("voice-tempo", "1")), from = Number(option("voice-from", "0")), at = Number(option("voice-at", "0"));
-    if (!(tempo >= 1 && tempo <= 1.05)) throw new Error("--voice-tempo must be from 1 to 1.05 (at most 5% faster)");
+    // Placed as the timing file says: its first word (at t0 in the take) at `at`, `tempo` times faster.
+    const { tempo, t0, at } = TIMING.voice ?? { tempo: 1, t0: 0, at: 0 };
+    if (!(tempo >= 1 && tempo <= 1.05)) throw new Error("the voice's tempo must be from 1 to 1.05 (at most 5% faster)");
     const clean = join(AUDIO, "voiceover-v3-clean.wav");
-    const delay = Math.max(0, Math.round((at - from / tempo) * RATE));
-    ff(["-i", VOICE_V3, "-af", `pan=mono|c0=c0,highpass=f=80:poles=2,afftdn=nr=6:nf=-50${tempo !== 1 ? `,atempo=${tempo}` : ""},${FORMAT},adelay=${delay}S:all=1,apad,atrim=0:${DURATION}`, "-c:a", "pcm_f32le", clean]);
+    const shift = at - t0 / tempo;
+    const trim = shift < 0 ? `atrim=start=${(-shift * tempo).toFixed(3)},asetpts=PTS-STARTPTS,` : "";
+    const delay = Math.max(0, Math.round(shift * RATE));
+    ff(["-i", VOICE_V3, "-af", `pan=mono|c0=c0,${trim}highpass=f=80:poles=2,afftdn=nr=6:nf=-50${tempo !== 1 ? `,atempo=${tempo}` : ""},${FORMAT},adelay=${delay}S:all=1,apad,atrim=0:${DURATION}`, "-c:a", "pcm_f32le", clean]);
     const spoken = level(clean, -16, join(WORK, "voice-v3-16.wav"));
     const voiced = join(WORK, "mix-v3-voice.wav");
     ff(["-i", spoken, "-i", level(music, -34, join(WORK, "music-34.wav")), "-i", level(bed, -40, join(WORK, "bed-40.wav")), "-i", fx, "-filter_complex",
