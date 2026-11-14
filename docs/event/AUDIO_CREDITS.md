@@ -12,7 +12,7 @@ Cleaned lightly: a high-pass at 80 Hz, a gentle de-noise (6 dB, `afftdn`). It is
 
 The final cut (v3) has its own script. Its voice-over is Yassen's too, recorded for it as `app/film/audio/voiceover-v3.*`, cleaned the same way and played at most 5% faster; it is only in `film-v3-final-voice.mp4`. Until that file exists there is no v3 voice version.
 
-v3.1 uses Yassen's final take (`app/film/audio/voiceover-v3.wav`, 31.1 s), placed by `app/scripts/film/v31-voice.mjs`: its 19 pauses shortened to 70 ms, played 2.9% faster with `atempo` (pitch unchanged), first word at 0.3 s, last word ending by 29.05 s. In `film-v3.1-final.mp4` the music sits 26 dB under his voice.
+v3.1 uses Yassen's final take (`app/film/audio/voiceover-v3.wav`, 31.1 s), placed by `app/scripts/film/v31-voice.mjs`: its 19 pauses shortened to 70 ms, played 2.9% faster with `atempo` (pitch unchanged), first word at 0.3 s, last word ending by 29.05 s. In `film-v3.1-final.mp4` the music sits 26 dB under his voice; five mouth clicks in his take are repaired with a de-clicker on 120 ms round each. v3.1 uses neither the lamp's flame nor the quill, the tick or the thread: only the wind (the camera's moves), the paper sheets (the sheets sliding together) and the parchment, low-passed (the cover closing).
 
 ## Music
 

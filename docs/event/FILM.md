@@ -218,7 +218,7 @@ v3.1 (`/studio/film/v31`, `app/lib/film/v31.ts`) tells v3's story to the voice-o
 
 **Checks.** As v3: 162 and 1,609, 77% and 14%, +97% and −53%, the verdict's rank, all from the data files; every caption inside its shot; at most 29.8 s; -14 LUFS and -1 dBTP. Rendered on the laptop's RTX 5060 (`render.mjs --high-gpu`, which starts Chrome with `--force_high_performance_gpu`): about twice as fast on the motion-blurred frames as the integrated GPU.
 
-**Sound.** His voice at -16 LUFS; the music very quiet, 26 dB under it (-42 LUFS), ducked about 6 dB more while he speaks, its final note at about 29.2 s; the lamp's bed 30 dB under; small effects on the beats (the moves, the flight, the leap, the circle, the four stages, the dial, the lasso, the badge, the arrow, the stamp, the sheets sliding, the cover, the brush). `npx tsx scripts/film/sound.mjs --films v31`.
+**Sound.** His voice at -16 LUFS, de-noised gently; the mouth clicks in his take (five, found by their high band standing far above its surroundings) are repaired where they are, with a de-clicker on 120 ms round each, so his consonants are left alone. The music very quiet, 26 dB under him (-42 LUFS), ducked about 6 dB more while he speaks, its final note at about 29.2 s. No lamp bed and no ticks, quill or rasp: under his voice they read as pops and scratches. The only effects are soft air on the camera's moves and the flight, paper as the sheets slide together, and a muffled thud as the cover closes. `npx tsx scripts/film/sound.mjs --films v31`.
 
 ## Sound
 
