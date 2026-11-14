@@ -6,7 +6,7 @@
 //                 draw, capture, share
 //   on the area   the area's menu: when to look, the timeline, the marks, save, clear
 //   right         Results, when there are results: one paper per answer, the tables last
-//   bottom left   the basemap tile, that day's sky, the credit
+//   bottom left   the basemap tile (the atlas, or NASA's cloud-free satellite picture), the credit
 // A right-drag draws a box, Alt + right-drag a free shape; a middle-drag turns the map.
 // Everything on screen is in the address, so a link reproduces it.
 
@@ -37,7 +37,7 @@ import Panel, { paperId, ResultPaper } from "./Panel";
 import Paper from "./Paper";
 import { FactsPapers, Seal } from "./Shell";
 import Timeline, { daysBetween, shortDate } from "./Timeline";
-import { Lever, Pop, Tip, TooltipProvider } from "./ui";
+import { Pop, Tip, TooltipProvider } from "./ui";
 
 // MapLibre is the heaviest script on the page. It is loaded on its own, after the first text.
 const MapView = dynamic(() => import("./MapView"), { ssr: false, loading: () => <div className="map map-waiting">Loading the map…</div> });
@@ -228,7 +228,7 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
   const span = panelArea && panelArea.months.year.length ? monthSpan(panelArea) : null;
   const from = span ? (state.from && state.from >= span[0] && state.from <= span[1] ? state.from : span[0]) : state.from ?? "2000-11";
   const to = span ? (state.to && state.to <= span[1] && state.to >= from ? state.to : span[1]) : state.to ?? (index?.last_full_day.slice(0, 7) ?? "2026-11");
-  // The day view. The satellite basemap's day's sky follows the chosen day.
+  // The day view.
   const lastDay = index?.last_full_day ?? "2026-11-12";
   const day = state.day && state.day >= "2000-11-01" && state.day <= lastDay ? state.day : null;
   const mapDate = day ?? lastDayOf(to, lastDay);
@@ -459,7 +459,7 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
 
       <div className="mapwrap">
         {!mapWanted && <div className="map map-waiting">Loading the map…</div>}
-        {mapWanted && <MapView basemap={state.basemap} date={mapDate} sky={state.sky} areas={hidden("outlines") ? [] : index?.areas ?? []} selected={areaId}
+        {mapWanted && <MapView basemap={state.basemap} date={mapDate} areas={hidden("outlines") ? [] : index?.areas ?? []} selected={areaId}
           onSelect={(id) => choose(id)} onSketchStart={() => loadCellsIndex().catch(() => undefined)}
           shape={drawMode || hidden("outlines") ? null : state.shape} drawMode={drawMode} onDraft={onDraft} onDrawn={onDrawn} hotspots={hotspots}
           chrome={false} tags onMap={setMap} onCursor={onCursor} fitPadding={fitPadding} />}
@@ -518,12 +518,6 @@ export default function Explore({ initialIndex = null, facts = null }: { initial
             <span>{state.basemap === "satellite" ? "Atlas" : "Satellite"}</span>
           </button>
         </Tip>
-        {state.basemap === "satellite" && (
-          <div className="sky slip">
-            <Lever label="Satellite picture" off="Cloud-free" on="That day's sky" checked={state.sky} onChange={(sky) => update({ sky })} />
-            {state.sky && <span className="sky-date">{shortDate(mapDate)}</span>}
-          </div>
-        )}
         <p className="map-credit">Fire data: NASA FIRMS · Imagery: NASA GIBS · Map: Natural Earth · Not affiliated with or endorsed by NASA</p>
       </div>
 

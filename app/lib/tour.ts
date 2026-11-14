@@ -15,7 +15,7 @@ export interface TourStep {
 // `view` names the paper of Results the step talks about: it is brought into view.
 const CLEAN: Partial<AppState> = {
   area: null, shape: null, day: null, days: null, from: null, to: null, view: "calendar", month: null, year: null,
-  basemap: "zij", sky: false, hide: [], panel: "open", timeline: false, recorded: false,
+  basemap: "zij", hide: [], panel: "open", timeline: false, recorded: false,
 };
 
 export const TOUR: TourStep[] = [
@@ -36,8 +36,8 @@ export const TOUR: TourStep[] = [
   },
   {
     title: "The Chilecito fire",
-    text: "29 July 2026, Argentina. Each dot is a VIIRS detection and each ring a MODIS one, over that day's sky seen from orbit. Results say how unusual the day's week and month were for this place.",
-    state: { area: "chilecito", day: "2026-07-29", basemap: "satellite", sky: true },
+    text: "29 July 2026, Argentina. Each dot is a VIIRS detection and each ring a MODIS one, over NASA's cloud-free satellite picture. Results say how unusual the day's week and month were for this place.",
+    state: { area: "chilecito", day: "2026-07-29", basemap: "satellite" },
   },
   {
     title: "Draw your own area",
