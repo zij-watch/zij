@@ -1592,13 +1592,27 @@
     g.Ww = Math.ceil(2 * k.wx + 64); g.Hw2 = Math.ceil(k.wh + 40);
     return g;
   }
+  // The rise and the turn are eased at both ends (no kick as they start, no stop as they land), and
+  // they don't move as one hinge: the camera lifts a little ahead of the tilt, so it arcs over the
+  // desk instead of swinging through a right angle. As it goes over it stands higher than it will
+  // rest, which draws the whole view back while it turns (by about a fifth at its furthest), the most
+  // so early, while the wall is still square to it and fills the frame: the wall and the desk have
+  // room to turn instead of crowding it. That extra height is gone at both ends of the turn, so the
+  // camera is exactly where it was before the turn and exactly on the desk after it, where it must be
+  // pixel for pixel.
+  const smoother = (t) => { t = clamp(t); return t * t * t * (t * (6 * t - 15) + 10); };
+  const span = (p, a, b) => clamp((p - a) / (b - a));
   function cam(p, g = G) {
+    const t = span(p, 0.36, g.p1), swing = Math.pow(Math.sin(Math.PI * Math.pow(t, 0.7)), 2);
     let D;
-    if (p < 0.3) D = lerp(g.D0, g.P, smooth(p / 0.3));
+    if (p < 0.3) D = lerp(g.D0, g.P, smoother(p / 0.3));
     else if (p < 0.36) D = g.P;
-    else if (p < g.p1) D = lerp(g.P, g.Dmin, smooth((p - 0.36) / (g.p1 - 0.36)));
+    else if (p < g.p1) D = lerp(g.P, g.Dmin, smoother(t));
     else D = g.Dmin + g.range * (p - g.p1) * (p - g.p1) / (2 * (1 - g.p1));
-    return { D, H: lerp(g.Hw, g.P, seg(p, 0.35, g.p1)), phi: 90 * (1 - seg(p, 0.36, g.p1)) };
+    const H = lerp(g.Hw, g.P, smoother(span(p, 0.34, g.p1 - 0.05))) + 0.11 * g.V * swing;
+    // the turn itself eases on the softer smoothstep: over the stretch it has, the harder curve would
+    // make the middle of the swing the quickest part of it, and the middle is what is seen
+    return { D, H, phi: 90 * (1 - smooth(span(p, 0.36, g.p1))) };
   }
   // Cast rays through the edges of the screen at every point of the move: how far across and along
   // the desk they land, and how wide and high up the wall (once it has faded in).
@@ -2411,7 +2425,8 @@
   (function abjadInk() {
     if (still) return;
     // each stroke: points across the letter's ink box (0,0 its top left, 1,1 its bottom right),
-    // the brush's width in ems, how long it takes (0: a dot, set down whole), and its wet tip as a share
+    // the brush's width in ems, how long it takes (0: a dot, set down whole), and its wet tip as a share.
+    // The first stroke is the letter's body; the others are its separate marks (a hamza, a dot).
     const DUCTUS = {
       'أ': [[[[0.5, 0.42], [0.5, 1.06]], 0.26, 0.45, 0.3], [[[0.9, 0], [0.3, 0.06], [0.62, 0.16], [0.2, 0.24]], 0.22, 0.32, 0.4]],
       'ب': [[[[1.02, 0], [0.98, 0.45], [0.75, 0.62], [0.25, 0.62], [0, 0.5], [-0.02, 0.15]], 0.34, 0.6, 0.16], [[[0.5, 0.78], [0.5, 1]], 0.26, 0, 0]],
@@ -2419,6 +2434,29 @@
       'د': [[[[0.4, 0], [0.9, 0.58], [0.7, 0.95], [-0.02, 0.95]], 0.34, 0.5, 0.2]],
     };
     const ctx = document.createElement('canvas').getContext('2d');
+    // Where a letter's separate marks lie: the letter is drawn once, off screen, and every piece of
+    // ink that is not joined to the largest one is a mark. Boxes in the ink box's own pixels.
+    function marksOf(ch, font, m) {
+      const edge = 3, w = Math.ceil(m.actualBoundingBoxLeft + m.actualBoundingBoxRight) + 2 * edge, h = Math.ceil(m.actualBoundingBoxAscent + m.actualBoundingBoxDescent) + 2 * edge;
+      const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      const g = cv.getContext('2d', { willReadFrequently: true });
+      g.font = font; g.fillText(ch, edge + m.actualBoundingBoxLeft, edge + m.actualBoundingBoxAscent);
+      const a = g.getImageData(0, 0, w, h).data, seen = new Uint8Array(w * h), pieces = [];
+      const ink = (i) => a[i * 4 + 3] > 40;
+      for (let i = 0; i < w * h; i++) {
+        if (seen[i] || !ink(i)) continue;
+        const piece = { x0: w, y0: h, x1: 0, y1: 0, n: 0 }, stack = [i];
+        seen[i] = 1;
+        while (stack.length) {
+          const j = stack.pop(), x = j % w, y = (j - x) / w;
+          piece.n++; piece.x0 = Math.min(piece.x0, x); piece.x1 = Math.max(piece.x1, x + 1); piece.y0 = Math.min(piece.y0, y); piece.y1 = Math.max(piece.y1, y + 1);
+          for (const [k, ok] of [[j - 1, x > 0], [j + 1, x < w - 1], [j - w, y > 0], [j + w, y < h - 1]]) if (ok && !seen[k] && ink(k)) { seen[k] = 1; stack.push(k); }
+        }
+        pieces.push(piece);
+      }
+      pieces.sort((p, q) => q.n - p.n);
+      return pieces.slice(1).filter((p) => p.n > 6).map((p) => ({ x: p.x0 - edge, y: p.y0 - edge, w: p.x1 - p.x0, h: p.y1 - p.y0 }));
+    }
     function write(letterEl, k) {
       const ch = letterEl.textContent.trim(), strokes = DUCTUS[ch];
       if (!strokes) { letterEl.classList.remove('ab-wait'); return; }
@@ -2432,24 +2470,34 @@
       const y0 = base - m.actualBoundingBoxAscent, y1 = base + m.actualBoundingBoxDescent;
       const pad = 0.14 * fs, iw = x1 - x0, ih = y1 - y0, W = iw + 2 * pad, H = ih + 2 * pad;
       const P = ([u, v]) => n1(pad + u * iw) + ' ' + n1(pad + v * ih);
-      let t = 0.15, ink = '', wet = '';
-      for (const [pts, w, dur, tip] of strokes) {
-        const d = `M${pts.map(P).join(' L')}`, timing = `--at:${n1(t)}s;--dur:${dur}s;--tip:${tip}`;
-        ink += `<path class="${dur ? 'ab-stroke' : 'ab-dot'}" pathLength="1" d="${d}" stroke-width="${n1(w * fs)}" style="${timing}"/>`;
-        if (dur) wet += `<path class="ab-wet-stroke" pathLength="1" d="${d}" stroke-width="${n1(w * fs)}" style="${timing}"/>`;
+      // The marks, where they really are. A mark stays covered until its own turn, so the body's
+      // stroke can never show a piece of it on the way past; a dot is then uncovered whole, at once.
+      let marks = marksOf(ch, ctx.font, m);
+      if (marks.length !== strokes.length - 1) marks = [];
+      const box = (b, grow) => `x="${n1(pad + b.x - grow)}" y="${n1(pad + b.y - grow)}" width="${n1(b.w + 2 * grow)}" height="${n1(b.h + 2 * grow)}"`;
+      const keep = marks.map((b) => `<rect ${box(b, 2)} fill="black"/>`).join('');
+      let t = 0.15, body = '', bodyWet = '', late = '', lateWet = '';
+      strokes.forEach(([pts, w, dur, tip], i) => {
+        const d = `M${pts.map(P).join(' L')}`, timing = `--at:${n1(t)}s;--dur:${dur}s;--tip:${tip}`, sw = n1(w * fs);
+        const mark = i > 0 && marks.length ? marks[i - 1] : null;
+        if (!dur) late += mark ? `<rect class="ab-dot" ${box(mark, 3)} style="${timing}"/>` : `<path class="ab-dot is-stroke" d="${d}" stroke-width="${sw}" style="${timing}"/>`;
+        else {
+          const ink = `<path class="ab-stroke" pathLength="1" d="${d}" stroke-width="${sw}" style="${timing}"/>`, wet = `<path class="ab-wet-stroke" pathLength="1" d="${d}" stroke-width="${sw}" style="${timing}"/>`;
+          if (i > 0) { late += ink; lateWet += wet; } else { body += ink; bodyWet += wet; }
+        }
         t += (dur || 0.05) + 0.1;
-      }
+      });
       // the letter, drawn again exactly where it stands, in its own face, for the brush to uncover
       const glyph = `x="${n1(left - x0 + pad)}" y="${n1(base - y0 + pad)}" style="font: ${cs.fontStyle} ${cs.fontWeight} ${fs}px ${cs.fontFamily.replace(/"/g, "'")}"`;
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('class', 'ab-ink'); svg.setAttribute('aria-hidden', 'true');
       svg.setAttribute('width', n1(W)); svg.setAttribute('height', n1(H)); svg.setAttribute('viewBox', `0 0 ${n1(W)} ${n1(H)}`);
       svg.style.left = n1(x0 - pad) + 'px'; svg.style.top = n1(y0 - pad) + 'px';
-      const box = `x="0" y="0" width="${n1(W)}" height="${n1(H)}"`;
-      const brush = `<filter id="ab-brush-${k}" filterUnits="userSpaceOnUse" ${box}><feTurbulence type="fractalNoise" baseFrequency="0.35" numOctaves="2" seed="${7 + k}"/><feDisplacementMap in="SourceGraphic" scale="${n1(fs * 0.045)}" xChannelSelector="R" yChannelSelector="G"/></filter>`;
+      const area = `x="0" y="0" width="${n1(W)}" height="${n1(H)}"`, f = `filter="url(#ab-brush-${k})"`;
+      const brush = `<filter id="ab-brush-${k}" filterUnits="userSpaceOnUse" ${area}><feTurbulence type="fractalNoise" baseFrequency="0.35" numOctaves="2" seed="${7 + k}"/><feDisplacementMap in="SourceGraphic" scale="${n1(fs * 0.045)}" xChannelSelector="R" yChannelSelector="G"/></filter>`;
       svg.innerHTML = `<defs>${brush}` +
-        `<mask id="ab-ink-${k}" maskUnits="userSpaceOnUse" ${box}><g filter="url(#ab-brush-${k})">${ink}</g><rect class="ab-settle" width="100%" height="100%" style="--at:${n1(t)}s"/></mask>` +
-        `<mask id="ab-wet-${k}" maskUnits="userSpaceOnUse" ${box}><g filter="url(#ab-brush-${k})">${wet}</g></mask></defs>` +
+        `<mask id="ab-ink-${k}" maskUnits="userSpaceOnUse" ${area}><g ${f}>${body}</g>${keep}<g ${f}>${late}</g><rect class="ab-settle" width="100%" height="100%" style="--at:${n1(t)}s"/></mask>` +
+        `<mask id="ab-wet-${k}" maskUnits="userSpaceOnUse" ${area}><g ${f}>${bodyWet}</g>${keep}<g ${f}>${lateWet}</g></mask></defs>` +
         `<text class="ab-glyph" ${glyph} mask="url(#ab-ink-${k})">${ch}</text><text class="ab-glyph is-wet" ${glyph} mask="url(#ab-wet-${k})">${ch}</text>`;
       if (getComputedStyle(letterEl).position === 'static') letterEl.style.position = 'relative';
       letterEl.appendChild(svg);

@@ -22,7 +22,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="stylesheet" href="/landing/tokens.css">
 <link rel="stylesheet" href="/landing/reference/materials.css">
-<link rel="stylesheet" href="/landing/additions.css?v=2eec4929">
+<link rel="stylesheet" href="/landing/additions.css?v=43aec08d">
 <style>
   /* The page is one scene: the sky through a window, then the desk under it, lit by one lantern.
      landing.js draws the sky, the wood, the paper and the ink, and moves the camera and the lantern.
@@ -819,53 +819,34 @@
     </div>
 
     <div class="hero" id="hero">
-      <h1><svg class="seal-written" viewBox="46 144 287 246" width="287" height="246" role="img" aria-label="Zij · زيج">
+      <h1 style="--seal-end:1.41s"><svg class="seal-written" viewBox="46 144 287 246" width="287" height="246" role="img" aria-label="Zij · زيج" style="--seal-end:1.41s">
         <defs>
-          <filter id="seal-brush" filterUnits="userSpaceOnUse" x="20" y="120" width="340" height="300">
-            <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="7"/>
-            <feDisplacementMap in="SourceGraphic" scale="7" xChannelSelector="R" yChannelSelector="G"/>
-          </filter>
-          <mask id="seal-ink" maskUnits="userSpaceOnUse" x="20" y="120" width="340" height="300">
-            <g filter="url(#seal-brush)" fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round">
-              <path class="seal-stroke" pathLength="1" d="M316 194 L316 340 L292 376 L254 376" stroke-width="46" style="--at:0.15s;--dur:0.42s"/>
-              <path class="seal-dot" pathLength="1" d="M316 141 L316 181" stroke-width="40" style="--at:0.62s;--dur:0s"/>
-              <path class="seal-stroke" pathLength="1" d="M243 194 L243 306" stroke-width="46" style="--at:0.74s;--dur:0.24s"/>
-              <path class="seal-dot" pathLength="1" d="M243 149.25 A11.75 11.75 0 1 0 243 172.75 A11.75 11.75 0 1 0 243 149.25" stroke-width="14" style="--at:1.02s;--dur:0s"/>
-              <path class="seal-dot" pathLength="1" d="M260 311 L260 346" stroke-width="34" style="--at:1.1s;--dur:0s"/>
-              <path class="seal-dot" pathLength="1" d="M226 311 L226 346" stroke-width="34" style="--at:1.18s;--dur:0s"/>
-              <path class="seal-stroke" pathLength="1" d="M198 376 L66 376 L198 214 L46 214" stroke-width="46" style="--at:1.32s;--dur:0.72s"/>
-              <path class="seal-stroke" pathLength="1" d="M214 286 L162 286" stroke-width="34" style="--at:2.08s;--dur:0.15s"/>
-              <path class="seal-dot" pathLength="1" d="M145 313 L145 349" stroke-width="34" style="--at:2.28s;--dur:0s"/>
-            </g>
+          <mask id="seal-pen-0" maskUnits="userSpaceOnUse" x="20" y="120" width="340" height="300">
+            <g transform="matrix(0 169.4 40 40 296 157.5)"><path class="seal-pen" pathLength="1" d="M0 .5H1" style="--at:0.1s;--dur:0.173s;--ease:cubic-bezier(.4,0,1,1)"/></g>
+            <g transform="matrix(-27.42 32.9 40 40 296.96 324.25)"><path class="seal-pen" pathLength="1" d="M0 .5H1" style="--at:0.273s;--dur:0.025s;--ease:linear"/></g>
+            <g transform="matrix(-53.5 0 40 40 272 356)"><path class="seal-pen" pathLength="1" d="M0 .5H1" style="--at:0.298s;--dur:0.052s;--ease:cubic-bezier(0,0,.6,1)"/></g>
           </mask>
-          <mask id="seal-wet" maskUnits="userSpaceOnUse" x="20" y="120" width="340" height="300">
-            <g filter="url(#seal-brush)" fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round">
-              <path class="seal-wet-stroke" pathLength="1" d="M316 194 L316 340 L292 376 L254 376" stroke-width="46" style="--at:0.15s;--dur:0.42s;--tip:0.2"/>
-              <path class="seal-wet-stroke" pathLength="1" d="M243 194 L243 306" stroke-width="46" style="--at:0.74s;--dur:0.24s;--tip:0.35"/>
-              <path class="seal-wet-stroke" pathLength="1" d="M198 376 L66 376 L198 214 L46 214" stroke-width="46" style="--at:1.32s;--dur:0.72s;--tip:0.1"/>
-              <path class="seal-wet-stroke" pathLength="1" d="M214 286 L162 286" stroke-width="34" style="--at:2.08s;--dur:0.15s;--tip:0.6"/>
-            </g>
+          <mask id="seal-pen-2" maskUnits="userSpaceOnUse" x="20" y="120" width="340" height="300">
+            <g transform="matrix(0 145 40 40 223 157.5)"><path class="seal-pen" pathLength="1" d="M0 .5H1" style="--at:0.44s;--dur:0.12s;--ease:cubic-bezier(.4,0,.6,1)"/></g>
+          </mask>
+          <mask id="seal-pen-5" maskUnits="userSpaceOnUse" x="20" y="120" width="340" height="300">
+            <g transform="matrix(191 0 34 34 9.5 197)"><path class="seal-pen" pathLength="1" d="M0 .5H1" style="--at:0.73s;--dur:0.142s;--ease:cubic-bezier(.4,0,1,1)"/></g>
+            <g transform="matrix(-136.92 164.3 34 34 173.46 195.85)"><path class="seal-pen" pathLength="1" d="M0 .5H1" style="--at:0.872s;--dur:0.096s;--ease:linear"/></g>
+            <g transform="matrix(191 0 34 34 9.5 359)"><path class="seal-pen" pathLength="1" d="M0 .5H1" style="--at:0.968s;--dur:0.142s;--ease:cubic-bezier(0,0,.6,1)"/></g>
+          </mask>
+          <mask id="seal-pen-6" maskUnits="userSpaceOnUse" x="20" y="120" width="340" height="300">
+            <g transform="matrix(-95 0 34 34 214.5 269)"><path class="seal-pen" pathLength="1" d="M0 .5H1" style="--at:1.14s;--dur:0.08s;--ease:cubic-bezier(.4,0,.6,1)"/></g>
           </mask>
         </defs>
-        <g class="seal-ink" mask="url(#seal-ink)">
-          <path d="M46,200L198,200L198,228L86.35,362L198,362L198,390L46,390L46,362L157.65,228L46,228Z"/>
-          <path d="M179.56,272L212,272L212,300L156.23,300Z"/>
-          <path d="M226,200L260,200L260,300L226,300Z"/>
-          <path d="M299,200L333,200L333,349.22L299.02,390L258,390L258,362L282,362L299,341.6Z"/>
-          <path d="M227,161a16,16 0 1,0 32,0a16,16 0 1,0 -32,0ZM235.5,161a7.5,7.5 0 1,1 15,0a7.5,7.5 0 1,1 -15,0Z"/>
-          <path d="M316,144L333,161L316,178L299,161Z"/>
-          <path d="M145,316.5L159.5,331L145,345.5L130.5,331Z"/>
-          <path d="M226,314L240.5,328.5L226,343L211.5,328.5ZM260,314L274.5,328.5L260,343L245.5,328.5Z"/>
-        </g>
-        <g class="seal-wet" mask="url(#seal-wet)" aria-hidden="true">
-          <path d="M46,200L198,200L198,228L86.35,362L198,362L198,390L46,390L46,362L157.65,228L46,228Z"/>
-          <path d="M179.56,272L212,272L212,300L156.23,300Z"/>
-          <path d="M226,200L260,200L260,300L226,300Z"/>
-          <path d="M299,200L333,200L333,349.22L299.02,390L258,390L258,362L282,362L299,341.6Z"/>
-          <path d="M227,161a16,16 0 1,0 32,0a16,16 0 1,0 -32,0ZM235.5,161a7.5,7.5 0 1,1 15,0a7.5,7.5 0 1,1 -15,0Z"/>
-          <path d="M316,144L333,161L316,178L299,161Z"/>
-          <path d="M145,316.5L159.5,331L145,345.5L130.5,331Z"/>
-          <path d="M226,314L240.5,328.5L226,343L211.5,328.5ZM260,314L274.5,328.5L260,343L245.5,328.5Z"/>
+        <g class="seal-ink">
+          <path d="M299,200L333,200L333,349.22L299.02,390L258,390L258,362L282,362L299,341.6Z" mask="url(#seal-pen-0)"/>
+          <path class="seal-stamp" d="M316,144L333,161L316,178L299,161Z" style="--at:0.38s"/>
+          <path d="M226,200L260,200L260,300L226,300Z" mask="url(#seal-pen-2)"/>
+          <path class="seal-stamp" d="M227,161a16,16 0 1,0 32,0a16,16 0 1,0 -32,0ZM235.5,161a7.5,7.5 0 1,1 15,0a7.5,7.5 0 1,1 -15,0Z" style="--at:0.59s"/>
+          <path class="seal-stamp" d="M226,314L240.5,328.5L226,343L211.5,328.5ZM260,314L274.5,328.5L260,343L245.5,328.5Z" style="--at:0.65s"/>
+          <path d="M46,200L198,200L198,228L86.35,362L198,362L198,390L46,390L46,362L157.65,228L46,228Z" mask="url(#seal-pen-5)"/>
+          <path d="M179.56,272L212,272L212,300L156.23,300Z" mask="url(#seal-pen-6)"/>
+          <path class="seal-stamp" d="M145,316.5L159.5,331L145,345.5L130.5,331Z" style="--at:1.25s"/>
         </g>
       </svg></h1>
       <p class="line">1,000 years ago, a zij charted the sky.<br>Ours charts a safer Earth.</p>
@@ -1227,7 +1208,7 @@
 </section>
 
 <script>window.ZIJ_TABLE = {"rows":[{"year":2000,"cells":["nd","nd","nd","nd","nd","nd","nd","nd","nd","h1","h4","h1"]},{"year":2001,"cells":["h1","h2","h1","h2","h4","h1","h1","h3","h5","h5","h4","h1"]},{"year":2002,"cells":["h1","h1","h1","h2","h3","h4","h3","h4","h5","h5","h4","h1"]},{"year":2003,"cells":["h1","h1","h1","h1","h3","h3","h2","h2","h5","h5","h3","h2"]},{"year":2004,"cells":["h1","h1","h2","h2","h2","h4","h2","h4","h5","h5","h4","h2"]},{"year":2005,"cells":["h1","h2","h2","h1","h4","h3","h1","h4","h5","h5","h4","h2"]},{"year":2006,"cells":["h1","h1","h1","h2","h4","h3","h3","h4","h5","h5","h4","h1"]},{"year":2007,"cells":["h1","h1","h2","h2","h4","h4","h3","h4","h5","h5","h4","h1"]},{"year":2008,"cells":["h3","h2","h3","h2","h4","h4","h1","h4","h5","h5","h5","h3"]},{"year":2009,"cells":["h3","h3","h2","h2","h4","h4","h2","h5","h5","h5","h4","h3"]},{"year":2010,"cells":["h3","h2","h1","h3","h4","h3","h3","h5","h5","h5","h4","h1"]},{"year":2011,"cells":["h3","h3","h2","h2","h3","h3","h1","h4","h5","h5","h4","h2"]},{"year":2012,"cells":["h1","h1","h3","h2","h4","h4","h1","h4","h5","h5","h4","h2"]},{"year":2013,"cells":["h1","h2","h2","h1","h4","h3","h1","h4","h5","h5","h3","h1"]},{"year":2014,"cells":["h1","h1","h2","h2","h4","h3","h3","h5","h5","h5","h4","h1"]},{"year":2015,"cells":["h3","h2","h2","h3","h4","h3","h3","h5","h5","h5","h4","h2"]},{"year":2016,"cells":["h1","h3","h2","h3","h5","h3","h3","h5","h5","h5","h3","h2"]},{"year":2017,"cells":["h2","h3","h3","h3","h5","h4","h3","h5","h5","h5","h4","h1"]},{"year":2018,"cells":["h2","h1","h3","h3","h4","h2","h2","h4","h5","h4","h2","h1"]},{"year":2019,"cells":["h1","h1","h3","h2","h4","h3","h3","h3","h5","h5","h4","h2"]},{"year":2020,"cells":["h1","h2","h1","h3","h5","h3","h3","h3","h5","h5","h3","h2"]},{"year":2021,"cells":["h2","h2","h2","h3","h4","h4","h2","h4","h5","h5","h4","h2"]},{"year":2022,"cells":["h2","h2","h2","h3","h4","h4","h2","h3","h5","h5","h4","h1"]},{"year":2023,"cells":["h1","h1","h3","h3","h5","h3","h1","h4","h5","h5","h4","h1"]},{"year":2024,"cells":["h1","h1","h2","h3","h5","h2","h2","h4","h5","h5","h4","h1"]},{"year":2025,"cells":["h1","h1","h2","h2","h4","h3","h2","h4","h5","h5","h3","h1"]},{"year":2026,"cells":["h2","h2","h1","h3","h4","h4","h4","h4","h5","h5","h1","nd"]}],"box":{"year":2018,"from":7,"months":3}};</script>
-<script src="/landing/reference/landing.js?v=2eec4929"></script>
-<script src="/landing/life.js?v=2eec4929"></script>
+<script src="/landing/reference/landing.js?v=43aec08d"></script>
+<script src="/landing/life.js?v=43aec08d"></script>
 </body>
 </html>

@@ -146,43 +146,39 @@
 /* The opening line is longer than the reference's: it may wrap where the screen is narrow. */
 @media (max-width: 900px) { #hero .line { white-space: normal; text-wrap: balance; } }
 
-/* The seal of the opening: written in with a brush, then it breathes a warm glow, the light of the
-   lamp held behind it. Opacity and transform only for the glow (cheap to
-   animate); the seal's own soft halo is a drop-shadow that swells and fades over five seconds. */
+/* The seal of the opening: written in with a reed pen, then it breathes a warm glow, the light of
+   the lamp held behind it. Only opacity and transform move, so the glow costs nothing to animate;
+   the seal's own soft halo is a fixed drop-shadow (a filter re-animated every frame repaints the
+   whole mark, which showed as a stutter). The glow begins when the writing ends (--seal-end, set by
+   build-landing.mjs). */
 .hero h1 { position: relative; }
 .hero h1::before {
   content: ""; position: absolute; z-index: -1; pointer-events: none;
   left: calc(var(--seal) * -0.32); top: -32%; width: calc(var(--seal) * 1.85); height: 164%;
   background: radial-gradient(closest-side, color-mix(in srgb, var(--flame) 14%, transparent), color-mix(in srgb, var(--brass) 5%, transparent) 58%, transparent);
-  animation: seal-breathe 5s ease-in-out 2.4s infinite alternate both;
+  animation: seal-breathe 5s ease-in-out var(--seal-end, 1.4s) infinite alternate both;
 }
-/* The seal is written in, stroke by stroke and right to left, as زيج, with an old reed brush
-   (build-landing.mjs draws the strokes); each stroke rests fully drawn, the animation only brings
-   it from nothing. Then it glows. */
-.hero h1 .seal-written { display: block; height: var(--seal); width: auto; aspect-ratio: 287 / 246; overflow: visible; animation: seal-light 5s ease-in-out 2.6s infinite alternate; }
+/* The seal is written right to left, as زيج (build-landing.mjs sets out the strokes and their
+   times). A stroke is the pen's runs, each a line as wide as the nib in a frame slanted to the
+   nib's edge, drawn along its length; a dot is one press of the nib: there at once, whole, a touch
+   large, and settling, and each dot is pressed as its letter is finished, so they come one by one.
+   Everything rests in its last frame, so without animation the seal is there. */
+.hero h1 .seal-written { display: block; height: var(--seal); width: auto; aspect-ratio: 287 / 246; overflow: visible; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--flame) 20%, transparent)); }
 .seal-written .seal-ink { fill: var(--ink); }
-.seal-written .seal-stroke { stroke-dasharray: 1; stroke-dashoffset: 0; animation: seal-write var(--dur, 0.4s) cubic-bezier(0.3, 0.1, 0.25, 1) var(--at, 0s) both; }
+.seal-written .seal-pen { fill: none; stroke: white; stroke-width: 1; stroke-dasharray: 1; stroke-dashoffset: 0; animation: seal-write var(--dur, 0.2s) var(--ease, linear) var(--at, 0s) both; }
+.seal-written .seal-stamp { transform-box: fill-box; transform-origin: center; animation: seal-stamp 0.26s cubic-bezier(0.2, 0.8, 0.25, 1) var(--at, 0s) both; }
 @keyframes seal-write { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
-/* a dot is set down whole, in one touch: no stroke across it, no wet tip, no second step */
-.seal-written .seal-dot, .ab-ink .ab-dot { fill: none; stroke: white; stroke-linecap: round; stroke-linejoin: round; animation: seal-dot 0.08s linear var(--at, 0s) both; }
+@keyframes seal-stamp { 0% { opacity: 0; transform: scale(1.1); } 32% { opacity: 1; } 100% { opacity: 1; transform: scale(1); } }
+/* the chapters' letters share the brush: their dots, and the wet tip of their strokes */
+.ab-ink .ab-dot { fill: white; animation: seal-dot 0.06s linear var(--at, 0s) both; }
+.ab-ink .ab-dot.is-stroke { fill: none; stroke: white; stroke-linecap: round; stroke-linejoin: round; }
 @keyframes seal-dot { from { opacity: 0; } }
-/* the wet tip: a short stretch of each stroke in warm, still-wet ink, running with the stroke's head
-   (same timing, so they stay together), drying a moment after the stroke ends */
-.seal-written .seal-wet { fill: color-mix(in srgb, var(--flame) 62%, var(--ink)); }
-.seal-written .seal-wet-stroke {
-  stroke-dasharray: var(--tip, 0.1) 2; stroke-dashoffset: calc(var(--tip, 0.1) - 1); opacity: 0;
-  animation: seal-tip var(--dur, 0.4s) cubic-bezier(0.3, 0.1, 0.25, 1) var(--at, 0s) both, seal-dry calc(var(--dur, 0.4s) + 0.3s) linear var(--at, 0s) both;
-}
 @keyframes seal-tip { from { stroke-dashoffset: var(--tip, 0.1); } to { stroke-dashoffset: calc(var(--tip, 0.1) - 1); } }
 @keyframes seal-dry { 0% { opacity: 0; } 8% { opacity: 1; } 62% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes seal-light {
-  from { filter: drop-shadow(0 0 1px color-mix(in srgb, var(--flame) 12%, transparent)); }
-  to { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--flame) 28%, transparent)); }
-}
 @keyframes seal-breathe { from { opacity: 0.2; transform: scale(0.96); } to { opacity: 0.5; transform: scale(1.03); } }
-.still .hero h1 .seal-written, .still .seal-written .seal-stroke, .still .seal-written .seal-dot, .still .seal-written .seal-wet-stroke, .still .hero h1::before { animation: none; }
+.still .seal-written .seal-pen, .still .seal-written .seal-stamp, .still .hero h1::before { animation: none; }
 .still .hero h1::before { opacity: 0.35; }
-@media (prefers-reduced-motion: reduce) { .hero h1 .seal-written, .seal-written .seal-stroke, .seal-written .seal-dot, .seal-written .seal-wet-stroke, .hero h1::before { animation: none; } .hero h1::before { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .seal-written .seal-pen, .seal-written .seal-stamp, .hero h1::before { animation: none; } .hero h1::before { opacity: 0.35; } }
 
 /* The opening line's "1,000" in lining figures: the face's old-style 1 reads as a small capital I. */
 #hero .line { font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1, "onum" 0; }
