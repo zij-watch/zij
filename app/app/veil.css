@@ -1,0 +1,35 @@
+/* The veil: how the app opens and closes. The landing page lets its lamp go out (a veil of the night
+   ground with the Seal, app/landing-src/leave.js); the app's first frame is the same veil, drawn
+   alike to the pixel, and it lifts when the page under it is ready (lib/veil.ts). So opening the map
+   or Roro's Fire Diary is one movement, not a cut. Leaving for the landing page lowers it again.
+   The veil shows only when the page says so (html.is-arriving, set before the first paint by the
+   script in components/Veil.tsx), and lifts by itself after a few seconds if nothing ever calls. */
+
+.veil {
+  position: fixed; inset: 0; z-index: 1000; display: none; place-items: center; align-content: center; gap: 22px;
+  background: var(--ground); color: var(--ink); pointer-events: none;
+}
+.veil svg { display: block; height: 72px; width: auto; }
+.veil i { display: block; width: 120px; height: 1px; background: var(--brass); transform-origin: 100% 50%; }
+
+/* arriving: held dark, then the lamp comes up */
+html.is-arriving .veil { display: grid; pointer-events: auto; animation: veil-lift var(--dur-scene) var(--ease-lamp) 4s both; }
+html.is-arriving.is-ready .veil { animation: veil-up var(--dur-scene) var(--ease-lamp) both; pointer-events: none; }
+html.is-arriving.is-ready .veil svg { animation: veil-seal var(--dur-sheet) var(--ease-ink) both; }
+html.is-arriving.is-ready .veil i { animation: veil-rule var(--dur-ink) var(--ease-ink) both; }
+@keyframes veil-lift { to { opacity: 0; visibility: hidden; } }
+@keyframes veil-up { to { opacity: 0; visibility: hidden; } }
+@keyframes veil-seal { to { opacity: 0; transform: translateY(-8px); } }
+@keyframes veil-rule { to { transform: scaleX(0); } }
+
+/* leaving for the landing page: the lamp goes out */
+html.is-leaving .veil { display: grid; pointer-events: auto; animation: veil-down 520ms var(--ease-lamp) both; }
+html.is-leaving .veil svg { animation: veil-seal-in 520ms var(--ease-ink) 120ms both; }
+html.is-leaving .veil i { transform-origin: 0 50%; animation: veil-rule-in 520ms var(--ease-ink) 160ms both; }
+@keyframes veil-down { from { opacity: 0; } }
+@keyframes veil-seal-in { from { opacity: 0; transform: translateY(6px); } }
+@keyframes veil-rule-in { from { transform: scaleX(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  html.is-arriving .veil, html.is-leaving .veil { display: none; }
+}

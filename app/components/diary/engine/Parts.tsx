@@ -5,7 +5,9 @@
 // and the end of a level, its stars rising into the sky.
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { PaperBack } from "@/components/Paper";
 import { WaxSeal, Constellation, type SealKind } from "../art/Things";
+import { Star8 } from "./Stage";
 import { useGame, type Who } from "./context";
 
 /** Bring a newly shown step into view inside the play area, without jumping the page. */
@@ -24,6 +26,7 @@ export function Task({ id }: { id: string }) {
   const ref = useIntoView<HTMLDivElement>(id);
   return (
     <div ref={ref} key={id} className="task slip" data-theme="folio" role="status">
+      <i className="task-mark" aria-hidden="true" />
       <span className="task-turn">{L["ui.turn"]}</span>
       <span className="task-text">{L[id]}</span>
     </div>
@@ -34,6 +37,7 @@ export function Task({ id }: { id: string }) {
 export function Note({ lines, still, names }: { lines: { id: string; who: Who; text: string }[]; still: boolean; names: { modis: string; viirs: string; mona: string } }) {
   return (
     <div className={`note-slip slip${lines.length ? " is-open" : ""}`} data-theme="folio" aria-live="polite" role="status">
+      <i className="note-tail" aria-hidden="true" />
       {lines.map((l, i) => (
         <p key={`${l.id}-${i}`} className={`note-line is-${l.who}`} style={{ animationDelay: still ? "0ms" : `${i * 360}ms` }}>
           {l.who !== "hudhud" && <span className="note-who">{names[l.who]}</span>}
@@ -127,8 +131,12 @@ export function LevelEnd({ level, stars, allStars, note, word, onGoOn }: { level
   }));
   return (
     <div className="level-end" role="dialog" aria-label={word}>
-      <div className="level-end-sheet slip" data-theme="folio">
-        <p className="t-eyebrow">{word}</p>
+      <div className="level-end-sheet paper is-sheet" data-theme="folio">
+        <PaperBack kind="sheet" seed={`level-end-${level}`} />
+        <span className="jadwal" aria-hidden="true" />
+        <p className="t-eyebrow">{L[`ui.ch${level}`]}</p>
+        <p className="level-end-word">{word}</p>
+        <div className="level-end-stars" aria-hidden="true">{[0, 1, 2].map((k) => <Star8 key={k} dim={k >= stars} />)}</div>
         <div className="level-end-sky" data-theme="night">
           <i className="shooting" aria-hidden="true" />
           <Constellation lit={lit} label={L["ui.stars"]} />

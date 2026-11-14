@@ -44,27 +44,28 @@
 .lv-arrive { display: grid; justify-items: center; align-content: end; gap: var(--space-3); min-height: 170px; }
 .lv-arrival { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-4); animation: dd-place var(--dur-sheet) var(--ease-paper) both; }
 /* the hot spot arrives on a lit plate of field, drawn larger, so a chimney or a faint dot can be told apart */
-.dd .lv-arrival button.drag { display: grid; place-items: end center; width: 132px; height: 132px; padding: var(--space-3); background: color-mix(in srgb, var(--ground-raised) 80%, var(--flame)); box-shadow: inset 0 0 0 1px var(--brass), var(--shadow-token); }
+.dd .lv-arrival button.drag { display: grid; place-items: end center; width: 140px; height: 140px; padding: var(--space-4); background: radial-gradient(ellipse 80% 60% at 50% 100%, color-mix(in srgb, var(--flame) 26%, var(--sky)), var(--sky) 78%); box-shadow: inset 0 0 0 1px var(--brass), inset 0 0 0 5px var(--sky), inset 0 0 0 6px var(--rule), var(--shadow-held); }
 .lv-arrival .drag > * { transform: scale(1.7); transform-origin: 50% 100%; }
-.lv-nights { display: grid; grid-template-columns: repeat(7, 26px); gap: 4px; padding: var(--space-3); background: var(--ground-raised); box-shadow: inset 0 0 0 1px var(--brass), var(--shadow-card); }
-.lv-night { position: relative; height: 40px; background: var(--sky); box-shadow: inset 0 0 0 1px var(--rule); }
+.lv-nights { display: grid; grid-template-columns: repeat(7, 30px); gap: 4px; padding: var(--space-3); background: var(--ground-raised); box-shadow: inset 0 0 0 1px var(--brass), var(--shadow-card); }
+.lv-night { position: relative; height: 46px; background: var(--sky); box-shadow: inset 0 0 0 1px var(--rule); }
 .lv-night i { position: absolute; left: 58%; top: 30%; width: 6px; height: 11px; margin-left: -3px; background: var(--flame); clip-path: polygon(50% 0, 100% 70%, 50% 100%, 0 70%); }
 .lv-trays { gap: var(--space-10); margin-top: var(--space-4); }
 .lv-held { display: inline-block; transform: scale(0.55); transform-origin: 50% 100%; margin: -16px -12px 0; }
 
-/* ================================================================ level 3 · count */
-.lv-week { display: grid; grid-template-columns: repeat(7, minmax(40px, 64px)); gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+/* ================================================================ level 3 · count
+   A week on a strip of ledger paper: above each night, whether the eye was open; below, what to write. */
+.lv-week { display: grid; grid-template-columns: repeat(7, minmax(40px, 66px)); gap: var(--space-2); margin: 0; padding: var(--space-3) var(--space-4) var(--space-4); list-style: none; box-shadow: var(--shadow-held); color: var(--ink); }
 .lv-day { display: grid; justify-items: stretch; gap: var(--space-2); }
-.lv-above { display: grid; place-items: center; height: 34px; background: color-mix(in srgb, var(--sky) 80%, var(--ground)); box-shadow: inset 0 0 0 1px var(--rule); }
-.lv-eye { width: 34px; height: 20px; fill: none; stroke: var(--ink-muted); stroke-width: 1.5; stroke-linecap: round; }
-.lv-eye.is-open { stroke: var(--ink); }
-.lv-eye.is-open circle { fill: color-mix(in srgb, var(--lapis) 35%, var(--sky)); }
+.lv-above { display: grid; place-items: center; height: 36px; background: color-mix(in srgb, var(--ink) 86%, var(--lapis)); }
+.lv-eye { width: 34px; height: 20px; fill: none; stroke: color-mix(in srgb, var(--ground-raised) 45%, transparent); stroke-width: 1.5; stroke-linecap: round; }
+.lv-eye.is-open { stroke: var(--ground-raised); }
+.lv-eye.is-open circle { fill: color-mix(in srgb, var(--flame) 70%, var(--ground-raised)); }
 .lv-eye .lv-pupil { fill: var(--ink); stroke: none; }
-.lv-box { display: grid; place-items: center; aspect-ratio: 1; min-height: 44px; background: var(--ground-raised); box-shadow: inset 0 0 0 1px var(--brass); }
-.lv-box.is-seen { background: color-mix(in srgb, var(--ground-raised) 80%, var(--brass)); }
+.lv-box { display: grid; place-items: center; aspect-ratio: 1; min-height: 44px; background: var(--ground); box-shadow: inset 0 0 0 1px var(--rule), inset 0 -2px 0 var(--brass); }
+.lv-box.is-seen { background: color-mix(in srgb, var(--ground) 76%, var(--brass)); }
 .lv-mark { font: 700 30px/1 var(--font-text); font-feature-settings: "lnum" 1; color: var(--ink); animation: dd-place var(--dur-sheet) var(--ease-paper) both; }
-.lv-tokens { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-4); }
-.lv-token { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--wood); color: var(--on-wood); box-shadow: inset 0 0 0 2px var(--brass), var(--shadow-token); font: 700 30px/1 var(--font-text); font-feature-settings: "lnum" 1; }
+.lv-tokens { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-6); }
+.lv-token { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: radial-gradient(circle at 36% 30%, color-mix(in srgb, var(--wood) 78%, var(--flame)), var(--wood) 62%); color: var(--on-wood); box-shadow: inset 0 0 0 2px var(--brass), inset 0 0 0 5px color-mix(in srgb, var(--shadow) 35%, transparent), var(--shadow-token); font: 700 32px/1 var(--font-text); font-feature-settings: "lnum" 1; }
 .lv-realrow { display: grid; justify-items: center; gap: var(--space-2); }
 .lv-realrow.is-other { opacity: 0.85; }
 .lv-who { margin: 0; font: var(--type-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink); }
@@ -213,28 +214,34 @@
 .lv-mona .person-label { color: var(--ink); font: var(--type-label); letter-spacing: var(--tracking-label); text-transform: uppercase; }
 .note-line.is-mona .note-who { color: var(--brass); }
 
-/* ================================================================ level 1 · two cameras */
+/* ================================================================ level 1 · two cameras
+   Two prints of the same fields, pinned side by side: the old camera's and the new one's. */
 .lv-spot2 { gap: var(--space-4); }
-.lv-photos { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-6); width: 100%; }
-.lv-photo { margin: 0; display: grid; gap: var(--space-2); width: min(100%, 420px); padding: var(--space-2); background: var(--ground-raised); box-shadow: var(--shadow-card); opacity: 0.55; transition: opacity var(--dur-sheet) var(--ease-lamp), transform var(--dur-sheet) var(--ease-paper); }
-.lv-photo.is-active { opacity: 1; transform: translateY(-4px); box-shadow: 0 0 0 2px var(--brass), var(--shadow-held); }
-.lv-photo-pic { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: var(--sky); }
+.lv-photos { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-8); width: 100%; padding-top: var(--space-2); }
+.lv-photo { margin: 0; display: grid; gap: var(--space-2); width: min(100%, 430px); padding: var(--space-3) var(--space-3) var(--space-2); color: var(--ink); opacity: 0.8; transform: rotate(1.2deg) scale(0.97); transition: opacity var(--dur-sheet) var(--ease-lamp), transform var(--dur-sheet) var(--ease-paper), box-shadow var(--dur-sheet) var(--ease-paper); }
+.lv-photo.is-modis { transform: rotate(-1.2deg) scale(0.97); }
+.lv-photo.is-active { opacity: 1; transform: rotate(0deg) translateY(-4px); box-shadow: var(--shadow-held); }
+.lv-photo-pin { left: 50%; top: 2px; }
+.lv-photo-pic { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: var(--sky); box-shadow: inset 0 0 0 1px var(--shadow), 0 0 0 1px var(--rule); }
+.lv-photo-pic::after { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; box-shadow: inset 0 0 44px var(--shadow); }
 .lv-photo-fields { position: absolute; inset: 0; width: 100%; height: 100%; }
 .dd button.lv-photo-fire { position: absolute; z-index: 2; transform: translate(-50%, -80%); display: grid; place-items: end center; }
 .lv-photo.is-modis .lv-photo-fire.is-tiny { opacity: 0.22; }
 .lv-photo-grid { position: absolute; inset: 0; z-index: 1; display: grid; grid-template-columns: repeat(var(--cols), 1fr); grid-template-rows: repeat(var(--rows), 1fr); pointer-events: none; }
-.lv-photo.is-modis .lv-photo-grid { background-image: linear-gradient(90deg, color-mix(in srgb, var(--lapis) 35%, transparent) 1px, transparent 1px), linear-gradient(0deg, color-mix(in srgb, var(--lapis) 35%, transparent) 1px, transparent 1px); background-size: calc(100% / 4) calc(100% / 3); }
-.lv-photo.is-viirs .lv-photo-grid { background-image: linear-gradient(90deg, color-mix(in srgb, var(--rubric) 22%, transparent) 1px, transparent 1px), linear-gradient(0deg, color-mix(in srgb, var(--rubric) 22%, transparent) 1px, transparent 1px); background-size: calc(100% / 12) calc(100% / 9); }
+.lv-photo.is-modis .lv-photo-grid { background-image: linear-gradient(90deg, color-mix(in srgb, var(--lapis) 42%, transparent) 1px, transparent 1px), linear-gradient(0deg, color-mix(in srgb, var(--lapis) 42%, transparent) 1px, transparent 1px); background-size: calc(100% / 4) calc(100% / 3); }
+.lv-photo.is-viirs .lv-photo-grid { background-image: linear-gradient(90deg, color-mix(in srgb, var(--rubric) 26%, transparent) 1px, transparent 1px), linear-gradient(0deg, color-mix(in srgb, var(--rubric) 26%, transparent) 1px, transparent 1px); background-size: calc(100% / 12) calc(100% / 9); }
 .lv-photo-sq { display: block; animation: dd-place var(--dur-sheet) var(--ease-paper) both; }
-.lv-photo.is-modis .lv-photo-sq { background: color-mix(in srgb, var(--lapis) 30%, transparent); box-shadow: inset 0 0 0 2px var(--lapis); }
-.lv-photo.is-viirs .lv-photo-sq { background: color-mix(in srgb, var(--rubric) 30%, transparent); box-shadow: inset 0 0 0 1.5px var(--rubric); }
-.lv-photo-cap { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-2); padding: 0 var(--space-1); }
-.lv-photo-count { font: var(--type-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink-muted); }
-.lv-photo-count b { font: 700 22px/1 var(--font-text); font-feature-settings: "lnum" 1, "tnum" 1; color: var(--ink); margin-left: var(--space-1); }
+.lv-photo.is-modis .lv-photo-sq { background: color-mix(in srgb, var(--lapis) 34%, transparent); box-shadow: inset 0 0 0 2px var(--lapis); }
+.lv-photo.is-viirs .lv-photo-sq { background: color-mix(in srgb, var(--rubric) 34%, transparent); box-shadow: inset 0 0 0 1.5px var(--rubric); }
+.lv-photo-cap { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--space-2); padding: var(--space-1) var(--space-1) 0; }
+.lv-photo .lv-tally { padding: 0; background: none; box-shadow: none; font: var(--type-eyebrow); font-variant-caps: all-small-caps; letter-spacing: var(--tracking-eyebrow); text-transform: none; font-size: 17px; }
+.lv-photo-count { display: inline-flex; align-items: baseline; gap: var(--space-2); font: var(--type-marginal); font-size: 16px; color: var(--ink-muted); }
+.lv-photo-count b { font: var(--type-display-m); font-size: 34px; line-height: 34px; font-feature-settings: "lnum" 1, "tnum" 1; color: var(--ink); min-width: 1.2em; text-align: right; }
 
 /* ================================================================ level 2 · seven nights of evidence */
-.lv-evidence { margin: 0; display: grid; gap: var(--space-1); justify-items: center; padding: var(--space-3); background: var(--ground-raised); box-shadow: var(--shadow-card); color: var(--ink); }
-.lv-evidence figcaption { font: var(--type-marginal); font-size: 15px; color: var(--ink-muted); }
+.lv-evidence { position: relative; margin: 0; display: grid; gap: var(--space-2); justify-items: center; padding: var(--space-4) var(--space-4) var(--space-3); background: var(--ground-raised); box-shadow: var(--shadow-held); color: var(--ink); transform: rotate(0.8deg); }
+.lv-evidence::after { content: ""; position: absolute; inset: 4px; border: 1px solid var(--rule); pointer-events: none; }
+.lv-evidence figcaption { font: var(--type-marginal); font-size: 16px; color: var(--ink-muted); }
 .lv-evidence .lv-nights { box-shadow: none; padding: 0; background: none; }
 .lv-evidence .lv-night { background: color-mix(in srgb, var(--ink) 88%, var(--lapis)); box-shadow: none; }
 .lv-night.is-dark i { display: none; }

@@ -5,8 +5,10 @@
 // one to the other the camera tilts down, as on the landing page; between levels the lamp goes out
 // and lights up again. The layers are canvases painted once; the camera moves them by transform.
 
-import { useEffect, useRef, type ReactNode } from "react";
-import { FieldsCanvas, SkyCanvas, WoodCanvas } from "../Textures";
+import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { FAR_FIRES, HORIZON } from "@/lib/diary/land";
+import { Flame } from "../art/Fire";
+import { LandCanvas, SkyCanvas, WoodCanvas } from "../Textures";
 
 export type Scene = "sky" | "desk";
 
@@ -16,32 +18,53 @@ function token(name: string, fallback: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
 }
 
-/** The book's running head: the Seal, then the five chapters, the current one ruled in brass. */
-export function RunningHead({ words, current, sealAlt }: { words: string[]; current: number; sealAlt: string }) {
+/** The letters the chapters are numbered with: abjad, as the landing page numbers its own. */
+export const ABJAD = ["أ", "ب", "ج", "د", "ه"];
+
+/** The eight-pointed star, two squares laid across each other: a star kept, or one let go. */
+export function Star8({ dim = false }: { dim?: boolean }) {
+  return (
+    <svg className={`star8${dim ? " is-dim" : ""}`} viewBox="0 0 40 40" aria-hidden="true">
+      <path d="M20 2L25.3 7.3H32.7V14.7L38 20L32.7 25.3V32.7H25.3L20 38L14.7 32.7H7.3V25.3L2 20L7.3 14.7V7.3H14.7Z" />
+    </svg>
+  );
+}
+
+/**
+ * The book's running head, lying on the sky: the Seal (the way back), the five chapters on a brass
+ * thread, each under its abjad letter, and the stars kept so far.
+ */
+export function RunningHead({ words, current, sealAlt, kept, keptLabel }: { words: string[]; current: number; sealAlt: string; kept: number; keptLabel: string }) {
+  const done = Math.min(1, Math.max(0, (current - 1) / (words.length - 1)));
   return (
     <header className="dd-head" data-theme="night">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <a href="/" className="dd-seal"><img src="/landing/logo/zij-seal-small-night.svg" alt={sealAlt} width={306} height={255} /></a>
-      <ol className="dd-chapters">
+      <ol className="dd-chapters" style={{ "--done": done } as CSSProperties}>
         {words.map((w, i) => (
-          <li key={w} className={i + 1 < current ? "is-done" : i + 1 === current ? "is-now" : current > words.length ? "is-done" : ""} aria-current={i + 1 === current ? "step" : undefined}>
+          <li key={w} className={i + 1 < current || current > words.length ? "is-done" : i + 1 === current ? "is-now" : ""} aria-current={i + 1 === current ? "step" : undefined}>
+            <b className="abjad" aria-hidden="true"><span>{ABJAD[i]}</span></b>
             <span>{w}</span>
-            <i className="dd-rule" aria-hidden="true" />
           </li>
         ))}
       </ol>
+      <p className="dd-kept" data-n={kept} aria-label={`${keptLabel}: ${kept}`}><Star8 /><span aria-hidden="true">{kept}</span></p>
     </header>
   );
 }
 
-/** A date palm against the sky, in ink: where Hudhud lands. */
-function Palm() {
+/** The straw fires far across the fields: small flames where the land canvas has lit the ground. */
+function FarFires() {
   return (
-    <svg className="dd-palm" viewBox="0 0 120 260" aria-hidden="true">
-      <path d="M62 260C60 210 58 160 64 110C66 92 70 80 72 70L77 71C74 84 71 96 70 112C66 160 68 212 70 260Z" />
-      <path d="M60 236H72M60 214H71M60 192H70M61 170H70M62 148H70M63 126H71M65 104H72M67 86H74" className="dd-palm-ring" />
-      <path d="M74 70C56 54 30 52 6 66C30 58 52 62 70 74ZM74 70C66 46 46 30 20 28C44 36 60 50 70 72ZM74 70C80 46 96 32 116 30C98 40 86 54 78 74ZM74 70C92 58 108 60 120 74C104 66 90 66 78 76ZM74 70C72 50 74 30 86 14C80 34 80 52 78 72ZM74 70C60 74 44 90 36 112C48 94 60 84 76 78ZM74 70C88 78 100 92 104 112C94 96 84 86 72 80Z" />
-    </svg>
+    <div className="dd-farfires" aria-hidden="true">
+      {FAR_FIRES.map((f, i) => (
+        <span key={i} className="dd-farfire" style={{ left: `${f.x * 100}%`, top: `${(HORIZON + (1 - HORIZON) * f.depth) * 100}%`, "--k": f.k } as CSSProperties}>
+          <Flame w={Math.round(9 * f.k)} h={Math.round(13 * f.k)} seed={31 + i * 7} lean={0.3} />
+          <Flame w={Math.round(7 * f.k)} h={Math.round(10 * f.k)} seed={47 + i * 5} lean={0.3} />
+          <Flame w={Math.round(8 * f.k)} h={Math.round(12 * f.k)} seed={12 + i * 3} lean={0.3} />
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -79,8 +102,10 @@ export function Stage({ scene, still, dark, sky, guide, children }: { scene: Sce
       <div className="dd-camera">
         <div ref={skyRef} className="dd-layer is-sky" data-on={String(scene === "sky")} data-theme="night">
           <SkyCanvas className="dd-sky" />
-          <div className="dd-land"><FieldsCanvas className="dd-fields" /></div>
-          <Palm />
+          <i className="dd-meteor" aria-hidden="true" /><i className="dd-meteor" aria-hidden="true" />
+          <LandCanvas className="dd-land" />
+          <FarFires />
+          <i className="dd-shade" aria-hidden="true" />
           {sky}
         </div>
         <div ref={deskRef} className="dd-layer is-desk" data-on={String(scene === "desk")} data-theme="night">

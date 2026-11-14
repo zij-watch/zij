@@ -10,20 +10,41 @@
 .hh-brass-line, .th-brass-line { fill: none; stroke: var(--brass); stroke-width: var(--stroke-instrument); vector-effect: non-scaling-stroke; }
 .hh-hatch, .sat-hatch, .tr-hatch, .th-hatch { fill: none; stroke: var(--ink); stroke-width: 0.8; vector-effect: non-scaling-stroke; opacity: 0.5; stroke-linecap: round; }
 
-/* ================================================================ Hudhud */
-.hh { --hh-buff: color-mix(in srgb, color-mix(in srgb, var(--brass) 60%, var(--rubric)) 70%, var(--ground-raised)); position: relative; width: var(--hh, 140px); aspect-ratio: 1; flex: none; }
+/* ================================================================ Roro */
+.hh {
+  --hh-buff: color-mix(in srgb, color-mix(in srgb, var(--brass) 52%, var(--rubric)) 62%, var(--ground-raised));
+  position: relative; width: var(--hh, 140px); aspect-ratio: 1; flex: none;
+  filter: drop-shadow(0 3px 3px color-mix(in srgb, var(--shadow) 55%, transparent));
+}
 .hh > div, .hh-crestwrap { position: absolute; inset: 0; }
 .hh svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.hh-head { transform-origin: 66% 48%; transition: transform var(--dur-ink) var(--ease-ink); }
-.hh.is-tilt .hh-head { transform: rotate(24deg); }
-.hh-feather { transform-box: view-box; transform-origin: 81px 44px; transform: rotate(var(--down)); transition: transform var(--dur-ink) var(--ease-ink); }
+.hh .hh-line { stroke-width: 1.3; }
+.hh-none { fill: none; }
+.hh-ink-line.is-fine { stroke-width: 0.9; }
+.hh-head { transform-origin: 66% 50%; transition: transform var(--dur-ink) var(--ease-ink); }
+.hh.is-tilt .hh-head { transform: rotate(22deg); }
+.hh-feather { transform-box: view-box; transform-origin: 80px 41px; transform: rotate(var(--down)); transition: transform var(--dur-ink) var(--ease-ink); }
+.hh-feather:nth-child(odd) { transition-delay: 40ms; }
 .hh.is-crest-up .hh-feather { transform: rotate(var(--up)); }
 .hh-buff { fill: var(--hh-buff); }
+.hh-belly { fill: color-mix(in srgb, var(--ground-raised) 62%, var(--hh-buff)); }
 .hh-pale, .hh-glint, .hh-paper { fill: var(--ground-raised); }
 .hh-ink { fill: var(--ink); }
+.hh-bar { fill: none; stroke: var(--ground-raised); stroke-width: 3.4; stroke-linecap: butt; }
+.hh-bar.is-wide { stroke-width: 5.4; }
+.hh-bill-root { fill: color-mix(in srgb, var(--hh-buff) 55%, var(--ink)); }
+.hh-leather { fill: color-mix(in srgb, var(--wood) 78%, var(--rubric)); }
+.hh-brass { fill: color-mix(in srgb, var(--brass) 62%, var(--flame)); }
+.hh-brass-line.is-bold { stroke-width: 2; }
+.hh-glint-line { fill: none; stroke: var(--ground-raised); stroke-width: 1.2; stroke-linecap: round; opacity: 0.8; }
 .hh-lens { fill: color-mix(in srgb, var(--sky) 55%, transparent); }
+/* he breathes: the body barely rises, so he is never a still picture */
+.hh-body { transform-origin: 50% 88%; animation: hh-breathe 3.6s ease-in-out infinite alternate; }
+@keyframes hh-breathe { from { transform: scale(1, 1); } to { transform: scale(1.012, 1.02); } }
+.hh.is-fly .hh-body { animation: hh-wing 0.42s ease-in-out infinite alternate; transform-origin: 50% 60%; }
+@keyframes hh-wing { from { transform: translateY(-2px) scaleY(1.04); } to { transform: translateY(3px) scaleY(0.92); } }
 .hh.is-step { animation: hh-step var(--dur-sheet) var(--ease-ink); }
-@keyframes hh-step { 0% { transform: translate(0, 0); } 45% { transform: translate(4px, -9px); } 100% { transform: translate(0, 0); } }
+@keyframes hh-step { 0% { transform: translate(0, 0); } 40% { transform: translate(0, -11px) rotate(-3deg); } 100% { transform: translate(0, 0); } }
 
 /* ================================================================ the satellites and their rings */
 .sat { position: relative; width: var(--sat, 104px); display: grid; justify-items: center; }
@@ -47,16 +68,34 @@
 .orbit-inner { fill: none; stroke: var(--brass); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .orbit-ticks { fill: none; stroke: var(--brass); stroke-width: 1; vector-effect: non-scaling-stroke; }
 
-/* ================================================================ fire */
+/* ================================================================ fire
+   Flame, the light it throws on the ground, sparks and a thread of smoke: never a glowing disc. */
 .flame { position: relative; display: inline-block; overflow: hidden; transform-origin: 50% 100%; animation: dd-lick var(--beat, 1.13s) ease-in-out var(--off, 0s) infinite; }
 .flame > canvas { position: absolute; left: 0; top: 0; width: 800%; height: 100%; max-width: none; animation: dd-leaf 0.56s steps(8) var(--off, 0s) infinite; }
 .flame.is-steady { animation-duration: 2.4s; }
 @keyframes dd-leaf { to { transform: translateX(-100%); } }
 @keyframes dd-lick { 0%, 100% { transform: scale(1, 0.97); } 17% { transform: scale(0.95, 1.06); } 29% { transform: scale(1.03, 0.92); } 46% { transform: scale(0.97, 1.04); } 61% { transform: scale(1.02, 0.94); } 78% { transform: scale(0.96, 1.07); } 89% { transform: scale(1.01, 0.96); } }
-.fire-field { position: relative; display: inline-flex; align-items: flex-end; gap: 0; padding: 0 calc(var(--k, 1) * 4px); }
-.fire-scorch { position: absolute; left: 0; right: 0; bottom: calc(var(--k, 1) * -3px); width: 100%; height: calc(var(--k, 1) * 8px); }
-.fire-scorch path { fill: color-mix(in srgb, var(--shadow) 70%, var(--rubric)); opacity: 0.8; }
+.fire-field { position: relative; display: inline-flex; align-items: flex-end; gap: 0; padding: 0 calc(var(--k, 1) * 5px); isolation: isolate; }
 .fire-field .flame + .flame { margin-left: calc(var(--k, 1) * -3px); }
+/* the light on the ground: a low, wide pool that swells and sinks with the flame */
+.fire-light {
+  position: absolute; z-index: -1; left: 50%; bottom: calc(var(--k, 1) * -9px); width: calc(var(--k, 1) * 110px); height: calc(var(--k, 1) * 44px); margin-left: calc(var(--k, 1) * -55px); border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--flame) 60%, transparent), color-mix(in srgb, var(--rubric) 26%, transparent) 46%, transparent 100%);
+  mix-blend-mode: screen; animation: dd-swell 1.7s ease-in-out var(--off, 0s) infinite alternate;
+}
+@keyframes dd-swell { from { opacity: 0.7; transform: scale(0.94); } to { opacity: 1; transform: scale(1.05); } }
+/* the burnt ground under it */
+.fire-scorch { position: absolute; z-index: -1; left: 0; right: 0; bottom: calc(var(--k, 1) * -3px); width: 100%; height: calc(var(--k, 1) * 8px); }
+.fire-scorch path { fill: color-mix(in srgb, var(--shadow) 82%, var(--rubric)); opacity: 0.9; }
+/* sparks rising and going out */
+.fire-spark { position: absolute; left: calc(50% + var(--x) * var(--k, 1) * 1px); bottom: 60%; width: 2px; height: 2px; border-radius: 50%; background: var(--flame); opacity: 0; pointer-events: none; animation: dd-spark var(--t) ease-out var(--d) infinite; }
+@keyframes dd-spark { 0% { opacity: 0; transform: translate(0, 0); } 12% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(var(--drift) * 1px), calc(var(--k, 1) * -46px)); } }
+/* smoke: a soft thread leaning on the night wind */
+.fire-smoke {
+  position: absolute; z-index: -1; left: 50%; bottom: 80%; width: calc(var(--k, 1) * 26px); height: calc(var(--k, 1) * 26px); margin-left: calc(var(--k, 1) * -13px); border-radius: 50%; pointer-events: none; opacity: 0;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--ink-muted) 34%, transparent), transparent); animation: dd-smoke 4.2s linear var(--d, 0s) infinite;
+}
+@keyframes dd-smoke { 0% { opacity: 0; transform: translate(0, 0) scale(0.5); } 18% { opacity: 0.55; } 100% { opacity: 0; transform: translate(calc(var(--k, 1) * 34px), calc(var(--k, 1) * -70px)) scale(2.4); } }
 .fire-factory { position: relative; display: inline-grid; justify-items: center; width: 34px; }
 .fire-factory > svg { width: 30px; height: 60px; }
 .fire-factory .flame { margin-bottom: -4px; }

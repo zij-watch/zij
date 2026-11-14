@@ -11,6 +11,8 @@ import "./ui.css";
 import "./materials.css";
 import "./explore.css";
 import "./errors.css";
+import "./veil.css";
+import Veil from "@/components/Veil";
 import { tokensCss } from "@/lib/tokens";
 
 export const metadata: Metadata = {
@@ -43,11 +45,14 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, them
 // The bare frame: fonts, tokens and the theme. The top bar and credits are in app/(site)/layout.tsx.
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <style dangerouslySetInnerHTML={{ __html: tokensCss() }} />
       </head>
-      <body>{children}</body>
+      <body>
+        <Veil />
+        {children}
+      </body>
     </html>
   );
 }

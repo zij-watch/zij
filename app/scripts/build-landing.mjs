@@ -26,7 +26,7 @@ const playWords = UI_LABELS.find((u) => u.id === "ui.landing").label;
 
 mkdirSync(here("../public/landing/reference/"), { recursive: true });
 for (const dir of ["logo", "assets"]) cpSync(here(`../landing-src/${dir}/`), here(`../public/landing/${dir}/`), { recursive: true });
-for (const file of ["tokens.css", "reference/materials.css", "additions.css", "life.js"]) cpSync(here(`../landing-src/${file}`), here(`../public/landing/${file}`));
+for (const file of ["tokens.css", "reference/materials.css", "additions.css", "life.js", "leave.js"]) cpSync(here(`../landing-src/${file}`), here(`../public/landing/${file}`));
 
 let html = read("../landing-src/landing.html");
 let js = read("../landing-src/landing.js");
@@ -459,6 +459,41 @@ js = swap(js, "  function drawThread(t) {", `  function threadsOverRecord() {
   }
   function drawThread(t) {`, "drawThread");
 
+// The thread follows the scroll. It used to be drawn on a timer (2.4 s, after its sheet's ink had
+// dried), so it crept in long after the reader had scrolled past. Now its tip keeps to a line three
+// quarters down the screen: it unspools as the page moves, at the page's speed, and its end pin is
+// set down as the tip reaches it. It never winds back. The line of pins at the end keeps its own
+// order, one pin after another, only quicker.
+const READ_LINE = 0.75;
+js = swap(js, "    const drawn = new Set(threads.filter((t) => t.drawn).map((t) => t.key));", `    const drawn = new Set(threads.filter((t) => t.drawn).map((t) => t.key));
+    const had = new Map(threads.map((t) => [t.key, t.f || 0]));`, "the threads kept across a relayout");
+js = swap(js, "lineage: /^l\\d/.test(b), pins: [] };", "lineage: /^l\\d/.test(b), pins: [], y0: p[1], y1: q[1], f: had.get(a + '>' + b) || 0 };", "where each thread starts and ends");
+js = swap(js, "t.els = [path.previousElementSibling, path];", "t.els = [path.previousElementSibling, path]; t.len = len;", "each thread's length");
+js = swap(js, "    if (!t || t.drawn) return;", `    if (!t || t.drawn) return;
+    if (!t.lineage && !still) return;   // the scroll draws it (followThreads)`, "the timed draw");
+js = swap(js, "endPin.style.opacity = '1'; }, 1900);", "endPin.style.opacity = '1'; }, 800);", "the end pin of the line");
+js = swap(js, "  function drawThread(t) {", `  // how far each thread is drawn: its tip on the reading line (desk coordinates), never drawn back
+  function followThreads(line) {
+    if (still) return;
+    for (const t of threads) {
+      if (t.lineage || !t.els) continue;
+      const span = Math.max(Math.abs(t.y1 - t.y0), 240);
+      const f = Math.max(t.f, clamp((line - Math.min(t.y0, t.y1)) / span));
+      if (f === t.shown) continue;
+      t.f = t.shown = f;
+      const off = n1(t.len * (1 - f));
+      for (const e of t.els) { e.classList.add('is-follow'); e.style.strokeDashoffset = off; }
+      const start = t.pins[0] === 0 ? t.pinEls[0] : null, end = t.pinEls[t.pinEls.length - 1];
+      if (start) start.style.opacity = f > 0 ? '1' : '0';
+      if (end && end !== start) end.style.opacity = f >= 0.995 ? '1' : '0';
+    }
+  }
+  function drawThread(t) {`, "followThreads");
+js = swap(js, "    threadsOverRecord();", `    threadsOverRecord();
+    followThreads(scrollY + vh * ${READ_LINE} - deskTop);`, "the threads after a relayout");
+js = swap(js, "    if (idx !== chIdx) { chIdx = idx; activate(idx); }", `    if (idx !== chIdx) { chIdx = idx; activate(idx); }
+    followThreads(y + vh * ${READ_LINE} - deskTop);`, "the threads on each frame");
+
 // ---- the seal of the opening, written with a reed pen ----------------------------------------
 // The same shapes as logo/zij-seal-night.svg, inline, so they can be written in. The pen is a reed
 // cut square and held at 45 degrees, the pen that makes the seal's own diamond dots: its edge is
@@ -572,7 +607,8 @@ const edits = [
   ['<link rel="icon" href="../logo/zij-impression.svg" type="image/svg+xml">', '<link rel="icon" href="/favicon.svg" type="image/svg+xml">\n<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">\n<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">\n<link rel="manifest" href="/manifest.webmanifest">', "the icon"],
   ['<link rel="stylesheet" href="../tokens.css">', '<link rel="stylesheet" href="/landing/tokens.css">', "tokens.css"],
   ['<link rel="stylesheet" href="materials.css">', '<link rel="stylesheet" href="/landing/reference/materials.css">\n<link rel="stylesheet" href="/landing/additions.css">', "materials.css"],
-  ['<script src="landing.js"></script>', `<script>window.ZIJ_TABLE = ${JSON.stringify(table)};</script>\n<script src="/landing/reference/landing.js"></script>\n<script src="/landing/life.js"></script>`, "the script"],
+  ['<script src="landing.js"></script>', `<script>window.ZIJ_TABLE = ${JSON.stringify(table)};</script>\n<script src="/landing/reference/landing.js"></script>\n<script src="/landing/life.js"></script>
+<script src="/landing/leave.js" defer></script>`, "the script"],
   ['<p class="line">Satellites do the watching.<br>We make the tables.</p>', '<p class="line">1,000 years ago, a zij charted the sky.<br>Ours charts a safer Earth.</p>', "the hero's line"],
   ['<h1><img src="../logo/zij-seal-night.svg" alt="Zij · زيج" width="287" height="246"></h1>', `<h1>${SEAL_WRITTEN}</h1>`, "the hero's seal"],
   // the words under the seal take their times from it (additions.css, the entrance)
@@ -619,8 +655,8 @@ html = html.replaceAll('"../logo/', '"/landing/logo/');
 // The page's own styles point at the patterns beside the reference; here they are under /landing.
 html = html.replaceAll('"../assets/', '"/landing/assets/');
 // The two files that change with the data or the styles carry a stamp, so a cached copy is never stale.
-const stamp = createHash("sha1").update(js).update(read("../landing-src/additions.css")).update(read("../landing-src/life.js")).digest("hex").slice(0, 8);
-html = html.replace('/landing/additions.css"', `/landing/additions.css?v=${stamp}"`).replace('/landing/reference/landing.js"', `/landing/reference/landing.js?v=${stamp}"`).replace('/landing/life.js"', `/landing/life.js?v=${stamp}"`);
+const stamp = createHash("sha1").update(js).update(read("../landing-src/additions.css")).update(read("../landing-src/life.js")).update(read("../landing-src/leave.js")).digest("hex").slice(0, 8);
+html = html.replace('/landing/additions.css"', `/landing/additions.css?v=${stamp}"`).replace('/landing/reference/landing.js"', `/landing/reference/landing.js?v=${stamp}"`).replace('/landing/life.js"', `/landing/life.js?v=${stamp}"`).replace('/landing/leave.js"', `/landing/leave.js?v=${stamp}"`);
 if (/fonts\.g(oogleapis|static)|\.\.\//.test(html)) throw new Error("build-landing: an outside or relative reference is left in the page");
 
 writeFileSync(here("../public/landing.html"), html);

@@ -24,14 +24,22 @@ export function Flame({ w, h, seed, lean = 0, className = "" }: { w: number; h: 
   );
 }
 
-/** A burning field: three to five tongues along a ragged line, the scorched ground behind them. */
+/** A burning field: three to five tongues along a ragged line, the scorched ground under them, the
+ * light they throw, sparks and a thread of smoke. */
 export function FieldFire({ seed, scale = 1, className = "" }: { seed: number; scale?: number; className?: string }) {
   const n = 3 + (seed % 3);
+  const small = scale < 0.7;
   return (
-    <span className={`fire-field ${className}`} style={{ "--k": scale } as CSSProperties} aria-hidden="true">
+    <span className={`fire-field ${className}`} style={{ "--k": scale, "--off": `${-(seed % 9) * 0.21}s` } as CSSProperties} aria-hidden="true">
+      <i className="fire-light" />
       <svg className="fire-scorch" viewBox="0 0 60 12"><path d="M2 8C10 4 18 9 28 6C38 3 46 9 58 6L58 10C46 12 36 9 28 11C18 12 10 10 2 11Z" /></svg>
+      {!small && <i className="fire-smoke" />}
+      {!small && <i className="fire-smoke" style={{ "--d": "-2.1s" } as CSSProperties} />}
       {Array.from({ length: n }, (_, i) => (
-        <Flame key={i} w={Math.round((9 + ((seed + i * 5) % 5)) * scale)} h={Math.round((15 + ((seed * 3 + i * 7) % 9)) * scale)} seed={seed * 13 + i} lean={0.15} />
+        <Flame key={i} w={Math.round((11 + ((seed + i * 5) % 5)) * scale)} h={Math.round((19 + ((seed * 3 + i * 7) % 11)) * scale)} seed={seed * 13 + i} lean={0.15} />
+      ))}
+      {!small && [0, 1, 2].map((i) => (
+        <i key={i} className="fire-spark" style={{ "--x": ((seed * 7 + i * 11) % 24) - 12, "--drift": 6 + ((seed + i * 5) % 12), "--t": `${1.5 + ((seed + i) % 4) * 0.35}s`, "--d": `${-i * 0.6 - (seed % 5) * 0.17}s` } as CSSProperties} />
       ))}
     </span>
   );

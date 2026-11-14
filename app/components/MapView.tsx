@@ -1,5 +1,6 @@
 "use client";
 
+import { veilReady } from "@/lib/veil";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
@@ -133,6 +134,9 @@ export default function MapView({ basemap, date, sky = false, areas, selected, o
           // Ready as soon as the style is in: the area is shown and fitted without waiting for
           // every tile, which on a slow line to the satellite imagery can take a long time.
           if (!cancelled) setReady(true);
+          // The veil the page opened under (app/veil.css) lifts now: the map is there to be seen.
+          m.once("idle", veilReady);
+          window.setTimeout(veilReady, 900);
         }
       });
       // A hotspot says in words what it is: sensor, satellite, time, strength.
