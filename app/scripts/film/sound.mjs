@@ -99,7 +99,7 @@ function sound(e, k) {
     case "air": { // a glide of the camera: soft air (recorded wind, banded)
       const dur = e.dur;
       return cut(file, join(SFX, "wind-desert-plain-fs697217.mp3"), 2 + (e.seed ?? 0) * 3.7, dur,
-        `highpass=f=180,lowpass=f=1600,afade=t=in:d=${(dur * 0.45).toFixed(3)}:curve=qsin,afade=t=out:st=${(dur * 0.45).toFixed(3)}:d=${(dur * 0.55).toFixed(3)}:curve=qsin`, -27 + gain);
+        `highpass=f=180,lowpass=f=${e.soft ? 900 : 1600},afade=t=in:d=${(dur * 0.45).toFixed(3)}:curve=qsin,afade=t=out:st=${(dur * 0.45).toFixed(3)}:d=${(dur * 0.55).toFixed(3)}:curve=qsin`, -27 + gain);
     }
     case "thread": // the thread drawn along with the glide: a faint rasp (synthesised: pink noise, band-passed)
       return synth(file, `anoisesrc=color=pink:amplitude=0.6:seed=${17 + (e.seed ?? 0)}:sample_rate=${RATE}`, e.dur,
@@ -351,46 +351,12 @@ function v31Events() {
   // muffled thud as the cover closes. No ticks, no quill, no rasp: under his voice they read as pops
   // and scratches.
   const { beats: b, moves } = makeCut31(timing31()), out = [];
-  moves.forEach(([a, c], i) => out.push({ kind: "air", at: a - 0.1, dur: c - a + 0.45, seed: i + 1, gain: i === 0 ? -2 : -4 })); // the camera's moves
-  out.push({ kind: "air", at: b.flyModis[0], dur: b.flyViirs + b.fly - b.flyModis[0] + 0.2, seed: 7, gain: -8 }); // the dots in flight
+  moves.forEach(([a, c], i) => out.push({ kind: "air", at: a - 0.1, dur: c - a + 0.45, seed: i + 1, gain: i === 0 ? -6 : -8, soft: true })); // the camera's moves
+  out.push({ kind: "air", at: b.flyModis[0], dur: b.flyViirs + b.fly - b.flyModis[0] + 0.2, seed: 7, gain: -12, soft: true }); // the dots in flight
   out.push({ kind: "slide", at: b.stack[0], gain: -6 }); // the sheets slide together
   out.push({ kind: "thud", at: b.close[1] - 0.04, gain: -2 }); // the cover closes
   return out;
 }
-/**
- * Clicks in a recording: 5 ms blocks whose high band (above 6 kHz, two biquads) stands more than
- * eight times above the median of the blocks round it, and above -50 dBFS. Mouth clicks and lip
- * smacks, mostly; returned as times in seconds.
- */
-function findClicks(file) {
-  const pcm = spawnSync("ffmpeg", ["-v", "error", "-i", file, "-ac", "1", "-ar", String(RATE), "-f", "f32le", "-"], { maxBuffer: 1 << 28 }).stdout;
-  const x = new Float32Array(pcm.buffer, pcm.byteOffset, Math.floor(pcm.length / 4));
-  const w = (2 * Math.PI * 6000) / RATE, q = Math.SQRT1_2, alpha = Math.sin(w) / (2 * q), cw = Math.cos(w);
-  const [b0, b1, b2, a0, a1, a2] = [(1 + cw) / 2, -(1 + cw), (1 + cw) / 2, 1 + alpha, -2 * cw, 1 - alpha];
-  const pass = (input) => {
-    const y = new Float32Array(input.length);
-    let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
-    for (let n = 0; n < input.length; n++) {
-      const v = (b0 * input[n] + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2) / a0;
-      x2 = x1; x1 = input[n]; y2 = y1; y1 = v; y[n] = v;
-    }
-    return y;
-  };
-  const hp = pass(pass(x)), block = RATE / 200, nb = Math.floor(hp.length / block);
-  const peaks = Array.from({ length: nb }, (_, k) => {
-    let m = 0;
-    for (let i = k * block; i < (k + 1) * block; i++) m = Math.max(m, Math.abs(hp[i]));
-    return m;
-  });
-  const out = [];
-  for (let k = 0; k < nb; k++) {
-    const around = peaks.slice(Math.max(0, k - 4), k + 5).sort((a, b) => a - b);
-    const median = around[Math.floor(around.length / 2)] + 1e-5;
-    if (peaks[k] / median > 8 && 20 * Math.log10(peaks[k] + 1e-9) > -50 && (!out.length || k * block / RATE - out[out.length - 1] > 0.02)) out.push(k * block / RATE);
-  }
-  return out;
-}
-
 function third31() {
   const D = DURATION31;
   const picture = join(OUT, "film-v3.1-silent.mp4");
@@ -407,12 +373,9 @@ function third31() {
   const mixes = [];
   if (existsSync(placed)) {
     const clean = join(AUDIO, "v31-voice-clean.wav");
-    // His take has a few mouth clicks: each is repaired where it is (a de-clicker on 120 ms round it),
-    // and nowhere else, so his consonants are left alone.
-    const marks = findClicks(placed);
-    const where = marks.map((c) => `between(t,${(c - 0.06).toFixed(3)},${(c + 0.06).toFixed(3)})`).join("+") || "0";
-    console.log(`  his voice: ${marks.length} mouth clicks repaired, at ${marks.map((c) => c.toFixed(2)).join(", ")} s`);
-    ff(["-i", placed, "-af", `highpass=f=80:poles=2,adeclick=w=40:o=75:t=1.5:b=4:enable='${where}',afftdn=nr=4:nf=-55,${FORMAT},apad,atrim=0:${D}`, "-c:a", "pcm_f32le", clean]);
+    // His take is clean: it is only cut a little below his voice. No de-noiser and no de-clicker:
+    // switched on round a click, a de-clicker's own delay makes glitches at its edges.
+    ff(["-i", placed, "-af", `highpass=f=70:poles=2,${FORMAT},apad,atrim=0:${D}`, "-c:a", "pcm_f32le", clean]);
     const voiced = join(WORK, "mix-v3.1-voice.wav");
     ff(["-i", level(clean, -16, join(WORK, "voice-v3.1-16.wav")), "-i", level(music, -42, join(WORK, "music-v3.1-42.wav")), "-i", fx, "-filter_complex",
       "[0]asplit=2[v][key];[1][key]sidechaincompress=threshold=0.015:ratio=6:attack=40:release=450:makeup=1[m];[2]volume=-8dB[x];[v][m][x]amix=inputs=3:normalize=0[out]",

@@ -2,7 +2,7 @@
 // The film v3.1's voice, placed (docs/event/FILM.md, "v3.1"). Yassen's take runs 31.1 s and the film
 // may not pass 29.9 s, with the book closing after his last word. So: every pause in it (quieter
 // than -40 dB for 80 ms or more) is shortened to 70 ms, the take is played at most 5% faster with
-// atempo (no change of pitch), and it is placed so his first word starts at 0.3 s and his last ends
+// rubberband (high quality, formants kept: no change of pitch), and it is placed so his first word starts at 0.3 s and his last ends
 // by 29.05 s. Then whisper.cpp gives the placed voice's word times, which every beat is keyed to.
 //
 //   npx tsx scripts/film/v31-voice.mjs            from app/; the take is film/audio/voiceover-v3.*
@@ -57,7 +57,7 @@ console.log(`  tempo ${tempo.toFixed(4)} (${((tempo - 1) * 100).toFixed(1)}% fas
 if (ends > END + 0.01) console.log(`  NOTE: even at ${MAX_TEMPO}x he ends at ${ends.toFixed(2)} s, after ${END} s`);
 
 const parts = keep.map(([a, b], k) => `[0]atrim=start=${a.toFixed(4)}:end=${b.toFixed(4)},asetpts=PTS-STARTPTS,afade=t=in:d=0.006,afade=t=out:st=${Math.max(0, b - a - 0.006).toFixed(4)}:d=0.006[p${k}]`);
-const graph = `${parts.join(";")};${keep.map((_, k) => `[p${k}]`).join("")}concat=n=${keep.length}:v=0:a=1,pan=mono|c0=0.5*c0+0.5*c1,aresample=48000,atempo=${tempo.toFixed(5)},adelay=${Math.round(AT * 1000)},apad,atrim=0:${DURATION31}[out]`;
+const graph = `${parts.join(";")};${keep.map((_, k) => `[p${k}]`).join("")}concat=n=${keep.length}:v=0:a=1,pan=mono|c0=0.5*c0+0.5*c1,aresample=48000,rubberband=tempo=${tempo.toFixed(5)}:pitchq=quality:transients=mixed:detector=compound:window=standard:formant=preserved,adelay=${Math.round(AT * 1000)},apad,atrim=0:${DURATION31}[out]`;
 const placed = join(AUDIO, "v31-voice-placed.wav");
 run("ffmpeg", ["-y", "-hide_banner", "-loglevel", "error", "-i", take, "-filter_complex", graph, "-map", "[out]", "-c:a", "pcm_s24le", placed]);
 console.log(`  ${placed}`);
