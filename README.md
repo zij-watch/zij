@@ -7,7 +7,7 @@
 
 Zij turns NASA's two satellite fire records, MODIS since 2000 and VIIRS since 2012, into one harmonized and validated record that anyone can explore for any area.
 
-**[Live site: zij.watch](https://zij.watch)** · **Video:** `TODO: add the video link` · **Project page:** `TODO: add the Space Apps project page link`
+**[Live site: zij.watch](https://zij.watch)** · **[Demo video](https://zij.watch/demo)** · **[Game: Roro's Fire Diary](https://zij.watch/diary)** · **[Space Apps project page](https://www.spaceappschallenge.org/2026/find-a-team/zij/?tab=project)**
 
 [![Licence: Apache-2.0](https://img.shields.io/github/license/zij-watch/zij?label=licence)](LICENSE)
 [![CI](https://github.com/zij-watch/zij/actions/workflows/ci.yml/badge.svg)](https://github.com/zij-watch/zij/actions/workflows/ci.yml)
@@ -247,15 +247,13 @@ Exact versions are in `pipeline/pyproject.toml` and `pipeline/uv.lock`. The app 
 - **The public FIRMS files were downloaded before the event.** They are public NASA data, not project work. The raw archive is not committed. What the app needs from it is: a filtered copy of the kept hotspots and the weekly counts per cell (see "What is shipped from FIRMS" above).
 - **The design system was made before the event.** From it this repository takes the colour and font tokens, the Seal (the mark that reads Zij and زيج; `Seal` in `app/components/Shell.tsx`, and the favicon set drawn from it by `app/scripts/icons.mjs`), and the paper material: the grain file `app/public/paper-grain.svg`, the scrollbar rules, the sheets and instruments of its reference `materials.css` (ported into `app/app/materials.css`) and the landing script's paper painter (ported into `app/lib/paper.ts`). The landing page at `/` is also from it: `app/landing-src/` holds its page, script, tokens, materials and patterns unchanged, and `app/scripts/build-landing.mjs`, written during the event, puts the real record into it. Nothing else of it is here.
 - **All other code in this repository was written during the event.**
-- **AI assistance: Claude and Claude Code (Anthropic).** They write code and documentation here under our direction. We decide the method, log every decision in `docs/event/DECISIONS.md`, and check the output against our own research numbers before building on it. No AI-generated images, video or audio are in this repository.
+- **AI assistance: Manus AI, and Claude and Claude Code (Anthropic).** Manus was used throughout the project alongside Claude, for code, data work and writing; the game Roro's Fire Diary (`app/app/diary/`, `app/components/diary/`) was built entirely with Manus, its drawings drawn in code (SVG). Claude and Claude Code write code and documentation here under our direction. We decide the method, log every decision in `docs/event/DECISIONS.md`, and check the output against our own research numbers before building on it. No AI-generated images, video or audio are in this repository.
 
 ## Team and roles
 
 Team Zij, Cairo. Contact: info@zij.watch.
 
-| Member | Role |
-|---|---|
-| `TODO: name` | `TODO: role` |
+Five people, one part each: a lead developer (data pipeline, model and app), a designer (interface, map and film), a researcher (validation against FIRMS and the literature), a tester (areas, devices, the demo and the game), and a coordinator (documentation and submission).
 
 ## Licence
 
