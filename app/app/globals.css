@@ -129,7 +129,6 @@ ol.bars li { display: grid; grid-template-columns: 64px 1fr 56px; align-items: c
 .page p, .page li { font-size: 19px; line-height: 30px; }
 .page .note { font-size: 16px; line-height: 23px; }
 .page table { margin: 8px 0 12px; }
-.page .placeholder { border: 1px dashed var(--brass); padding: 8px 12px; color: var(--ink-muted); }
 .figure { font: 600 40px/44px var(--font-display); }
 .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 12px 0; }
 .facts > div { border: 1px solid var(--rule); padding: 12px 12px; background: var(--ground-raised); }

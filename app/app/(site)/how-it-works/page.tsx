@@ -1,4 +1,4 @@
-// Placeholder page: the structure and the numbers. The final text is still to be written.
+// How it works: each step of the method with its numbers, read from the build's method file.
 // Every number comes from public/data/method.json, which the pipeline writes.
 
 import Link from "next/link";
@@ -68,8 +68,9 @@ export default function Page() {
       <div className="page-inner">
         <p className="eyebrow">How it works</p>
         <h1>Two sensors, one scale</h1>
-        <p className="placeholder">
-          Placeholder page: the numbers are final for this build ({method.built_at_utc.slice(0, 10)}, data to {method.last_full_day}); the text is not written yet.
+        <p>
+          Zij puts NASA&rsquo;s two fire records, MODIS and VIIRS, on one scale. This page shows each step and the numbers behind it,
+          from this build ({method.built_at_utc.slice(0, 10)}, data to {method.last_full_day}).
         </p>
 
         <h2 id="requirements">What the challenge asks for, and where it is</h2>
