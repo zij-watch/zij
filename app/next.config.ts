@@ -12,7 +12,7 @@ const EXPLORE_PARAMS = ["area", "box", "poly", "day", "days", "from", "to", "vie
 const BUILD_ID = (process.env.VERCEL_GIT_COMMIT_SHA ?? `t${Date.now().toString(36)}`).slice(0, 12);
 
 // The demo film (NASA Space Apps 2026).
-const DEMO = "https://www.youtube.com/watch?v=XABi7qeNZwA";
+const DEMO = "https://www.youtube.com/watch?v=9Dm6Ytcao2A";
 
 const nextConfig: NextConfig = {
   env: { NEXT_PUBLIC_BUILD_ID: BUILD_ID },
