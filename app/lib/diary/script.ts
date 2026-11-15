@@ -57,7 +57,7 @@ export const UI_LABELS: { id: string; label: string; role: LabelRole; what: stri
   { id: "ui.hudhud", label: "Roro, the hoopoe", role: "caption", what: "the guide's name for screen readers" },
   { id: "ui.mona", label: "Mona", role: "caption", what: "the girl from Kafr El Sheikh whose question the game answers" },
   ...["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((m, i) => ({ id: `ui.m${i + 1}`, label: m, role: "caption" as const, what: "a month on the calendar gear's volvelle" })),
-  { id: "ui.landing", label: "Play Hudhud's Fire Diary", role: "catchword", what: "on the landing page, under Open the map" },
+  { id: "ui.landing", label: "Play Roro's Fire Diary", role: "catchword", what: "on the landing page, under Open the map" },
   { id: "ui.turn", label: "Your turn", role: "caption", what: "above the task slip that says what to do next" },
   { id: "ui.ch1", label: "Chapter one", role: "caption", what: "the turning page before level 1" },
   { id: "ui.ch2", label: "Chapter two", role: "caption", what: "the turning page before level 2" },
